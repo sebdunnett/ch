@@ -1,0 +1,42 @@
+LONGNAME,SHORTNAME
+Likely; All Ramsar sites,L-RAMSALL
+Likely; Alliance for Zero Extinction Sites,L-AZE
+Likely; Cold seeps,L-COLDSEEP
+Likely; Cold water coral reefs - Observed occurence,L-COLDREEF
+Likely; CR species under criterion D,L-CRCRD
+Likely; EN species under criterion D,L-ENCRD
+Likely; Hydrothermal Vents,L-HYDRO
+Likely; IMMAs under criterion B2,L-IMMAB2
+Likely; Intact Forest Landscapes,L-IFL
+Likely; Irreplaceable protected areas,L-IRREPL
+"Likely; IUCN management categories Ia, Ib and II",L-IUCNMGMT
+Likely; KBAs with triggers including CR/EN species,L-KBACREN
+Likely; KBAs with triggers including endemic species,L-KBAENDMC
+Likely; KBAs with triggers including migratory birds/congregations,L-KBAMIGRT
+Likely; KBAs with triggers including other,L-KBAOTHER
+Likely; Mangroves,L-MANGROVE
+Likely; Natural and mixed World Heritage sites,L-WHS
+Likely; Ramsar sites under criteria 1 and 3,L-RAMS13
+Likely; Ramsar Sites under criteria 5 and 6,L-RAMS56
+Likely; Ramsar sites under criterion 2,L-RAMS2
+Likely; Saltmarshes,L-SALTM
+Likely; Sea turtle nesting sites - CR and EN species,L-TRTLCREN
+Likely; Seagrass beds,L-SEAGRSS
+Likely; Tiger Conservation Landscapes,L-TIGERCL
+Likely; Warm water coral reefs,L-WARMREEF
+Potential; Cold seeps,P-COLDSEEP
+Potential; Cold water Coral - Modelled occurence,P-COLDREEF
+Potential; Ever-wet tropical forests,P-WETFORST
+Potential; Hydrothermal vents,P-HYDRO
+"Potential; IIMMAs under criteria C1, C2 and C3",P-IMMAC123
+Potential; IIMMAs under criterion B1,P-IMMAB1
+Potential; IMMAs under criterion A,P-IMMAA
+Potential; IMMAs under criterion D1,P-IMMAD1
+Potential; IMMAs under criterion D2,P-IMMAD2
+Potential; KBAs with triggers including VU species,P-KBAVULN
+"Potential; Ramsar sites under criteria 4, 7, 8 and 9",P-RAMS4789
+Potential; Sea turtle nesting sites - All species,P-TRTLALL
+Potential; Seamounts,P-SEAMOUNT
+Potential; Tropical dry forest,P-DRYFOR
+Potential; Tropical montane cloud forests,P-MONTFOR
+Potential; VU species under criterion D,P-VUCRD
