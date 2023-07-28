@@ -13,24 +13,62 @@ data_path = "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/raw_data
 
 output_path = "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/scratch/"
 
+fix_sf <- function(sf) {
+  # Check validity of geometries
+  valid = st_is_valid(sf)
+  
+  # If all geometries are valid, return the original sf object
+  if (all(valid)) {
+    message("All geometries are valid.")
+    return(sf)
+  }
+  
+  # If there are invalid geometries, try to fix them
+  fixed_sf = st_make_valid(sf)
+  
+  # Check validity of the fixed geometries
+  valid_fixed = st_is_valid(fixed_sf)
+  
+  # If all geometries are now valid, return the fixed sf object
+  if (all(valid_fixed)) {
+    message("All invalid geometries have been fixed.")
+    return(fixed_sf)
+  }
+  
+  # If there are still invalid geometries, remove them
+  valid_indices = which(valid_fixed)
+  invalid_indices = which(!valid_fixed)
+  num_removed <- length(invalid_indices)
+  message(paste0("Removed ", num_removed, " invalid geometries."))
+  return(fixed_sf[valid_indices, ])
+}
+
+tic("read in WDPA and KBAs")
+cat("read in WDPA and KBAs...")
+
 wdpa_gdb = paste0(data_path,"WDPA_Dec2022_Licensed.gdb")
 
 wdpa_poly_layer = st_layers(wdpa_gdb)$name %>% keep(.,str_detect(.,"poly"))
 wdpa_pt_layer = st_layers(wdpa_gdb)$name %>% keep(.,str_detect(.,"point"))
 
-wdpa_polys = st_read(wdpa_gdb, layer = wdpa_poly_layer)
-wdpa_pts = st_read(wdpa_gdb, layer = wdpa_pt_layer)
+wdpa_polys = st_read(wdpa_gdb, layer=wdpa_poly_layer, quiet=TRUE)
+wdpa_pts = st_read(wdpa_gdb, layer=wdpa_pt_layer, quiet=TRUE)
 
-kba_polys = st_read(dsn = paste0(data_path,"KBAsGlobal_2022_03/KBAsGlobal_2022_03/KBAsGlobal_2022_03_POL.shp"))
-kba_pts = st_read(dsn = paste0(data_path,"KBAsGlobal_2022_03/KBAsGlobal_2022_03/KBAsGlobal_2022_03_PNT.shp"))
+kba_aze_iba_polys = st_read(dsn = paste0(data_path,"KBAsGlobal_2022_03/KBAsGlobal_2022_03/KBAsGlobal_2022_03_POL.shp"), quiet=TRUE)
+kba_aze_iba_pts = st_read(dsn = paste0(data_path,"KBAsGlobal_2022_03/KBAsGlobal_2022_03/KBAsGlobal_2022_03_PNT.shp"), quiet=TRUE)
+
+cat("done\n")
+toc()
 
 `%ni%` = Negate(`%in%`)
 
 ################################################################
-#### SWOT TURTLE NESTS #########################################
+#### SWOT TURTLE NESTS (POINT) #################################
 ################################################################
 
-swot = st_read(paste0(data_path,"obis_seamap_swot/obis_seamap_swot_5f7dd60721f10_20201007_105234_site_locations_shapefile.shp"))
+cat("sea turtle nesting...")
+
+swot = st_read(paste0(data_path,"obis_seamap_swot/obis_seamap_swot_5f7dd60721f10_20201007_105234_site_locations_shapefile.shp"), quiet=TRUE)
 
 L_C1_Turtle_CREN = filter(swot,commonname %in% c("Green Sea Turtle","Hawksbill Sea Turtle","Kemp's Ridley")) %>% 
   st_combine() %>% st_sf() %>% 
@@ -42,20 +80,28 @@ P_C3_C4_Turtle_all = swot %>%
   mutate(Type = "Potential", Feature = "Sea turtle nesting sites - All species",
          C1=0,C2=0,C3=1,C4=1,C5=0)
   
+cat("done\n")
+
 ################################################################
-#### CLOUD FORESTS #############################################
+#### CLOUD FORESTS (POINT) #####################################
 ################################################################
 
-P_C4_Cloud_Forest = st_read(paste0(data_path,"cloud_forests/cloud_forest_points_1997.shp")) %>%
+cat("cloud forests...")
+
+P_C4_Cloud_Forest = st_read(paste0(data_path,"cloud_forests/cloud_forest_points_1997.shp"), quiet=TRUE) %>%
   st_combine() %>% st_sf() %>% 
   mutate(Type = "Potential", Feature = "Tropical montane cloud forests",
          C1=0,C2=0,C3=0,C4=1,C5=0)
 
+cat("done\n")
+
 ################################################################
-#### COLD SEEPS ################################################
+#### COLD SEEPS (POINT) ########################################
 ################################################################
 
-cold_seeps = st_read(paste0(data_path,"ChEssBase_20200910_v1_1/ChEssBase_20200910_v1_1_occurrence.shp"))
+cat("cold seeps...")
+
+cold_seeps = st_read(paste0(data_path,"ChEssBase_20200910_v1_1/ChEssBase_20200910_v1_1_occurrence.shp"), quiet=TRUE)
 
 L_C4_C5_Cold_seeps = cold_seeps %>% 
   st_combine() %>% st_sf() %>% 
@@ -67,50 +113,67 @@ P_C2_Cold_seeps = cold_seeps %>%
   mutate(Type = "Potential", Feature = "Cold seeps",
          C1=0,C2=1,C3=0,C4=0,C5=0)
 
+cat("done\n")
+
 ################################################################
-#### OBSERVED COLDWATER CORAL ##################################
+#### OBSERVED COLDWATER CORAL (POINT & POLY) ###################
 ################################################################
 
-cw_coral_pts = st_read(paste0(data_path,"14_001_WCMC001_ColdCorals2017_v5_1/01_Data/WCMC001_ColdCorals2017_Pt_v5_1.shp"))
+cat("observed coldwater coral...")
 
-cw_coral_polys = st_read(paste0(data_path,"14_001_WCMC001_ColdCorals2017_v5_1/01_Data/WCMC001_ColdCorals2017_Py_v5_1.shp")) %>% 
-  dplyr::select(-REP_AREA_K) #prevents binding as chr vs num
+cw_coral_pts = st_read(paste0(data_path,"14_001_WCMC001_ColdCorals2017_v5_1/01_Data/WCMC001_ColdCorals2017_Pt_v5_1.shp"), quiet=TRUE) %>%
+  dplyr::select(-all_of(names(st_drop_geometry(.))))
 
-L_C4_C5_Cold_water_coral_observed = bind_rows(cw_coral_pts,cw_coral_polys) %>% 
-  st_combine() %>% st_sf() %>% 
+cw_coral_polys = st_read(paste0(data_path,"14_001_WCMC001_ColdCorals2017_v5_1/01_Data/WCMC001_ColdCorals2017_Py_v5_1.shp"), quiet=TRUE) %>%
+  dplyr::select(-all_of(names(st_drop_geometry(.)))) %>%
+  fix_sf()
+
+L_C4_C5_Cold_water_coral_observed = bind_rows(cw_coral_pts,cw_coral_polys) %>%
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Cold water coral reefs - Observed occurence",
          C1=0,C2=0,C3=0,C4=1,C5=1)
 
+cat("done\n")
+
 ################################################################
-#### CORAL REEFS ###############################################
+#### CORAL REEFS (POINT & POLY) ################################
 ################################################################
 
-cr_pts = st_read(paste0(data_path,"14_001_WCMC008_CoralReefs2018_v4_1/01_Data/WCMC008_CoralReef2018_Pt_v4_1.shp"))
+cat("coral reefs...")
 
-cr_polys = st_read(paste0(data_path,"14_001_WCMC008_CoralReefs2018_v4_1/01_Data/WCMC008_CoralReef2018_Py_v4_1.shp"))
+cr_pts = st_read(paste0(data_path,"14_001_WCMC008_CoralReefs2018_v4_1/01_Data/WCMC008_CoralReef2018_Pt_v4_1.shp"), quiet=TRUE) %>%
+  dplyr::select(-all_of(names(st_drop_geometry(.))))
 
-L_C4_C5_Warm_water_coral = bind_rows(cr_pts,cr_polys) %>% 
-  st_combine() %>% st_sf() %>% 
+cr_polys = st_read(paste0(data_path,"14_001_WCMC008_CoralReefs2018_v4_1/01_Data/WCMC008_CoralReef2018_Py_v4_1.shp"), quiet=TRUE) %>%
+  dplyr::select(-all_of(names(st_drop_geometry(.)))) %>%
+  fix_sf()
+
+L_C4_C5_Warm_water_coral = bind_rows(cr_pts,cr_polys) %>%
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Warm water coral reefs",
          C1=0,C2=0,C3=0,C4=1,C5=1)
+
+cat("done\n")
 
 ################################################################
 #### EBSAs #####################################################
 ################################################################
 
-ebsa = st_read(paste0(data_path,"CBD-001-EBSAs/02_Data_records/Global_EBSAs_Critieria_Join_WGS84.shp"))
+#ebsa = st_read(paste0(data_path,"CBD-001-EBSAs/02_Data_records/Global_EBSAs_Critieria_Join_WGS84.shp"), quiet=TRUE)
 
-ebsa_c1 = filter(ebsa, Endangered == "H")
+#ebsa_c1 = filter(ebsa, Endangered == "H")
 
-ebsa_c3 = filter(ebsa, Life_Histo == "H")
+#ebsa_c3 = filter(ebsa, Life_Histo == "H")
 
-ebsa_c4 = filter(ebsa, Unique_Rar == "H" | Fragility == "H" | Naturalnes == "H")
+#ebsa_c4 = filter(ebsa, Unique_Rar == "H" | Fragility == "H" | Naturalnes == "H")
 
 ################################################################
-#### HYDROTHERMAL VENTS ########################################
+#### HYDROTHERMAL VENTS (POINT) ########################################
 ################################################################
 
-hydrothermal_vents = st_read(paste0(data_path,"PANGEA_2020_InterRidge_Database_Hydrothermal_Vent_v3_4/vent_fields_all_20200325.shp"))
+cat("hydrothermal vents...")
+
+hydrothermal_vents = st_read(paste0(data_path,"PANGEA_2020_InterRidge_Database_Hydrothermal_Vent_v3_4/vent_fields_all_20200325.shp"), quiet=TRUE)
 
 L_C2_C5_Hydrothermal_Vents = hydrothermal_vents %>%
   filter(Activity %in% c("active, inferred","active, confirmed")) %>%
@@ -123,16 +186,21 @@ P_C4_Hydrothermal_Vents = hydrothermal_vents %>%
   mutate(Type = "Potential", Feature = "Hydrothermal Vents",
          C1=0,C2=0,C3=0,C4=1,C5=0)
 
+cat("done\n")
+
 ################################################################
-#### IMMAs #####################################################
+#### IMMAs (POLYGON) ###########################################
 ################################################################
 
-imma = st_read(paste0(data_path,"iucn-imma/iucn-imma_oct20.shp"))
+cat("immas...")
+
+imma = st_read(paste0(data_path,"iucn-imma/iucn-imma_oct20.shp"), quiet=TRUE) %>% 
+  fix_sf()
 
 P_C1_IMMAs_A = filter(imma, str_detect(Criteria.2,"A")) %>% 
   st_combine() %>% st_sf() %>% 
   mutate(Type = "Potential", Feature = "IMMAs under criterion A",
-         C1=1,C2=0,C3=,C4=0,C5=0)
+         C1=1,C2=0,C3=0,C4=0,C5=0)
  
 P_C2_IMMAs_B1 = filter(imma, str_detect(Criteria.2,"B1")) %>% 
   st_combine() %>% st_sf() %>% 
@@ -159,38 +227,54 @@ P_C4_IMMAs_D2 = filter(imma, str_detect(Criteria.2,"D2")) %>%
   mutate(Type = "Potential", Feature = "IMMAs under criterion D2",
          C1=0,C2=0,C3=0,C4=1,C5=0)
 
+cat("done\n")
+
 ################################################################
-#### INTACT FOREST LANDSCAPES ##################################
+#### INTACT FOREST LANDSCAPES (POLYGON) ########################
 ################################################################
 
-L_C4_Intact_Forest_Landscapes = st_read(paste0(data_path,"IFL_2016/ifl_2016.shp")) %>% 
-  st_combine() %>% st_sf() %>% 
+cat("intact forest landscapes...")
+
+L_C4_Intact_Forest_Landscapes = st_read(paste0(data_path,"IFL_2016/ifl_2016.shp"), quiet=TRUE) %>%
+  fix_sf() %>%
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Intact Forest Landscapes",
          C1=0,C2=0,C3=0,C4=1,C5=0)
 
+cat("done\n")
+
 ################################################################
-#### IRREPLACEABLE PAs #########################################
+#### IRREPLACEABLE PAs (POLYGON) ###############################
 ################################################################
 
-L_C4_Irrep_PAs = st_read(paste0(data_path,"Irreplaceable/irrep_pa_WDPA_poly_Nov2022.shp")) %>% 
-  st_combine() %>% st_sf() %>% 
+cat("irreplaceable PAs...")
+
+L_C4_Irrep_PAs = st_read(paste0(data_path,"Irreplaceable/irrep_pa_WDPA_poly_Nov2022.shp"), quiet=TRUE) %>%
+  fix_sf() %>%
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Irreplaceable protected areas",
          C1=0,C2=0,C3=0,C4=1,C5=0)
 
+cat("done\n")
+
 ################################################################
-#### KBAs ######################################################
+#### KBAs (POLYGON) ############################################
 ################################################################
 
-kba_polys = filter(kba_polys, KBASTATUS == "confirmed") %>% 
-  dplyr::select(Triggers)
+cat("kbas...")
 
-kba_pts = filter(kba_pts, KBASTATUS == "confirmed") %>% 
+kba_polys = filter(kba_aze_iba_polys, KbaStatus == "confirmed") %>% 
+  dplyr::select(Triggers) %>% 
+  fix_sf()
+
+kba_pts = filter(kba_aze_iba_pts, KbaStatus == "confirmed") %>% 
   st_transform("ESRI:54009") %>% 
   filter(SitArea > 0) %>% 
   dplyr::select(Triggers,SitArea)
 
 kba_pts_buff = st_buffer(kba_pts, dist = sqrt((kba_pts$SitArea*10000)/pi)) %>% 
-  st_transform(4326)
+  st_transform(4326) %>% 
+  fix_sf()
 
 kba = bind_rows(kba_polys,kba_pts_buff)
 
@@ -219,68 +303,90 @@ L_C4_KBAs_other = filter(kba, str_detect(Triggers,"other")) %>%
   mutate(Type = "Likely", Feature = "KBAs with triggers including other",
          C1=0,C2=0,C3=0,C4=1,C5=0)
 
+cat("done\n")
+
 ################################################################
-#### AZEs ######################################################
+#### AZEs (POLYGON) ############################################
 ################################################################
 
-aze_polys = filter(kba_polys, AZESTATUS == "confirmed") %>% 
+cat("azes...")
+
+aze_polys = filter(kba_aze_iba_polys, AzeStatus == "confirmed") %>%
+  dplyr::select(SitArea) %>%
+  fix_sf()
+
+aze_pts = filter(kba_aze_iba_pts, AzeStatus == "confirmed") %>%
+  st_transform("ESRI:54009") %>%
+  filter(SitArea > 0) %>%
   dplyr::select(SitArea)
 
-aze_pts = filter(kba_pts, AZESTATUS == "confirmed") %>%
-  st_transform("ESRI:54009") %>% 
-  filter(SitArea > 0) %>% 
-  dplyr::select(SitArea)
+aze_pts_buff = st_buffer(aze_pts, dist = sqrt((aze_pts$SitArea*10000)/pi)) %>%
+  st_transform(4326) %>%
+  fix_sf()
 
-aze_pts_buff = st_buffer(aze_pts, dist = sqrt((aze_pts$SitArea*10000)/pi)) %>% 
-  st_transform(4326)
-
-L_C1_C2_C3_AZEs = bind_rows(aze_polys,aze_pts_buff) %>% 
-  st_combine() %>% st_sf() %>% 
+L_C1_C2_C3_AZEs = bind_rows(aze_polys,aze_pts_buff) %>%
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Alliance for Zero Extinction Sites",
          C1=1,C2=1,C3=1,C4=0,C5=0)
 
-################################################################
-#### IBAs ######################################################
-################################################################
-
-iba_polys = filter(kba_polys, IBASTATUS = "confirmed") %>% 
-  dplyr::select(Triggers)
-
-iba_pts = filter(kba_pts, IBASTATUS = "confirmed") %>% 
-  st_transform("ESRI:54009") %>% 
-  filter(SitArea > 0) %>% 
-  dplyr::select(Triggers,SitArea)
-
-iba_pts_buff = st_buffer(iba_pts, dist = sqrt((iba_pts$SitArea*10000)/pi)) %>% 
-  st_transform(4326)
-
-iba = bind_rows(iba_polys,iba_pts_buff)
-
-iba_CREN = filter(iba, str_detect(Triggers,"CR/EN"))
-
-iba_VU = filter(iba, str_detect(Triggers,"VU"))
-
-iba_endemic = filter(iba, str_detect(Triggers,"endemic"))
-
-iba_congregation = filter(iba, str_detect(Triggers,"migratory birds/congregation"))
+cat("done\n")
 
 ################################################################
-#### MANGROVES #################################################
+#### IBAs (POLYGON) ############################################
 ################################################################
 
-L_C4_Mangrove = st_read(paste0(data_path,"GMW_v2/01_Data/GMW_2016_v2.shp")) %>% 
-  st_combine() %>% st_sf() %>% 
+# cat("ibas...")
+# 
+# iba_polys = filter(kba_aze_iba_polys, IbaStatus == "confirmed") %>% 
+#   dplyr::select(Triggers) %>% 
+#   fix_sf()
+# 
+# iba_pts = filter(kba_aze_iba_pts, IbaStatus == "confirmed") %>% 
+#   st_transform("ESRI:54009") %>% 
+#   filter(SitArea > 0) %>% 
+#   dplyr::select(Triggers,SitArea)
+# 
+# iba_pts_buff = st_buffer(iba_pts, dist = sqrt((iba_pts$SitArea*10000)/pi)) %>% 
+#   st_transform(4326) %>% 
+#   fix_sf()
+# 
+# iba = bind_rows(iba_polys,iba_pts_buff)
+# 
+# iba_CREN = filter(iba, str_detect(Triggers,"CR/EN"))
+# 
+# iba_VU = filter(iba, str_detect(Triggers,"VU"))
+# 
+# iba_endemic = filter(iba, str_detect(Triggers,"endemic"))
+# 
+# iba_congregation = filter(iba, str_detect(Triggers,"migratory birds/congregation"))
+# 
+# cat("done\n")
+
+################################################################
+#### MANGROVES (POLYGON) #######################################
+################################################################
+
+cat("mangroves...")
+
+L_C4_Mangrove = st_read(paste0(data_path,"GMW_v2/01_Data/GMW_2016_v2.shp"), quiet=TRUE) %>%
+  fix_sf() %>%
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Mangroves",
          C1=0,C2=0,C3=0,C4=1,C5=0)
 
+cat("done\n")
+
 ################################################################
-#### RAMSAR ####################################################
+#### RAMSAR (POINT & POLY) #####################################
 ################################################################
 
-ramsar_polys = filter(wdpa_poly, STATUS %ni% c("Proposed","Established","Not Reported") &
+cat("ramsar wetlands...")
+
+ramsar_polys = filter(wdpa_polys, STATUS %ni% c("Proposed","Established","Not Reported") &
                         DESIG_ENG == "Ramsar Site, Wetland of International Importance" &
                         DESIG_TYPE == "International") %>% 
-  dplyr::select(REP_AREA,INT_CRIT)
+  dplyr::select(REP_AREA,INT_CRIT) %>% 
+  fix_sf()
 
 ramsar_pts = filter(wdpa_pts, STATUS %ni% c("Proposed","Established","Not Reported") &
                       DESIG_ENG == "Ramsar Site, Wetland of International Importance" &
@@ -290,7 +396,8 @@ ramsar_pts = filter(wdpa_pts, STATUS %ni% c("Proposed","Established","Not Report
   dplyr::select(REP_AREA,INT_CRIT)
 
 ramsar_pts_buff = st_buffer(ramsar_pts, dist = sqrt((ramsar_pts$REP_AREA*1000000)/pi)) %>% 
-  st_transform(4326)
+  st_transform(4326) %>% 
+  fix_sf()
 
 ramsar = bind_rows(ramsar_polys,ramsar_pts_buff)
 
@@ -319,92 +426,128 @@ L_C4_All_Ramsar = ramsar %>%
   mutate(Type = "Likely", Feature = "All Ramsar sites",
          C1=0,C2=0,C3=0,C4=1,C5=0)
 
+cat("done\n")
+
 ################################################################
-#### IUCN I/II PROTECTED AREAS #################################
+#### IUCN I/II PROTECTED AREAS (POLYGON) #######################
 ################################################################
 
-pa_polys = filter(wdpa_poly, STATUS %ni% c("Proposed","Established","Not Reported") &
-                    IUCN_CAT %in% c("Ia","Ib","II")) %>% 
-  dplyr::select(REP_AREA)
+cat("iucn i/ii PAs...")
+
+pa_polys = filter(wdpa_polys, STATUS %ni% c("Proposed","Established","Not Reported") &
+                    IUCN_CAT %in% c("Ia","Ib","II")) %>%
+  dplyr::select(REP_AREA) %>%
+  fix_sf()
 
 pa_pts = filter(wdpa_pts, STATUS %ni% c("Proposed","Established","Not Reported") &
                   IUCN_CAT %in% c("Ia","Ib","II")) %>%
-  st_transform("ESRI:54009") %>% 
-  filter(REP_AREA > 0) %>% 
+  st_transform("ESRI:54009") %>%
+  filter(REP_AREA > 0) %>%
   dplyr::select(REP_AREA)
 
-pa_pts_buff = st_buffer(pa_pts, dist = sqrt((pa_pts$REP_AREA*1000000)/pi)) %>% 
-  st_transform(4326)
+pa_pts_buff = st_buffer(pa_pts, dist = sqrt((pa_pts$REP_AREA*1000000)/pi)) %>%
+  st_transform(4326) %>%
+  fix_sf()
 
-L_C4_IUCN_Ia_Ib_II = bind_rows(pa_polys,pa_pts_buff) %>% 
-  st_combine() %>% st_sf() %>% 
+L_C4_IUCN_Ia_Ib_II = bind_rows(pa_polys,pa_pts_buff) %>%
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "IUCN management categories Ia, Ib and II",
          C1=0,C2=0,C3=0,C4=1,C5=0)
 
+cat("done\n")
+
 ################################################################
-#### WORLD HERITAGE SITES ######################################
+#### WORLD HERITAGE SITES (POLYGON) ############################
 ################################################################
 
-whs = filter(wdpa_poly, STATUS %ni% c("Proposed","Established","Not Reported") &
+cat("world heritage sites...")
+
+whs = filter(wdpa_polys, STATUS %ni% c("Proposed","Established","Not Reported") &
                DESIG_ENG == "World Heritage Site (natural or mixed)" &
-               DESIG_TYPE == "International")
+               DESIG_TYPE == "International") %>%
+  fix_sf()
 
-L_C4_WHS = whs %>% 
-  st_combine() %>% st_sf() %>% 
+L_C4_WHS = whs %>%
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Natural and mixed World Heritage sites",
          C1=0,C2=0,C3=0,C4=1,C5=0)
 
+cat("done\n")
+
 ################################################################
-#### SALTMARSH #################################################
+#### SALTMARSH (POINT & POLY) ##################################
 ################################################################
 
-saltmarsh_pts = st_read(paste0(data_path,"WCMC027_Saltmarsh_v6/01_Data/WCMC027_Saltmarshes_Pt_v6.shp")) %>% 
-  st_geometry() %>% st_sf(sf_column_name = "geometry")
+cat("saltmarshes...")
 
-saltmarsh_polys = st_read(paste0(data_path,"WCMC027_Saltmarsh_v6/01_Data/WCMC027_Saltmarshes_Py_v6.shp")) %>% 
-  st_geometry() %>% st_sf(sf_column_name = "geometry")
+saltmarsh_pts = st_read(paste0(data_path,"WCMC027_Saltmarsh_v6/01_Data/WCMC027_Saltmarshes_Pt_v6.shp"), quiet=TRUE) %>%
+  dplyr::select(-all_of(names(st_drop_geometry(.)))) %>%
+  st_zm()
 
-L_C4_Saltmarsh = bind_rows(saltmarsh_polys,saltmarsh_pts) %>% 
-  st_combine() %>% st_sf() %>% 
+saltmarsh_polys = st_read(paste0(data_path,"WCMC027_Saltmarsh_v6/01_Data/WCMC027_Saltmarshes_Py_v6.shp"), quiet=TRUE) %>%
+  dplyr::select(-all_of(names(st_drop_geometry(.)))) %>%
+  fix_sf()
+
+L_C4_Saltmarsh = bind_rows(saltmarsh_polys,saltmarsh_pts) %>%
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Saltmarshes",
          C1=0,C2=0,C3=0,C4=1,C5=0)
 
+cat("done\n")
+
 ################################################################
-#### SEAGRASS ##################################################
+#### SEAGRASS (POINT & POLY) ###################################
 ################################################################
 
-seagrass_pts = st_read(paste0(data_path,"WCMC013-014_SeagrassPtPy2021_v7_1/01_Data/WCMC_013_014_SeagrassesPt_v7_1.shp")) %>% 
-  st_geometry() %>% st_sf(sf_column_name = "geometry")
+cat("seagrass...")
 
-seagrass_polys = st_read(paste0(data_path,"WCMC013-014_SeagrassPtPy2021_v7_1/01_Data/WCMC013014-Seagrasses-Py-v7_1.shp")) %>% 
-  st_geometry() %>% st_sf(sf_column_name = "geometry")
+seagrass_pts = st_read(paste0(data_path,"WCMC013-014_SeagrassPtPy2021_v7_1/01_Data/WCMC_013_014_SeagrassesPt_v7_1.shp"), quiet=TRUE) %>%
+  dplyr::select(-all_of(names(st_drop_geometry(.))))
 
-L_C4_Seagrass = bind_rows(seagrass_polys,seagrass_pts) %>% 
-  st_combine() %>% st_sf() %>% 
+seagrass_polys = st_read(paste0(data_path,"WCMC013-014_SeagrassPtPy2021_v7_1/01_Data/WCMC013014-Seagrasses-Py-v7_1.shp"), quiet=TRUE) %>%
+  dplyr::select(-all_of(names(st_drop_geometry(.)))) %>%
+  fix_sf() %>%
+  st_transform(4326)
+
+L_C4_Seagrass = bind_rows(seagrass_polys,seagrass_pts) %>%
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Seagrass beds",
          C1=0,C2=0,C3=0,C4=1,C5=0)
 
+cat("done\n")
+
 ################################################################
-#### SEAMOUNTS #################################################
+#### SEAMOUNTS (POINT) #########################################
 ################################################################
 
-P_C4_Seamounts = st_read(paste0(data_path,"ZSL-002-ModelledSeamounts2011\DownloadPack-14_001_ZSL002_ModelledSeamounts2011_v1\01_Data\Seamounts\Seamounts.shp")) %>% 
+cat("seamounts...")
+
+P_C4_Seamounts = st_read(paste0(data_path,"ZSL-002-ModelledSeamounts2011/DownloadPack-14_001_ZSL002_ModelledSeamounts2011_v1/01_Data/Seamounts/Seamounts.shp"), quiet=TRUE) %>% 
   st_combine() %>% st_sf() %>% 
   mutate(Type = "Potential", Feature = "Seamounts",
          C1=0,C2=0,C3=0,C4=1,C5=0)
 
+cat("done\n")
+
 ################################################################
-#### TIGER CONSERVATION LANDSCAPES #############################
+#### TIGER CONSERVATION LANDSCAPES (POLYGON) ###################
 ################################################################
 
-L_C1_Tiger = st_read(paste0(data_path,"Tiger_Conservation_Landscapes/Tiger_Conservation_Landscapes.shp")) %>% 
-  st_combine() %>% st_sf() %>% 
+cat("tiger conservation landscapes...")
+
+L_C1_Tiger = st_read(paste0(data_path,"Tiger_Conservation_Landscapes/Tiger_Conservation_Landscapes.shp"), quiet=TRUE) %>%
+  fix_sf() %>%
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Tiger Conservation Landscapes",
          C1=1,C2=0,C3=0,C4=0,C5=0)
+
+cat("done\n")
 
 ################################################################
 #### COMBINE VECTORS ###########################################
 ################################################################
+
+cat("rbinding...")
 
 Likely_Critical_Habitat = rbind(
   L_C1_C2_C3_AZEs,
@@ -447,6 +590,8 @@ Potential_Critical_Habitat = rbind(
   P_C4_Seamounts
 )
 
+cat("done\n")
+
 ################################################################
 #### WRITE GPKGS ###############################################
 ################################################################
@@ -455,15 +600,20 @@ Potential_Critical_Habitat = rbind(
 # rename old files (and delete older)
 # save
 likely_file = paste0(output_path,"Likely_Critical_Habitat_vectors.gpkg")
-potential_file = paste0(output_path,"Likely_Critical_Habitat_vectors.gpkg")
+potential_file = paste0(output_path,"Potential_Critical_Habitat_vectors.gpkg")
 
 output_files = c(likely_file,potential_file)
+old_files = str_replace(output_files,".gpkg","_old.gpkg")
 
-if((output_files %in% list.files(output_path, full.names = TRUE) %>% sum)>1){
-  file.remove(str_replace(output_files,".gpkg","_old.gpkg"))
-  file.rename(output_files,str_replace(output_files,".gpkg","_old.gpkg"))
+if(any(old_files %in% list.files(output_path, full.names = TRUE))){
+  file.remove(old_files)
 } else{}
 
-cat("saving\n")
+if(any(output_files %in% list.files(output_path, full.names = TRUE))){
+  file.rename(output_files,old_files)
+} else{}
+
+cat("saving...")
 st_write(Likely_Critical_Habitat,likely_file)
-st_write(Likely_Potential_Habitat,potential_file)
+st_write(Potential_Critical_Habitat,potential_file)
+cat("done\n")

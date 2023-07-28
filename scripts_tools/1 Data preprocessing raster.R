@@ -111,10 +111,14 @@ output_files = c(coldwater_coral_WGS_file, coldwater_coral_moll_file,
                  everwet_WGS_file, everwet_moll_file,
                  tropical_moist_WGS_file, tropical_moist_moll_file,
                  tropical_dry_WGS_file, tropical_dry_moll_file)
+old_files = str_replace(output_files,".tif","_old.tif")
 
-if((output_files %in% list.files(output_path, full.names = TRUE) %>% sum)>1){
-  file.remove(str_replace(output_files,".tif","_old.tif"))
-  file.rename(output_files,str_replace(output_files,".tif","_old.tif"))
+if(any(old_files %in% list.files(output_path, full.names = TRUE))){
+  file.remove(old_files)
+} else{}
+
+if(any(output_files %in% list.files(output_path, full.names = TRUE))){
+  file.rename(output_files,old_files)
 } else{}
 
 writeRaster(P_C4_C5_Coldwater_coral_WGS, coldwater_coral_WGS_file, datatype = "FLT8S")

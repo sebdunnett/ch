@@ -8,6 +8,37 @@ rl_gdb = "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/raw_data/IU
 
 output_path = "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/scratch/"
 
+# helper function to fix invalid geometries 
+fix_sf <- function(sf) {
+  # Check validity of geometries
+  valid = st_is_valid(sf)
+  
+  # If all geometries are valid, return the original sf object
+  if (all(valid)) {
+    message("All geometries are valid.")
+    return(sf)
+  }
+  
+  # If there are invalid geometries, try to fix them
+  fixed_sf = st_make_valid(sf)
+  
+  # Check validity of the fixed geometries
+  valid_fixed = st_is_valid(fixed_sf)
+  
+  # If all geometries are now valid, return the fixed sf object
+  if (all(valid_fixed)) {
+    message("All invalid geometries have been fixed.")
+    return(fixed_sf)
+  }
+  
+  # If there are still invalid geometries, remove them
+  valid_indices = which(valid_fixed)
+  invalid_indices = which(!valid_fixed)
+  num_removed <- length(invalid_indices)
+  message(paste0("Removed ", num_removed, " invalid geometries."))
+  return(fixed_sf[valid_indices, ])
+}
+
 cat("read in lookup and pre-filter species IDs\n")
 
 # extract data layer names and discard subset layers
@@ -31,7 +62,8 @@ toc()
 rl_CH_subset = filter(rl_lookup,
                       category %in% c("CR","EN","VU") &
                         str_detect(criteria,"D") &
-                        biome_marine == "false") %>% 
+                        biome_marine == "false" |
+                        family == "HOMINIDAE") %>% 
   pull(id_no) %>% 
   as.character
 
@@ -48,17 +80,9 @@ cat("read in RL ranges of interest\n")
 tic("read in RL ranges of interest")
 rl = st_read(rl_gdb, query=sql, quiet=TRUE)
 toc()
-beep()
 
 # a couple of invalid geometries to fix
-cat("check geometry validity\n")
-table(st_is_valid(rl))
-
-# attempt fix
-rl = st_make_valid(rl)
-
-# check fix worked
-table(st_is_valid(rl))
+rl = fix_sf(rl)
 
 # combine with lookup table
 rl_full = left_join(rl,rl_lookup,by="id_no")
@@ -67,7 +91,8 @@ rl_full = left_join(rl,rl_lookup,by="id_no")
 cat("buffer ranges by 50km transforming to and from equal-area\n")
 rl_full_buffered = st_transform(rl_full, "ESRI:54009") |>
   st_buffer(50000) |>
-  st_transform(4326)
+  st_transform(4326) |>
+  fix_sf()
 
 # in case any being loaded into Google Earth Engine
 # has a limit of 100k vertices per feature
@@ -90,6 +115,8 @@ P_C1_IUCN_VU_D2 = filter(rl_full_buffered, category=="VU" & str_detect(criteria,
   mutate(Type="Potential", Feature="VU species under criterion D2",
          C1=1,C2=0,C3=0,C4=0,C5=0)
 
+great_apes = filter(rl_full, family == "HOMINIDAE")
+
 # check output folder for previously made files
 # rename old files (and delete older)
 # save
@@ -98,10 +125,14 @@ en_file = paste0(output_path,"L_C1_IUCN_EN_D.gpkg")
 vu_file = paste0(output_path,"P_C1_IUCN_VU_D2.gpkg")
 
 output_files = c(cr_file,en_file,vu_file)
+old_files = str_replace(output_files,".gpkg","_old.gpkg")
 
-if((output_files %in% list.files(output_path, full.names = TRUE) %>% sum)>1){
-  file.remove(str_replace(output_files,".gpkg","_old.gpkg"))
-  file.rename(output_files,str_replace(output_files,".gpkg","_old.gpkg"))
+if(any(old_files %in% list.files(output_path, full.names = TRUE))){
+  file.remove(old_files)
+} else{}
+
+if(any(output_files %in% list.files(output_path, full.names = TRUE))){
+  file.rename(output_files,old_files)
 } else{}
 
 cat("saving\n")

@@ -5,11 +5,6 @@
 # Author: Seb Dunnett
 # Created: 16/02/2023
 
-# This script can be run once the polygon files have been exported from Google Earth Engine
-# These scripts can be found:
-# Potential: https://code.earthengine.google.com/?scriptPath=users%2Fcorinnaravilious%2FUNEP-WCMC_SharedScripts%3Ap08868_Critical_Habitat_Update%2FPotential_Critical_Habitat
-# Likely: https://code.earthengine.google.com/?scriptPath=users%2Fcorinnaravilious%2FUNEP-WCMC_SharedScripts%3Ap08868_Critical_Habitat_Update%2FLikely_Critical_Habitat
-
 # Install packages (if required)
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(sf,raster,fasterize,tidyverse,rgeos,units,tictoc,foreign)
@@ -24,18 +19,29 @@ cat("Importing and reprojecting shapefiles...\n")
 
 # set path variables (these will be the only lines that need changing in this script)
 # path to where the GEE output shapefiles are stored
-shapefile_path <- "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/scratch/"
+scratch_path = "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/scratch/"
 
 # path to where you want the output saved
-output_path <- "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/outputs/"
+output_path = "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/outputs/"
 
 # read in WGS shapefiles
-likely_WGS <- st_read(paste0(shapefile_path, "Likely_Critical_Habitat_Polygon.shp"), quiet=TRUE) |>
-  dplyr::select(Type,Feature,C1,C2,C3,C4,C5)
-potential_WGS <- st_read(paste0(shapefile_path, "Potential_Critical_Habitat_Polygon.shp"), quiet=TRUE) |>
-  dplyr::select(Type,Feature,C1,C2,C3,C4,C5)
+likely_WGS = st_read(paste0(scratch_path, "Likely_Critical_Habitat_vectors.gpkg"), quiet=TRUE)
+potential_WGS = st_read(paste0(scratch_path, "Potential_Critical_Habitat_vectors.gpkg"), quiet=TRUE)
 
-# create Mollweide shps
+likely_WGS_pts = filter(likely_WGS, st_geometry_type(likely_WGS)=="MULTIPOINT")
+likely_WGS_polys = filter(likely_WGS, st_geometry_type(likely_WGS)=="MULTIPOLYGON")
+
+potential_WGS_pts = filter(potential_WGS, st_geometry_type(potential_WGS)=="MULTIPOINT")
+potential_WGS_polys = filter(potential_WGS, st_geometry_type(potential_WGS)=="MULTIPOLYGON")
+
+L_C1_IUCN_CR_D = st_read(paste0(scratch_path,"L_C1_IUCN_CR_D.gpkg"), quiet=TRUE)
+L_C1_IUCN_EN_D = st_read(paste0(scratch_path,"L_C1_IUCN_EN_D.gpkg"), quiet=TRUE)
+P_C1_IUCN_VU_D2 = st_read(paste0(scratch_path,"P_C1_IUCN_VU_D2.gpkg"), quiet=TRUE)
+
+likely_WGS_polys = rbind(likely_WGS_polys,L_C1_IUCN_CR_D,L_C1_IUCN_EN_D)
+potential_WGS_polys = rbind(potential_WGS_polys,P_C1_IUCN_VU_D2)
+
+# create Mollweide vectors
 # need to wrap dateline to avoid projection error
 likely_moll <- st_wrap_dateline(likely_WGS,
                                 options = c("WRAPDATELINE=TRUE","DATELINEOFFSET=90")) %>% 
