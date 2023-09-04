@@ -4,10 +4,11 @@
 
 # Author: Seb Dunnett
 # Created: 16/02/2023
+# Modified: 28/07/2023
 
 # Install packages (if required)
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(sf,raster,fasterize,tidyverse,rgeos,units,tictoc,foreign)
+pacman::p_load(sf,terra,tidyverse,units,tictoc,foreign)
 
 # Turns off scientific notation, e.g. 12.0e+12
 # Required to maintain accuracy of large numbers
@@ -24,48 +25,79 @@ scratch_path = "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/scrat
 # path to where you want the output saved
 output_path = "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/outputs/"
 
+lookup = read.csv("O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/scripts_tools/lookup.csv") %>% 
+  arrange(Type,Feature)
+
+# split the number of features into three roughly equal groups
+# R loses precision over ~22 digits
+# uncomment and run the next couple of lines to see an example
+# options(scipen=0)
+# 10^(1:40)
+# options(scipen=999)
+# 10^(1:40)
+# this method can handle up to a max of ~60 triggers
+ntriggers = nrow(lookup)
+divs <- rep(ntriggers%/%3, 3)
+mod <- ntriggers%%3
+divs[seq_len(mod)] <- divs[seq_len(mod)] + 1
+
+# we use 1, 3, and 5 to maintain information about overlaps
+# position of number and number itself holds info
+# e.g. 9 means that cell contains all three features at position one in their group (1+3+5=9)
+# e.g. 600 means that cell contains two features at position three in their group (1+5=6)
+values <- c(1,10^(1:(divs[1]-1)),
+            3,3*(10^(1:(divs[2]-1))),
+            5,5*(10^(1:(divs[3]-1))))
+set <- rep(1:3, divs)
+
+lookup$Values = values
+lookup$Set = set 
+
 # read in WGS shapefiles
-likely_WGS = st_read(paste0(scratch_path, "Likely_Critical_Habitat_vectors.gpkg"), quiet=TRUE)
-potential_WGS = st_read(paste0(scratch_path, "Potential_Critical_Habitat_vectors.gpkg"), quiet=TRUE)
+likely_WGS_polys = vect(paste0(scratch_path, "Likely_Critical_Habitat_polys.shp"))
+likely_WGS_pts = vect(paste0(scratch_path, "Likely_Critical_Habitat_pts.shp"))
 
-likely_WGS_pts = filter(likely_WGS, st_geometry_type(likely_WGS)=="MULTIPOINT")
-likely_WGS_polys = filter(likely_WGS, st_geometry_type(likely_WGS)=="MULTIPOLYGON")
+# read in WGS shapefiles
+tic("potential polys")
+potential_WGS_polys = vect(list(vect(paste0(scratch_path, "Potential_Critical_Habitat_polys.shp")), vect(paste0(scratch_path, "P_C1_IUCN_VU_D2.gpkg")))) %>% 
+  terra::sort("Feature") %>% 
+  terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
+toc()
+tic("potential pts")
+potential_WGS_pts = vect(paste0(scratch_path, "Potential_Critical_Habitat_pts.shp")) %>% 
+  terra::sort("Feature") %>% 
+  terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
+toc()
 
-potential_WGS_pts = filter(potential_WGS, st_geometry_type(potential_WGS)=="MULTIPOINT")
-potential_WGS_polys = filter(potential_WGS, st_geometry_type(potential_WGS)=="MULTIPOLYGON")
+likely_rfiles = list.files(scratch_path) %>% 
+  keep(.,str_detect(.,"^L_") & str_detect(.,"WGS.tif")) %>% 
+  discard(.,str_detect(.,"_old")) %>% 
+  paste0(scratch_path,.)
 
-L_C1_IUCN_CR_D = st_read(paste0(scratch_path,"L_C1_IUCN_CR_D.gpkg"), quiet=TRUE)
-L_C1_IUCN_EN_D = st_read(paste0(scratch_path,"L_C1_IUCN_EN_D.gpkg"), quiet=TRUE)
-P_C1_IUCN_VU_D2 = st_read(paste0(scratch_path,"P_C1_IUCN_VU_D2.gpkg"), quiet=TRUE)
+potential_rfiles = list.files(scratch_path) %>% 
+  keep(.,str_detect(.,"^P_") & str_detect(.,"WGS.tif")) %>% 
+  discard(.,str_detect(.,"_old")) %>% 
+  paste0(scratch_path,.)
 
-likely_WGS_polys = rbind(likely_WGS_polys,L_C1_IUCN_CR_D,L_C1_IUCN_EN_D)
-potential_WGS_polys = rbind(potential_WGS_polys,P_C1_IUCN_VU_D2)
-
-# create Mollweide vectors
-# need to wrap dateline to avoid projection error
-likely_moll <- st_wrap_dateline(likely_WGS,
-                                options = c("WRAPDATELINE=TRUE","DATELINEOFFSET=90")) %>% 
-  st_transform("ESRI:54009") %>% 
-  st_cast("MULTIPOLYGON")
-
-potential_moll <- st_wrap_dateline(potential_WGS,
-                                options = c("WRAPDATELINE=TRUE","DATELINEOFFSET=90")) %>% 
-  st_transform("ESRI:54009") %>% 
-  st_cast("MULTIPOLYGON")
+likely_rasters = rast(lapply(likely_rfiles,rast)) %>%
+  classify(rbind(c(0,0.5,0),c(0.5,1,1))) %>% 
+  classify(cbind(NA,0))
+potential_rasters = rast(lapply(potential_rfiles,rast))
 
 # load example raster with appropriate extent (global) and resolution (1 km) properties (e.g. NatMod raster from the portal)
-# datatype "FLT8S" required to maintain precision
-raster_WGS <- raster('O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/raw_data/WCMC_natural_modified_habitat_screening_layer/natural_modified_habitat_screening_layer.tif')
-dataType(raster_WGS) <- "FLT8S"
-raster_WGS
+raster_WGS <- rast('O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/raw_data/WCMC_natural_modified_habitat_screening_layer/natural_modified_habitat_screening_layer.tif')
 
-# create example raster in Mollweide with global extent and 1km resolution
-# datatype "FLT8S" required to maintain precision
-raster_moll <- raster(crs=st_crs("ESRI:54009")$proj4string,
-                      res=1000,
-                      ext=extent(c(-18040095.7,18040095.7,-9020047.85,9020047.85)))
-dataType(raster_moll) <- "FLT8S"
-raster_moll
+rasterize(potential_WGS_pts, raster_WGS, field="Values", by="Feature", fun=min, background=0, filename=paste0(scratch_path,"potential_WGS_pts.tif"), wopt=list(datatype="FLT8S", overwrite=TRUE))
+rasterize(potential_WGS_polys, raster_WGS, field="Values", by="Feature", fun="min", touches=TRUE, background=0, filename=paste0(scratch_path,"potential_WGS_polys.tif"), wopt=list(datatype="FLT8S", overwrite=TRUE))
+
+potential = c(rast(paste0(scratch_path,"potential_WGS_polys.tif")),
+              rast(paste0(scratch_path,"potential_WGS_pts.tif")),
+              potential_rasters)
+
+potential_vals = filter(lookup, Type=="Potential" & Feature %in% names(potential)) %>% 
+  pull(Values)
+
+names()
 
 # combine potential and likely to final
 final_combined_WGS <- rbind(likely_WGS, potential_WGS)

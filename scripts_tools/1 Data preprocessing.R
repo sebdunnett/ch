@@ -7,40 +7,73 @@
 
 # Install packages (if required)
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(sf,tidyverse,terra,tictoc)
+pacman::p_load(sf,tidyverse,terra,tictoc,geos)
 
 data_path = "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/raw_data/"
 
 output_path = "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/scratch/"
 
 fix_sf <- function(sf) {
-  # Check validity of geometries
-  valid = st_is_valid(sf)
+  # # Check validity of geometries
+  # valid = st_is_valid(sf)
+  # 
+  # # If all geometries are valid, return the original sf object
+  # if (all(valid)) {
+  #   message("All geometries are valid.")
+  #   return(sf)
+  # }
+  # 
+  # # If there are invalid geometries, try to fix them
+  # idx = which(st_is_valid(sf))
+  # valid_sf = sf[idx,]
+  # invalid_sf = sf[-idx,]
+  # fixed_sf = st_make_valid(invalid_sf) %>% bind_rows(valid_sf)
+  # 
+  # # Check validity of the fixed geometries
+  # valid_fixed = st_is_valid(fixed_sf)
+  # 
+  # # If all geometries are now valid, return the fixed sf object
+  # if (all(valid_fixed)) {
+  #   message("All invalid geometries have been fixed.")
+  #   return(fixed_sf)
+  # }
+  # 
+  # # If there are still invalid geometries, remove them
+  # valid_indices = which(valid_fixed)
+  # invalid_indices = which(!valid_fixed)
+  # num_removed <- length(invalid_indices)
+  # message(paste0("Removed ", num_removed, " invalid geometries."))
+  # return(fixed_sf[valid_indices, ])
+  message("Be on your way sf!")
+  return(sf)
+}
+
+st_faster_union <- function(sf) {
   
-  # If all geometries are valid, return the original sf object
-  if (all(valid)) {
-    message("All geometries are valid.")
-    return(sf)
-  }
+  rtn_sf = sf %>%
+    as_geos_geometry() %>%
+    geos_make_collection() %>%
+    geos_make_valid() %>%
+    geos_unary_union() %>%
+    geos_make_valid() %>%
+    st_as_sf()
   
-  # If there are invalid geometries, try to fix them
-  fixed_sf = st_make_valid(sf)
+    return(rtn_sf)
+}
+
+st_save <- function(sf,filename,outpath){
+  fnm = paste0(outpath,filename)
+  old_fnm = str_replace(fnm,".gpkg","_old.gpkg")
   
-  # Check validity of the fixed geometries
-  valid_fixed = st_is_valid(fixed_sf)
+  if(old_fnm %in% list.files(outpath, full.names=TRUE)){
+    file.remove(old_fnm)
+  } else{}
   
-  # If all geometries are now valid, return the fixed sf object
-  if (all(valid_fixed)) {
-    message("All invalid geometries have been fixed.")
-    return(fixed_sf)
-  }
+  if(fnm %in% list.files(outpath, full.names=TRUE)){
+    file.rename(fnm,old_fnm)
+  } else{}
   
-  # If there are still invalid geometries, remove them
-  valid_indices = which(valid_fixed)
-  invalid_indices = which(!valid_fixed)
-  num_removed <- length(invalid_indices)
-  message(paste0("Removed ", num_removed, " invalid geometries."))
-  return(fixed_sf[valid_indices, ])
+  st_write(sf,fnm)
 }
 
 tic("read in WDPA and KBAs")
@@ -70,16 +103,21 @@ cat("sea turtle nesting...")
 
 swot = st_read(paste0(data_path,"obis_seamap_swot/obis_seamap_swot_5f7dd60721f10_20201007_105234_site_locations_shapefile.shp"), quiet=TRUE)
 
-L_C1_Turtle_CREN = filter(swot,commonname %in% c("Green Sea Turtle","Hawksbill Sea Turtle","Kemp's Ridley")) %>% 
-  st_combine() %>% st_sf() %>% 
+L_C1_Turtle_CREN = filter(swot,commonname %in% c("Green Sea Turtle","Hawksbill Sea Turtle","Kemp's Ridley")) %>%
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Sea turtle nesting sites - CR and EN species",
          C1=1,C2=0,C3=0,C4=0,C5=0)
 
 P_C3_C4_Turtle_all = swot %>%
-  st_combine() %>% st_sf() %>% 
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Potential", Feature = "Sea turtle nesting sites - All species",
          C1=0,C2=0,C3=1,C4=1,C5=0)
-  
+
+cat("saving...")
+
+st_save(sf=L_C1_Turtle_CREN, filename="L_C1_Turtle_CREN.gpkg", outpath=output_path)
+st_save(sf=P_C3_C4_Turtle_all, filename="P_C3_C4_Turtle_all.gpkg", outpath=output_path)
+
 cat("done\n")
 
 ################################################################
@@ -89,9 +127,13 @@ cat("done\n")
 cat("cloud forests...")
 
 P_C4_Cloud_Forest = st_read(paste0(data_path,"cloud_forests/cloud_forest_points_1997.shp"), quiet=TRUE) %>%
-  st_combine() %>% st_sf() %>% 
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Potential", Feature = "Tropical montane cloud forests",
          C1=0,C2=0,C3=0,C4=1,C5=0)
+
+cat("saving...")
+
+st_save(sf=P_C4_Cloud_Forest, filename="P_C4_Cloud_Forest.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -103,15 +145,20 @@ cat("cold seeps...")
 
 cold_seeps = st_read(paste0(data_path,"ChEssBase_20200910_v1_1/ChEssBase_20200910_v1_1_occurrence.shp"), quiet=TRUE)
 
-L_C4_C5_Cold_seeps = cold_seeps %>% 
-  st_combine() %>% st_sf() %>% 
+L_C4_C5_Cold_seeps = cold_seeps %>%
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Cold seeps",
          C1=0,C2=0,C3=0,C4=0,C5=1)
 
-P_C2_Cold_seeps = cold_seeps %>% 
-  st_combine() %>% st_sf() %>% 
+P_C2_Cold_seeps = cold_seeps %>%
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Potential", Feature = "Cold seeps",
          C1=0,C2=1,C3=0,C4=0,C5=0)
+
+cat("saving...")
+
+st_save(sf=L_C4_C5_Cold_seeps, filename="L_C4_C5_Cold_seeps.gpkg", outpath=output_path)
+st_save(sf=P_C2_Cold_seeps, filename="P_C2_Cold_seeps.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -124,14 +171,21 @@ cat("observed coldwater coral...")
 cw_coral_pts = st_read(paste0(data_path,"14_001_WCMC001_ColdCorals2017_v5_1/01_Data/WCMC001_ColdCorals2017_Pt_v5_1.shp"), quiet=TRUE) %>%
   dplyr::select(-all_of(names(st_drop_geometry(.))))
 
+tic("coldwater coral polys read in, fix and union")
 cw_coral_polys = st_read(paste0(data_path,"14_001_WCMC001_ColdCorals2017_v5_1/01_Data/WCMC001_ColdCorals2017_Py_v5_1.shp"), quiet=TRUE) %>%
   dplyr::select(-all_of(names(st_drop_geometry(.)))) %>%
-  fix_sf()
+  fix_sf() %>%
+  st_faster_union()
+toc()
 
 L_C4_C5_Cold_water_coral_observed = bind_rows(cw_coral_pts,cw_coral_polys) %>%
   st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Cold water coral reefs - Observed occurence",
          C1=0,C2=0,C3=0,C4=1,C5=1)
+
+cat("saving...")
+
+st_save(sf=L_C4_C5_Cold_water_coral_observed, filename="L_C4_C5_Cold_water_coral_observed.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -144,14 +198,21 @@ cat("coral reefs...")
 cr_pts = st_read(paste0(data_path,"14_001_WCMC008_CoralReefs2018_v4_1/01_Data/WCMC008_CoralReef2018_Pt_v4_1.shp"), quiet=TRUE) %>%
   dplyr::select(-all_of(names(st_drop_geometry(.))))
 
+tic("coral reef polys read in, fix and union")
 cr_polys = st_read(paste0(data_path,"14_001_WCMC008_CoralReefs2018_v4_1/01_Data/WCMC008_CoralReef2018_Py_v4_1.shp"), quiet=TRUE) %>%
   dplyr::select(-all_of(names(st_drop_geometry(.)))) %>%
-  fix_sf()
+  fix_sf() %>%
+  st_faster_union()
+toc()
 
 L_C4_C5_Warm_water_coral = bind_rows(cr_pts,cr_polys) %>%
   st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Warm water coral reefs",
          C1=0,C2=0,C3=0,C4=1,C5=1)
+
+cat("saving...")
+
+st_save(sf=L_C4_C5_Warm_water_coral, filename="L_C4_C5_Warm_water_coral.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -177,14 +238,19 @@ hydrothermal_vents = st_read(paste0(data_path,"PANGEA_2020_InterRidge_Database_H
 
 L_C2_C5_Hydrothermal_Vents = hydrothermal_vents %>%
   filter(Activity %in% c("active, inferred","active, confirmed")) %>%
-  st_combine() %>% st_sf() %>% 
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Hydrothermal Vents",
          C1=0,C2=1,C3=0,C4=0,C5=1)
 
 P_C4_Hydrothermal_Vents = hydrothermal_vents %>%
-  st_combine() %>% st_sf() %>% 
+  st_combine() %>% st_sf() %>%
   mutate(Type = "Potential", Feature = "Hydrothermal Vents",
          C1=0,C2=0,C3=0,C4=1,C5=0)
+
+cat("saving...")
+
+st_save(sf=L_C2_C5_Hydrothermal_Vents, filename="L_C2_C5_Hydrothermal_Vents.gpkg", outpath=output_path)
+st_save(sf=P_C4_Hydrothermal_Vents, filename="P_C4_Hydrothermal_Vents.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -194,38 +260,49 @@ cat("done\n")
 
 cat("immas...")
 
-imma = st_read(paste0(data_path,"iucn-imma/iucn-imma_oct20.shp"), quiet=TRUE) %>% 
+tic("immas read in, fix and union")
+imma = st_read(paste0(data_path,"iucn-imma/iucn-imma_oct20.shp"), quiet=TRUE) %>%
   fix_sf()
 
-P_C1_IMMAs_A = filter(imma, str_detect(Criteria.2,"A")) %>% 
-  st_combine() %>% st_sf() %>% 
+P_C1_IMMAs_A = filter(imma, str_detect(Criteria.2,"A")) %>%
+  st_faster_union() %>%
   mutate(Type = "Potential", Feature = "IMMAs under criterion A",
          C1=1,C2=0,C3=0,C4=0,C5=0)
- 
-P_C2_IMMAs_B1 = filter(imma, str_detect(Criteria.2,"B1")) %>% 
-  st_combine() %>% st_sf() %>% 
+
+P_C2_IMMAs_B1 = filter(imma, str_detect(Criteria.2,"B1")) %>%
+  st_faster_union() %>%
   mutate(Type = "Potential", Feature = "IMMAs under criterion B1",
          C1=0,C2=1,C3=0,C4=0,C5=0)
 
-L_C3_IMMAs_B2 = filter(imma, str_detect(Criteria.2,"B2")) %>% 
-  st_combine() %>% st_sf() %>% 
+L_C3_IMMAs_B2 = filter(imma, str_detect(Criteria.2,"B2")) %>%
+  st_faster_union() %>%
   mutate(Type = "Likely", Feature = "IMMAs under criterion B2",
          C1=0,C2=0,C3=1,C4=0,C5=0)
- 
-P_C3_IMMAs_C1_C2_C3 = filter(imma, str_detect(Criteria.2,"C1|C2|C3")) %>% 
-  st_combine() %>% st_sf() %>% 
+
+P_C3_IMMAs_C1_C2_C3 = filter(imma, str_detect(Criteria.2,"C1|C2|C3")) %>%
+  st_faster_union() %>%
   mutate(Type = "Potential", Feature = "IMMAs under criteria C1, C2 and C3",
          C1=0,C2=0,C3=1,C4=0,C5=0)
- 
-P_C2_C4_IMMAs_D1 = filter(imma, str_detect(Criteria.2,"D1")) %>% 
-  st_combine() %>% st_sf() %>% 
+
+P_C2_C4_IMMAs_D1 = filter(imma, str_detect(Criteria.2,"D1")) %>%
+  st_faster_union() %>%
   mutate(Type = "Potential", Feature = "IMMAs under criterion D1",
          C1=0,C2=1,C3=0,C4=1,C5=0)
 
-P_C4_IMMAs_D2 = filter(imma, str_detect(Criteria.2,"D2")) %>% 
-  st_combine() %>% st_sf() %>% 
+P_C4_IMMAs_D2 = filter(imma, str_detect(Criteria.2,"D2")) %>%
+  st_faster_union() %>%
   mutate(Type = "Potential", Feature = "IMMAs under criterion D2",
          C1=0,C2=0,C3=0,C4=1,C5=0)
+toc()
+
+cat("saving...")
+
+st_save(sf=P_C1_IMMAs_A, filename="P_C1_IMMAs_A.gpkg", outpath=output_path)
+st_save(sf=P_C2_IMMAs_B1, filename="P_C2_IMMAs_B1.gpkg", outpath=output_path)
+st_save(sf=L_C3_IMMAs_B2, filename="L_C3_IMMAs_B2.gpkg", outpath=output_path)
+st_save(sf=P_C3_IMMAs_C1_C2_C3, filename="P_C3_IMMAs_C1_C2_C3.gpkg", outpath=output_path)
+st_save(sf=P_C2_C4_IMMAs_D1, filename="P_C2_C4_IMMAs_D1.gpkg", outpath=output_path)
+st_save(sf=P_C4_IMMAs_D2, filename="P_C4_IMMAs_D2.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -235,11 +312,17 @@ cat("done\n")
 
 cat("intact forest landscapes...")
 
+tic("intact forest landscapes read in, fix and union")
 L_C4_Intact_Forest_Landscapes = st_read(paste0(data_path,"IFL_2016/ifl_2016.shp"), quiet=TRUE) %>%
   fix_sf() %>%
-  st_combine() %>% st_sf() %>%
+  st_faster_union() %>%
   mutate(Type = "Likely", Feature = "Intact Forest Landscapes",
          C1=0,C2=0,C3=0,C4=1,C5=0)
+toc()
+
+cat("saving...")
+
+st_save(sf=L_C4_Intact_Forest_Landscapes, filename="L_C4_Intact_Forest_Landscapes.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -249,11 +332,17 @@ cat("done\n")
 
 cat("irreplaceable PAs...")
 
+tic("irreplaceable PAs read in, fix and union")
 L_C4_Irrep_PAs = st_read(paste0(data_path,"Irreplaceable/irrep_pa_WDPA_poly_Nov2022.shp"), quiet=TRUE) %>%
   fix_sf() %>%
-  st_combine() %>% st_sf() %>%
+  st_faster_union() %>%
   mutate(Type = "Likely", Feature = "Irreplaceable protected areas",
          C1=0,C2=0,C3=0,C4=1,C5=0)
+toc()
+
+cat("saving...")
+
+st_save(sf=L_C4_Irrep_PAs, filename="L_C4_Irrep_PAs.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -263,45 +352,55 @@ cat("done\n")
 
 cat("kbas...")
 
-kba_polys = filter(kba_aze_iba_polys, KbaStatus == "confirmed") %>% 
-  dplyr::select(Triggers) %>% 
+tic("kbas fix and union")
+kba_polys = filter(kba_aze_iba_polys, KbaStatus == "confirmed") %>%
+  dplyr::select(Triggers) %>%
   fix_sf()
 
-kba_pts = filter(kba_aze_iba_pts, KbaStatus == "confirmed") %>% 
-  st_transform("ESRI:54009") %>% 
-  filter(SitArea > 0) %>% 
+kba_pts = filter(kba_aze_iba_pts, KbaStatus == "confirmed") %>%
+  st_transform("ESRI:54009") %>%
+  filter(SitArea > 0) %>%
   dplyr::select(Triggers,SitArea)
 
-kba_pts_buff = st_buffer(kba_pts, dist = sqrt((kba_pts$SitArea*10000)/pi)) %>% 
-  st_transform(4326) %>% 
+kba_pts_buff = st_buffer(kba_pts, dist = sqrt((kba_pts$SitArea*10000)/pi)) %>%
+  st_transform(4326) %>%
   fix_sf()
 
 kba = bind_rows(kba_polys,kba_pts_buff)
 
-L_C1_KBAs_CREN = filter(kba, str_detect(Triggers,"CR/EN")) %>% 
-  st_combine() %>% st_sf() %>% 
+L_C1_KBAs_CREN = filter(kba, str_detect(Triggers,"CR/EN")) %>%
+  st_faster_union() %>%
   mutate(Type = "Likely", Feature = "KBAs with triggers including CR/EN species",
          C1=1,C2=0,C3=0,C4=0,C5=0)
 
-P_C1_KBAs_VU = filter(kba, str_detect(Triggers,"VU")) %>% 
-  st_combine() %>% st_sf() %>% 
+P_C1_KBAs_VU = filter(kba, str_detect(Triggers,"VU")) %>%
+  st_faster_union() %>%
   mutate(Type = "Potential", Feature = "KBAs with triggers including VU species",
          C1=1,C2=0,C3=0,C4=0,C5=0)
 
-L_C2_KBAs_endemic = filter(kba, str_detect(Triggers,"endemic")) %>% 
-  st_combine() %>% st_sf() %>% 
+L_C2_KBAs_endemic = filter(kba, str_detect(Triggers,"endemic")) %>%
+  st_faster_union() %>%
   mutate(Type = "Likely", Feature = "KBAs with triggers including endemic species",
          C1=0,C2=1,C3=0,C4=0,C5=0)
 
-L_C3_KBAs_migratory = filter(kba, str_detect(Triggers,"migratory birds/congregation")) %>% 
-  st_combine() %>% st_sf() %>% 
+L_C3_KBAs_migratory = filter(kba, str_detect(Triggers,"migratory birds/congregation")) %>%
+  st_faster_union() %>%
   mutate(Type = "Likely", Feature = "KBAs with triggers including migratory birds/congregations",
          C1=0,C2=0,C3=1,C4=0,C5=0)
 
-L_C4_KBAs_other = filter(kba, str_detect(Triggers,"other")) %>% 
-  st_combine() %>% st_sf() %>% 
+L_C4_KBAs_other = filter(kba, str_detect(Triggers,"other")) %>%
+  st_faster_union() %>%
   mutate(Type = "Likely", Feature = "KBAs with triggers including other",
          C1=0,C2=0,C3=0,C4=1,C5=0)
+toc()
+
+cat("saving...")
+
+st_save(sf=L_C1_KBAs_CREN, filename="L_C1_KBAs_CREN.gpkg", outpath=output_path)
+st_save(sf=P_C1_KBAs_VU, filename="P_C1_KBAs_VU.gpkg", outpath=output_path)
+st_save(sf=L_C2_KBAs_endemic, filename="L_C2_KBAs_endemic.gpkg", outpath=output_path)
+st_save(sf=L_C3_KBAs_migratory, filename="L_C3_KBAs_migratory.gpkg", outpath=output_path)
+st_save(sf=L_C4_KBAs_other, filename="L_C4_KBAs_other.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -311,6 +410,7 @@ cat("done\n")
 
 cat("azes...")
 
+tic("azes fix and union")
 aze_polys = filter(kba_aze_iba_polys, AzeStatus == "confirmed") %>%
   dplyr::select(SitArea) %>%
   fix_sf()
@@ -325,9 +425,14 @@ aze_pts_buff = st_buffer(aze_pts, dist = sqrt((aze_pts$SitArea*10000)/pi)) %>%
   fix_sf()
 
 L_C1_C2_C3_AZEs = bind_rows(aze_polys,aze_pts_buff) %>%
-  st_combine() %>% st_sf() %>%
+  st_faster_union() %>%
   mutate(Type = "Likely", Feature = "Alliance for Zero Extinction Sites",
          C1=1,C2=1,C3=1,C4=0,C5=0)
+toc()
+
+cat("saving...")
+
+st_save(sf=L_C1_C2_C3_AZEs, filename="L_C1_C2_C3_AZEs.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -368,11 +473,15 @@ cat("done\n")
 
 cat("mangroves...")
 
-L_C4_Mangrove = st_read(paste0(data_path,"GMW_v2/01_Data/GMW_2016_v2.shp"), quiet=TRUE) %>%
+L_C4_Mangrove = st_read(paste0(data_path,"GMW_v2/01_Data/gmw_v3_2020_vec.shp"), quiet=TRUE) %>%
   fix_sf() %>%
-  st_combine() %>% st_sf() %>%
+  st_faster_union() %>%
   mutate(Type = "Likely", Feature = "Mangroves",
          C1=0,C2=0,C3=0,C4=1,C5=0)
+
+cat("saving...")
+
+st_save(sf=L_C4_Mangrove, filename="L_C4_Mangrove.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -382,6 +491,7 @@ cat("done\n")
 
 cat("ramsar wetlands...")
 
+tic("ramsar sites fix and union")
 ramsar_polys = filter(wdpa_polys, STATUS %ni% c("Proposed","Established","Not Reported") &
                         DESIG_ENG == "Ramsar Site, Wetland of International Importance" &
                         DESIG_TYPE == "International") %>% 
@@ -402,29 +512,38 @@ ramsar_pts_buff = st_buffer(ramsar_pts, dist = sqrt((ramsar_pts$REP_AREA*1000000
 ramsar = bind_rows(ramsar_polys,ramsar_pts_buff)
 
 L_C1_Ramsar_ii = filter(ramsar, str_detect(INT_CRIT,"(ii)")) %>% 
-  st_combine() %>% st_sf() %>% 
+  st_faster_union() %>% 
   mutate(Type = "Likely", Feature = "Ramsar sites under criterion 2",
          C1=1,C2=0,C3=0,C4=0,C5=0)
 
 L_C3_Ramsar_v_vi = filter(ramsar, str_detect(INT_CRIT,"(v)|(vi)")) %>% 
-  st_combine() %>% st_sf() %>% 
+  st_faster_union() %>% 
   mutate(Type = "Likely", Feature = "Ramsar sites under criteria 5 and 6",
          C1=0,C2=0,C3=1,C4=0,C5=0)
 
 L_C4_Ramsar_i_iii = filter(ramsar, str_detect(INT_CRIT,"(i)|(iii)")) %>% 
-  st_combine() %>% st_sf() %>% 
+  st_faster_union() %>% 
   mutate(Type = "Likely", Feature = "Ramsar sites under criteria 1 and 3",
          C1=0,C2=0,C3=0,C4=1,C5=0)
 
 P_C3_Ramsar_iv_vii_viii_ix = filter(ramsar, str_detect(INT_CRIT,"(iv)|(vii)|(viii)|(ix)")) %>% 
-  st_combine() %>% st_sf() %>% 
+  st_faster_union() %>% 
   mutate(Type = "Potential", Feature = "Ramsar sites under criteria 4, 7, 8 and 9",
          C1=0,C2=0,C3=1,C4=0,C5=0)
 
 L_C4_All_Ramsar = ramsar %>% 
-  st_combine() %>% st_sf() %>% 
+  st_faster_union() %>% 
   mutate(Type = "Likely", Feature = "All Ramsar sites",
          C1=0,C2=0,C3=0,C4=1,C5=0)
+toc()
+
+cat("saving...")
+
+st_save(sf=L_C1_Ramsar_ii, filename="L_C1_Ramsar_ii.gpkg", outpath=output_path)
+st_save(sf=L_C3_Ramsar_v_vi, filename="L_C3_Ramsar_v_vi.gpkg", outpath=output_path)
+st_save(sf=L_C4_Ramsar_i_iii, filename="L_C4_Ramsar_i_iii.gpkg", outpath=output_path)
+st_save(sf=P_C3_Ramsar_iv_vii_viii_ix, filename="P_C3_Ramsar_iv_vii_viii_ix.gpkg", outpath=output_path)
+st_save(sf=L_C4_All_Ramsar, filename="L_C4_All_Ramsar.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -434,6 +553,7 @@ cat("done\n")
 
 cat("iucn i/ii PAs...")
 
+tic("iucn i/ii PAs fix and union")
 pa_polys = filter(wdpa_polys, STATUS %ni% c("Proposed","Established","Not Reported") &
                     IUCN_CAT %in% c("Ia","Ib","II")) %>%
   dplyr::select(REP_AREA) %>%
@@ -450,9 +570,14 @@ pa_pts_buff = st_buffer(pa_pts, dist = sqrt((pa_pts$REP_AREA*1000000)/pi)) %>%
   fix_sf()
 
 L_C4_IUCN_Ia_Ib_II = bind_rows(pa_polys,pa_pts_buff) %>%
-  st_combine() %>% st_sf() %>%
+  st_faster_union() %>%
   mutate(Type = "Likely", Feature = "IUCN management categories Ia, Ib and II",
          C1=0,C2=0,C3=0,C4=1,C5=0)
+toc()
+
+cat("saving...")
+
+st_save(sf=L_C4_IUCN_Ia_Ib_II, filename="L_C4_IUCN_Ia_Ib_II.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -462,15 +587,21 @@ cat("done\n")
 
 cat("world heritage sites...")
 
+tic("world heritage sites fix and union")
 whs = filter(wdpa_polys, STATUS %ni% c("Proposed","Established","Not Reported") &
                DESIG_ENG == "World Heritage Site (natural or mixed)" &
                DESIG_TYPE == "International") %>%
   fix_sf()
 
 L_C4_WHS = whs %>%
-  st_combine() %>% st_sf() %>%
+  st_faster_union() %>%
   mutate(Type = "Likely", Feature = "Natural and mixed World Heritage sites",
          C1=0,C2=0,C3=0,C4=1,C5=0)
+toc()
+
+cat("saving...")
+
+st_save(sf=L_C4_WHS, filename="L_C4_WHS.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -484,14 +615,21 @@ saltmarsh_pts = st_read(paste0(data_path,"WCMC027_Saltmarsh_v6/01_Data/WCMC027_S
   dplyr::select(-all_of(names(st_drop_geometry(.)))) %>%
   st_zm()
 
+toc("saltmarsh polys read in, fix and union")
 saltmarsh_polys = st_read(paste0(data_path,"WCMC027_Saltmarsh_v6/01_Data/WCMC027_Saltmarshes_Py_v6.shp"), quiet=TRUE) %>%
   dplyr::select(-all_of(names(st_drop_geometry(.)))) %>%
-  fix_sf()
+  fix_sf() %>% 
+  st_faster_union()
+toc()
 
 L_C4_Saltmarsh = bind_rows(saltmarsh_polys,saltmarsh_pts) %>%
   st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Saltmarshes",
          C1=0,C2=0,C3=0,C4=1,C5=0)
+
+cat("saving...")
+
+st_save(sf=L_C4_Saltmarsh, filename="L_C4_Saltmarsh.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -504,15 +642,22 @@ cat("seagrass...")
 seagrass_pts = st_read(paste0(data_path,"WCMC013-014_SeagrassPtPy2021_v7_1/01_Data/WCMC_013_014_SeagrassesPt_v7_1.shp"), quiet=TRUE) %>%
   dplyr::select(-all_of(names(st_drop_geometry(.))))
 
+tic("seagrass polys read in, fix and union")
 seagrass_polys = st_read(paste0(data_path,"WCMC013-014_SeagrassPtPy2021_v7_1/01_Data/WCMC013014-Seagrasses-Py-v7_1.shp"), quiet=TRUE) %>%
   dplyr::select(-all_of(names(st_drop_geometry(.)))) %>%
   fix_sf() %>%
-  st_transform(4326)
+  st_transform(4326) %>% 
+  st_faster_union()
+toc()
 
 L_C4_Seagrass = bind_rows(seagrass_polys,seagrass_pts) %>%
   st_combine() %>% st_sf() %>%
   mutate(Type = "Likely", Feature = "Seagrass beds",
          C1=0,C2=0,C3=0,C4=1,C5=0)
+
+cat("saving...")
+
+st_save(sf=L_C4_Seagrass, filename="L_C4_Seagrass.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -527,6 +672,10 @@ P_C4_Seamounts = st_read(paste0(data_path,"ZSL-002-ModelledSeamounts2011/Downloa
   mutate(Type = "Potential", Feature = "Seamounts",
          C1=0,C2=0,C3=0,C4=1,C5=0)
 
+cat("saving...")
+
+st_save(sf=P_C4_Seamounts, filename="P_C4_Seamounts.gpkg", outpath=output_path)
+
 cat("done\n")
 
 ################################################################
@@ -535,11 +684,17 @@ cat("done\n")
 
 cat("tiger conservation landscapes...")
 
+tic("tiger conservation landscapes read in, fix and union")
 L_C1_Tiger = st_read(paste0(data_path,"Tiger_Conservation_Landscapes/Tiger_Conservation_Landscapes.shp"), quiet=TRUE) %>%
   fix_sf() %>%
-  st_combine() %>% st_sf() %>%
+  st_faster_union() %>%
   mutate(Type = "Likely", Feature = "Tiger Conservation Landscapes",
          C1=1,C2=0,C3=0,C4=0,C5=0)
+toc()
+
+cat("saving...")
+
+st_save(sf=L_C1_Tiger, filename="L_C1_Tiger.gpkg", outpath=output_path)
 
 cat("done\n")
 
@@ -548,7 +703,7 @@ cat("done\n")
 ################################################################
 
 cat("rbinding...")
-
+tic("rbinding")
 Likely_Critical_Habitat = rbind(
   L_C1_C2_C3_AZEs,
   L_C1_KBAs_CREN,
@@ -568,7 +723,6 @@ Likely_Critical_Habitat = rbind(
   L_C4_Intact_Forest_Landscapes,
   L_C4_Irrep_PAs,
   L_C4_KBAs_other,
-  L_C4_Mangrove,
   L_C4_Ramsar_i_iii,
   L_C4_Saltmarsh,
   L_C4_Seagrass,
@@ -589,31 +743,16 @@ Potential_Critical_Habitat = rbind(
   P_C4_IMMAs_D2,
   P_C4_Seamounts
 )
-
 cat("done\n")
+toc()
 
 ################################################################
 #### WRITE GPKGS ###############################################
 ################################################################
 
-# check output folder for previously made files
-# rename old files (and delete older)
-# save
-likely_file = paste0(output_path,"Likely_Critical_Habitat_vectors.gpkg")
-potential_file = paste0(output_path,"Potential_Critical_Habitat_vectors.gpkg")
+cat("saving likely & potential combined vector geopackages...")
 
-output_files = c(likely_file,potential_file)
-old_files = str_replace(output_files,".gpkg","_old.gpkg")
+st_save(sf=Likely_Critical_Habitat, filename="Likely_Critical_Habitat_vectors.gpkg", outpath=output_path)
+st_save(sf=Potential_Critical_Habitat, filename="Potential_Critical_Habitat_vectors.gpkg", outpath=output_path)
 
-if(any(old_files %in% list.files(output_path, full.names = TRUE))){
-  file.remove(old_files)
-} else{}
-
-if(any(output_files %in% list.files(output_path, full.names = TRUE))){
-  file.rename(output_files,old_files)
-} else{}
-
-cat("saving...")
-st_write(Likely_Critical_Habitat,likely_file)
-st_write(Potential_Critical_Habitat,potential_file)
 cat("done\n")

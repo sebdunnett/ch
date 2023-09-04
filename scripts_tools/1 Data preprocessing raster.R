@@ -21,40 +21,60 @@ raster_moll <- rast(crs="ESRI:54009",
                       res=1000,
                       ext=ext(c(-18040095.7,18040095.7,-9020047.85,9020047.85)))
 
+sphere <- st_graticule(ndiscr = 10000, margin = 10e-6) %>%
+  st_transform(crs = st_crs("ESRI:54009")) %>%
+  st_convex_hull() %>%
+  summarise(geometry = st_union(geometry))
+
+raster_moll_mask = rasterize(sphere,raster_moll)
+
+rast_save <- function(rst,filename,outpath){
+  fnm = paste0(outpath,filename)
+  old_fnm = str_replace(fnm,".tif","_old.tif")
+  
+  if(old_fnm %in% list.files(outpath, full.names=TRUE)){
+    file.remove(old_fnm)
+  } else{}
+  
+  if(fnm %in% list.files(outpath, full.names=TRUE)){
+    file.rename(fnm,old_fnm)
+  } else{}
+  
+  writeRaster(rst,fnm,datatype = "FLT8S")
+}
+
 ################################################################
 #### MODELLED COLDWATER CORAL ##################################
 ################################################################
 
-cat("coldwater coral...")
-
-coldwater_coral_modelled = rast(paste0(data_path,"Yesson_2012_ColdWaterCorals_Modelled/Yesson_2012_ColdWaterCorals_Modelled.tif"))
-
-crs(coldwater_coral_modelled) = "ESRI:54034" # Cylindrical Equal Area proj
-
-P_C4_C5_Coldwater_coral_WGS = project(coldwater_coral_modelled, raster_WGS, method="near") %>% 
-  classify(cbind(NA,0))
-P_C4_C5_Coldwater_coral_moll = project(coldwater_coral_modelled, raster_moll, method="near") %>% 
-  classify(cbind(NA,0))
-
-cat("done\n")
+# cat("coldwater coral...")
+# 
+# coldwater_coral_modelled = rast(paste0(data_path,"Yesson_2012_ColdWaterCorals_Modelled/Yesson_2012_ColdWaterCorals_Modelled.tif"))
+# 
+# crs(coldwater_coral_modelled) = "ESRI:54034" # Cylindrical Equal Area proj
+# 
+# P_C4_C5_Coldwater_coral_WGS = project(coldwater_coral_modelled, raster_WGS, method="near", threads=TRUE) %>% 
+#   classify(cbind(NA,0))
+# P_C4_C5_Coldwater_coral_moll = project(coldwater_coral_modelled, raster_moll_mask, method="near", mask=TRUE, threads=TRUE)
+# 
+# cat("done\n")
 
 ################################################################
 #### EVERWET FORESTS ###########################################
 ################################################################
 
-cat("everwet forests...")
-
-everwet = rast(paste0(data_path,"Everwet_Zones/Everwet_Zones/everwet_zones")) %>%
-  classify(rbind(c(0,NA),c(1,1),c(2,1),c(3,1)))
-
-crs(everwet) = "ESRI:54034" # Cylindrical Equal Area proj
-
-P_C4_Everwet_Zones_WGS = project(everwet, raster_WGS, method="near") %>% 
-  classify(cbind(NA,0))
-P_C4_Everwet_Zones_moll = project(everwet, raster_moll, method="near") %>% 
-  classify(cbind(NA,0))
-
-cat("done\n")
+# cat("everwet forests...")
+# 
+# everwet = rast(paste0(data_path,"Everwet_Zones/Everwet_Zones/everwet_zones")) %>%
+#   classify(rbind(c(0,NA),c(1,1),c(2,1),c(3,1)))
+# 
+# crs(everwet) = "ESRI:54034" # Cylindrical Equal Area proj
+# 
+# P_C4_Everwet_Zones_WGS = project(everwet, raster_WGS, method="near", threads=TRUE) %>% 
+#   classify(cbind(NA,0))
+# P_C4_Everwet_Zones_moll = project(everwet, raster_moll_mask, method="near", mask=TRUE, threads=TRUE)
+# 
+# cat("done\n")
 
 ################################################################
 #### TROPICAL MOIST FOREST #####################################
@@ -62,12 +82,37 @@ cat("done\n")
 
 cat("tropical moist forests...")
 
-L_C4_Tropical_Moist_Forest_WGS = rast(paste0(data_path,"Tropical Moist Forest/tmf_mosaic.tif")) %>% 
-  resample(raster_WGS, method="near") %>% 
+tmf_files = list.files(paste0(data_path,"Tropical Moist Forest"),full.names=TRUE) %>% discard(str_detect(.,"mosaic"))
+
+cat("remove unnecessary tiles...")
+
+# some tiles don't have TMF category
+has_cat10 = unlist(lapply(1:length(tmf_files),function(x){
+  cat(paste0(x,"..."))
+  10 %in% terra::unique(rast(tmf_files[x]))[,1]
+  }))
+
+tmf_files = tmf_files %>% keep(.,has_cat10)
+
+cat("vrt...")
+
+vrt(x=tmf_files, filename=paste0(data_path,"Tropical Moist Forest/tmf_mosaic.tif"), overwrite=TRUE)
+
+cat("aggregate...")
+
+terra::aggregate(rast(paste0(data_path,"Tropical Moist Forest/tmf_mosaic.tif")),
+                 fact=round(res(raster_WGS)/res(rast(tmf_files[1]))),
+                 fun=function(x,...){sum((x == 10),na.rm = T)/length(x)},
+                 filename=paste0(data_path,"Tropical Moist Forest/tmf_mosaic_agg.tif"),
+                 overwrite=TRUE)
+
+cat("resample and project...")
+
+L_C4_Tropical_Moist_Forest_WGS = rast(paste0(data_path,"Tropical Moist Forest/tmf_mosaic_agg.tif")) %>% 
+  resample(raster_WGS, method="bilinear") %>% 
   classify(cbind(NA,0))
 
-L_C4_Tropical_Moist_Forest_moll = project(rast(paste0(data_path,"Tropical Moist Forest/tmf_mosaic.tif")), raster_moll, method="near") %>% 
-  classify(cbind(NA,0))
+L_C4_Tropical_Moist_Forest_moll = project(L_C4_Tropical_Moist_Forest_WGS, raster_moll_mask, method="near", mask=TRUE, threads=TRUE)
 
 cat("done\n")
 
@@ -75,14 +120,44 @@ cat("done\n")
 #### TROPICAL DRY FOREST #######################################
 ################################################################
 
-cat("tropical dry forests...")
+# cat("tropical dry forests...")
+# 
+# tropical_dry_forest_500m = rast(paste0(data_path,"WCMC_065_TropicalDryForests2006/Tropical_Dry_Forests/trop_dryf/tropdryf"))
+# 
+# P_C4_Tropical_Dry_Forest_WGS = project(tropical_dry_forest_500m, raster_WGS, method="near", threads=TRUE) %>% 
+#   classify(cbind(NA,0))
+# P_C4_Tropical_Dry_Forest_moll = project(tropical_dry_forest_500m, raster_moll_mask, method="near", mask=TRUE, threads=TRUE)
+# 
+# cat("done\n")
 
-tropical_dry_forest_500m = rast(paste0(data_path,"WCMC_065_TropicalDryForests2006/Tropical_Dry_Forests/trop_dryf/tropdryf"))
+################################################################
+#### MANGROVES (POLYGON) #######################################
+################################################################
 
-P_C4_Tropical_Dry_Forest_WGS = project(tropical_dry_forest_500m, raster_WGS, method="near") %>% 
+cat("mangroves...")
+
+mangrove_files = list.files(paste0(data_path,"GMW_v3/gmw_v3_2020"), full.names = TRUE) %>%
+  discard(str_detect(.,"mosaic"))
+
+cat("vrt...")
+
+vrt(x=mangrove_files, filename=paste0(data_path,"GMW_v3/gmw_v3_2020/mosaic.tif"), overwrite=TRUE)
+
+cat("aggregate...")
+
+terra::aggregate(rast(paste0(data_path,"GMW_v3/gmw_v3_2020/mosaic.tif")),
+                 fact=round(res(raster_WGS)/res(rast(mangrove_files[1]))),
+                 fun=function(x,...){sum(x,na.rm=T)/length(x)},
+                 filename=paste0(data_path,"GMW_v3/gmw_v3_2020/mosaic_agg.tif"),
+                 overwrite=TRUE)
+
+cat("resample and reproject...")
+
+L_C4_Mangrove_WGS = rast(paste0(data_path,"GMW_v3/gmw_v3_2020/mosaic_agg.tif")) %>% 
+  resample(raster_WGS, method="bilinear") %>% 
   classify(cbind(NA,0))
-P_C4_Tropical_Dry_Forest_moll = project(tropical_dry_forest_500m, raster_moll, method="near") %>%
-  classify(cbind(NA,0))
+
+L_C4_Mangrove_moll = project(L_C4_Mangrove_WGS, raster_moll_mask, method="bilinear", mask=TRUE, threads=TRUE)
 
 cat("done\n")
 
@@ -92,45 +167,19 @@ cat("done\n")
 
 cat("writing rasters...")
 
-# check output folder for previously made files
-# rename old files (and delete older)
-# save
-coldwater_coral_WGS_file = paste0(output_path,"P_C4_C5_Coldwater_coral_WGS.tif")
-coldwater_coral_moll_file = paste0(output_path,"P_C4_C5_Coldwater_coral_moll.tif")
+#rast_save(rst=P_C4_C5_Coldwater_coral_WGS,filename="P_C4_C5_Coldwater_coral_WGS.tif",outpath=output_path)
+#rast_save(rst=P_C4_C5_Coldwater_coral_moll,filename="P_C4_C5_Coldwater_coral_moll.tif",outpath=output_path)
 
-everwet_WGS_file = paste0(output_path,"P_C4_Everwet_Zones_WGS.tif")
-everwet_moll_file = paste0(output_path,"P_C4_Everwet_Zones_moll.tif")
+#rast_save(rst=P_C4_Everwet_Zones_WGS,filename="P_C4_Everwet_Zones_WGS.tif",outpath=output_path)
+#rast_save(rst=P_C4_Everwet_Zones_moll,filename="P_C4_Everwet_Zones_moll.tif",outpath=output_path)
 
-tropical_moist_WGS_file = paste0(output_path,"L_C4_Tropical_Moist_Forest_WGS.tif")
-tropical_moist_moll_file = paste0(output_path,"L_C4_Tropical_Moist_Forest_moll.tif")
+rast_save(rst=L_C4_Tropical_Moist_Forest_WGS,filename="L_C4_Tropical_Moist_Forest_WGS.tif",outpath=output_path)
+rast_save(rst=L_C4_Tropical_Moist_Forest_moll,filename="L_C4_Tropical_Moist_Forest_moll.tif",outpath=output_path)
 
-tropical_dry_WGS_file = paste0(output_path,"P_C4_Tropical_Dry_Forest_WGS.tif")
-tropical_dry_moll_file = paste0(output_path,"P_C4_Tropical_Dry_Forest_moll.tif")
+#rast_save(rst=P_C4_Tropical_Dry_Forest_WGS,filename="P_C4_Tropical_Dry_Forest_WGS.tif",outpath=output_path)
+#rast_save(rst=P_C4_Tropical_Dry_Forest_moll,filename="P_C4_Tropical_Dry_Forest_moll.tif",outpath=output_path)
 
-output_files = c(coldwater_coral_WGS_file, coldwater_coral_moll_file,
-                 everwet_WGS_file, everwet_moll_file,
-                 tropical_moist_WGS_file, tropical_moist_moll_file,
-                 tropical_dry_WGS_file, tropical_dry_moll_file)
-old_files = str_replace(output_files,".tif","_old.tif")
-
-if(any(old_files %in% list.files(output_path, full.names = TRUE))){
-  file.remove(old_files)
-} else{}
-
-if(any(output_files %in% list.files(output_path, full.names = TRUE))){
-  file.rename(output_files,old_files)
-} else{}
-
-writeRaster(P_C4_C5_Coldwater_coral_WGS, coldwater_coral_WGS_file, datatype = "FLT8S")
-writeRaster(P_C4_C5_Coldwater_coral_moll, coldwater_coral_moll_file, datatype = "FLT8S")
-
-writeRaster(P_C4_Everwet_Zones_WGS, everwet_WGS_file, datatype = "FLT8S")
-writeRaster(P_C4_Everwet_Zones_moll, everwet_moll_file, datatype = "FLT8S")
-
-writeRaster(L_C4_Tropical_Moist_Forest_WGS, tropical_moist_WGS_file, datatype = "FLT8S")
-writeRaster(L_C4_Tropical_Moist_Forest_moll, tropical_moist_moll_file, datatype = "FLT8S")
-
-writeRaster(P_C4_Tropical_Dry_Forest_WGS, tropical_dry_WGS_file, datatype = "FLT8S")
-writeRaster(P_C4_Tropical_Dry_Forest_moll, tropical_dry_moll_file, datatype = "FLT8S")
+rast_save(rst=L_C4_Mangrove_WGS,filename="L_C4_Mangrove_WGS.tif",outpath=output_path)
+rast_save(rst=L_C4_Mangrove_moll,filename="L_C4_Mangrove_moll.tif",outpath=output_path)
 
 cat("done\n")
