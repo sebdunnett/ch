@@ -8,24 +8,27 @@
 
 # Install packages (if required)
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(sf,terra,tidyverse,units,tictoc,foreign)
+pacman::p_load(sf,terra,tidyverse,units,tictoc, foreign)
 
 # Turns off scientific notation, e.g. 12.0e+12
+# Set terra to default to FLT8S (double float)
 # Required to maintain accuracy of large numbers
 options(scipen = 999)
+terraOptions(datatype="FLT8S")
 
-tic()
+# load example raster with appropriate extent (global) and resolution (1/120 degrees ~ 1km)
+raster_WGS <- rast(res=1/120)
 
 cat("Importing and reprojecting shapefiles...\n")
 
 # set path variables (these will be the only lines that need changing in this script)
 # path to where the GEE output shapefiles are stored
-scratch_path = "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/scratch/"
+scratch_path = "scratch/"
 
 # path to where you want the output saved
-output_path = "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/outputs/"
+output_path = "outputs/"
 
-lookup = read.csv("O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/scripts_tools/lookup.csv") %>% 
+lookup = read.csv("scripts_tools/lookup.csv") %>% 
   arrange(Type,Feature)
 
 # split the number of features into three roughly equal groups
@@ -51,53 +54,112 @@ values <- c(1,10^(1:(divs[1]-1)),
 set <- rep(1:3, divs)
 
 lookup$Values = values
-lookup$Set = set 
+lookup$Set = set
+lookup$Type_Feature = paste0(lookup$Type,"; ",lookup$Feature)
 
-# read in WGS shapefiles
-likely_WGS_polys = vect(paste0(scratch_path, "Likely_Critical_Habitat_polys.shp"))
-likely_WGS_pts = vect(paste0(scratch_path, "Likely_Critical_Habitat_pts.shp"))
+################################################################
+#### LIKELY ####################################################
+################################################################
 
-# read in WGS shapefiles
-tic("potential polys")
-potential_WGS_polys = vect(list(vect(paste0(scratch_path, "Potential_Critical_Habitat_polys.shp")), vect(paste0(scratch_path, "P_C1_IUCN_VU_D2.gpkg")))) %>% 
+likely_polys_files = list.files(scratch_path) %>% 
+  keep(.,str_detect(.,"^L_") & str_detect(.,"_polys.shp"))
+likely_pts_files = list.files(scratch_path) %>% 
+  keep(.,str_detect(.,"^L_") & str_detect(.,"_pts.shp"))
+
+tic("read in likely polygons")
+likely_polys = vect(lapply(paste0(scratch_path,likely_polys_files),vect)) %>% 
   terra::sort("Feature") %>% 
   terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
 toc()
-tic("potential pts")
-potential_WGS_pts = vect(paste0(scratch_path, "Potential_Critical_Habitat_pts.shp")) %>% 
+likely_pts = vect(lapply(paste0(scratch_path,likely_pts_files),vect)) %>%
   terra::sort("Feature") %>% 
   terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
+
+correct_lpts_names = sapply(split(likely_pts,"Feature"), function(i) i[["Feature"]][1])
+
+tic("rasterize likely points")
+rasterize(likely_pts, raster_WGS, field="Values", by="Feature", fun=function(x) min(x,na.rm=TRUE), background=0, filename=paste0(scratch_path,"likely_WGS_pts.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S", names=correct_lpts_names))
+toc()
+
+correct_lpolys_names = sapply(split(likely_polys,"Feature"), function(i) i[["Feature"]][1])
+
+tic("rasterize likely polygons")
+rasterize(likely_polys, raster_WGS, field="Values", by="Feature", fun="min", touches=TRUE, background=0, filename=paste0(scratch_path,"likely_WGS_polys.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S",names=correct_lpolys_names))
 toc()
 
 likely_rfiles = list.files(scratch_path) %>% 
-  keep(.,str_detect(.,"^L_") & str_detect(.,"WGS.tif")) %>% 
-  discard(.,str_detect(.,"_old")) %>% 
-  paste0(scratch_path,.)
+  keep(.,str_detect(.,"^L_") & str_detect(.,"WGS.tif"))
+
+likely_rasters = rast(lapply(paste0(scratch_path,likely_rfiles),rast))
+
+likely = c(rast(paste0(scratch_path,"likely_WGS_polys.tif")),
+              rast(paste0(scratch_path,"likely_WGS_pts.tif")),
+              likely_rasters)
+
+#likely = likely[[order(names(likely))]]
+
+#likely_vals = filter(lookup, Type=="Likely" & Feature %in% names(likely)) %>% 
+#  pull(Values)
+
+tic("reclass likely raster stack")
+app(likely,sum,filename=paste0(scratch_path,"likely_sum.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S"))
+toc()
+
+################################################################
+#### POTENTIAL #################################################
+################################################################
+
+potential_polys_files = list.files(scratch_path) %>% 
+  keep(.,str_detect(.,"^P_") & str_detect(.,"_polys.shp"))
+potential_pts_files = list.files(scratch_path) %>% 
+  keep(.,str_detect(.,"^P_") & str_detect(.,"_pts.shp"))
+
+tic("read in potential polygons")
+potential_polys = vect(lapply(paste0(scratch_path,potential_polys_files),vect)) %>% 
+  terra::sort("Feature") %>% 
+  terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
+toc()
+potential_pts = vect(lapply(paste0(scratch_path,potential_pts_files),vect)) %>% 
+  terra::sort("Feature") %>% 
+  terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
+
+correct_ppts_names = sapply(split(potential_pts,"Feature"), function(i) i[["Feature"]][1])
+
+tic("rasterize potential points")
+rasterize(potential_pts, raster_WGS, field="Values", by="Feature", fun=function(x) min(x,na.rm=TRUE), background=0, filename=paste0(scratch_path,"potential_WGS_pts.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S", names=correct_ppts_names))
+toc()
+
+correct_ppolys_names = sapply(split(potential_polys,"Feature"), function(i) i[["Feature"]][1])
+
+tic("rasterize potential polygons")
+rasterize(potential_polys, raster_WGS, field="Values", by="Feature", fun="min", touches=TRUE, background=0, filename=paste0(scratch_path,"potential_WGS_polys.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S",names=correct_ppolys_names))
+toc()
 
 potential_rfiles = list.files(scratch_path) %>% 
-  keep(.,str_detect(.,"^P_") & str_detect(.,"WGS.tif")) %>% 
-  discard(.,str_detect(.,"_old")) %>% 
-  paste0(scratch_path,.)
+  keep(.,str_detect(.,"^P_") & str_detect(.,"WGS.tif"))
 
-likely_rasters = rast(lapply(likely_rfiles,rast)) %>%
-  classify(rbind(c(0,0.5,0),c(0.5,1,1))) %>% 
-  classify(cbind(NA,0))
-potential_rasters = rast(lapply(potential_rfiles,rast))
-
-# load example raster with appropriate extent (global) and resolution (1 km) properties (e.g. NatMod raster from the portal)
-raster_WGS <- rast('O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/raw_data/WCMC_natural_modified_habitat_screening_layer/natural_modified_habitat_screening_layer.tif')
-
-rasterize(potential_WGS_pts, raster_WGS, field="Values", by="Feature", fun=min, background=0, filename=paste0(scratch_path,"potential_WGS_pts.tif"), wopt=list(datatype="FLT8S", overwrite=TRUE))
-rasterize(potential_WGS_polys, raster_WGS, field="Values", by="Feature", fun="min", touches=TRUE, background=0, filename=paste0(scratch_path,"potential_WGS_polys.tif"), wopt=list(datatype="FLT8S", overwrite=TRUE))
+potential_rasters = rast(lapply(paste0(scratch_path,potential_rfiles),rast))
 
 potential = c(rast(paste0(scratch_path,"potential_WGS_polys.tif")),
               rast(paste0(scratch_path,"potential_WGS_pts.tif")),
               potential_rasters)
 
-potential_vals = filter(lookup, Type=="Potential" & Feature %in% names(potential)) %>% 
-  pull(Values)
+#potential = potential[[order(names(potential))]]
 
-names()
+#potential_vals = filter(lookup, Type=="Potential" & Feature %in% names(potential)) %>% 
+#  pull(Values)
+
+tic("reclass potential raster stack")
+app(potential,sum,filename=paste0(scratch_path,"potential_sum.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S"))
+toc()
+
+# Combine
+
+tic("combine likely and potential rasters")
+combined = c(rast(paste0(scratch_path,"potential_sum.tif")),rast(paste0(scratch_path,"likely_sum.tif")))
+
+app(combined, sum, filename=paste0(scratch_path,"likely_potential_sum.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S"))
+toc()
 
 # combine potential and likely to final
 final_combined_WGS <- rbind(likely_WGS, potential_WGS)
@@ -186,13 +248,14 @@ cat("Extracting unique raster values...\n")
 
 # extract unique values from raster
 # these are all unique combinations of triggers at 1km resolution
-ID = unique(values(rs_WGS))
+ID = unique(rast(paste0(scratch_path,"likely_potential_sum.tif"))) %>% 
+  rename(ID=sum)
 
 cat("Creating raster attribute table...\n")
 
 # separate each unique ID value into digits across columns
-rat = data.frame(ID) %>%
-  separate(ID, into = paste0("V",0:max(divs)), sep="", fill="left") %>% 
+rat = ID %>%
+  separate(1, into = paste0("V",0:max(divs)), sep="", fill="left") %>% 
   mutate(across(everything(), ~ na_if(.x,""))) %>% 
   mutate(across(everything(), ~ replace(.x, is.na(.x), 0))) %>% 
   dplyr::select(-V0)
@@ -215,7 +278,7 @@ rats = lapply(1:3, function(x){
   
   rat_out = rat_out[,(1+(ncol(rat_out) - divs[x])):ncol(rat_out)]
   
-  names(rat_out) = filter(lookup,set==x) %>% pull(combined_values) %>% rev
+  names(rat_out) = filter(lookup,Set==x) %>% pull(Type_Feature) %>% rev
   
   rat_out = cbind(ID=ID, rat_out)
   
@@ -228,16 +291,16 @@ rat_full = rats %>% reduce(full_join, by = "ID")
 
 # pivot longer so we have one row for each trigger and ID
 add_cr = rat_full %>%
-  pivot_longer(2:42, names_to = "combined_values", values_to = "value")
+  pivot_longer(2:42, names_to = "Type_Feature", values_to = "Join")
 
 # add value = 1 to lookup so we only add criteria where a cell has been triggered
 # add 10 for likely, 1 for potential
-cr_df = mutate(lookup, value=1) %>%
-  dplyr::select(value,combined_values,C1:C5) %>% 
+cr_df = mutate(lookup, Join=1) %>%
+  dplyr::select(Join,Type_Feature,C1:C5) %>% 
   mutate(CH = rep(c(10,1),c(table(lookup$Type)[["Likely"]],table(lookup$Type)[["Potential"]])))
 
 # join to pivoted attribute table, replacing NAs (no lookup value)  with 0  
-add_cr = left_join(add_cr,cr_df,by=c("value","combined_values")) %>% 
+add_cr = left_join(add_cr,cr_df,by=c("Join","Type_Feature")) %>% 
   mutate(across(everything(), ~ replace(.x, is.na(.x), 0)))
 
 # group by ID, collapsing to one row per ID
@@ -256,27 +319,26 @@ final_rat = inner_join(cr_rat,rat_full,by="ID")
 cat("Calculating cell frequencies...\n")
 
 # ArcGIS calculates this automatically but good to have for software independence
-cell_counts = freq(rs_WGS)[,2]
+cell_counts = freq(rast(paste0(scratch_path,"likely_potential_sum.tif")))
 
 # Replace IDs with a more sensible value so we can save as integer raster
 # e.g. 5003010, 500, 95060601 --> 1,2,3 etc.
 final_rat = final_rat %>%  
   mutate(Value = 1:nrow(final_rat),
-         Count = cell_counts,
+         Count = cell_counts$count,
          .after = ID) %>% 
   dplyr::select(-ID)
 
 # ArcGIS needs shortened field names
-# lookup short name from csv and replace RAT names
-fid_lookup = read.csv("O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/scripts_tools/FID_LOOKUP.csv")
-shorts = fid_lookup$SHORTNAME[match(names(final_rat),fid_lookup$LONGNAME)] %>% discard(is.na(.))
+# match short name from lookup and replace RAT names
+shorts = lookup$Short[match(names(final_rat),lookup$Type_Feature)] %>% discard(is.na(.))
 
 names(final_rat) <- c("VALUE","COUNT","CH","C1","C2","C3","C4","C5",shorts)
 
 cat("Reclassifying raster...\n")
 
 # reclassify output raster to our more sensible values
-rss = reclassify(rs_WGS,as.matrix(cbind(sort(ID),1:length(ID))),datatype="INT2U")
+rss = classify(rast(paste0(scratch_path,"likely_potential_sum.tif")),as.matrix(cbind(sort(ID$ID),1:nrow(ID))))
 
 # saving files and removing previous versions
 

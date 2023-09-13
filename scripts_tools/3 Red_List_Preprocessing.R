@@ -1,43 +1,15 @@
 library(pacman)
-p_load(tidyverse,sf,tictoc,giscoR,scico)
+p_load(tidyverse,sf,tictoc,geos,giscoR,scico)
 
 tic("processing RL ranges")
 
 # location of full Red List geodatabase
-rl_gdb = "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/raw_data/IUCN_RL_2022_2_Species_Data.gdb"
+rl_gdb = "raw_data/IUCN_RL_2022_2_Species_Data.gdb"
 
-output_path = "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/scratch/"
+output_path = "scratch/"
 
-# helper function to fix invalid geometries 
-fix_sf <- function(sf) {
-  # Check validity of geometries
-  valid = st_is_valid(sf)
-  
-  # If all geometries are valid, return the original sf object
-  if (all(valid)) {
-    message("All geometries are valid.")
-    return(sf)
-  }
-  
-  # If there are invalid geometries, try to fix them
-  fixed_sf = st_make_valid(sf)
-  
-  # Check validity of the fixed geometries
-  valid_fixed = st_is_valid(fixed_sf)
-  
-  # If all geometries are now valid, return the fixed sf object
-  if (all(valid_fixed)) {
-    message("All invalid geometries have been fixed.")
-    return(fixed_sf)
-  }
-  
-  # If there are still invalid geometries, remove them
-  valid_indices = which(valid_fixed)
-  invalid_indices = which(!valid_fixed)
-  num_removed <- length(invalid_indices)
-  message(paste0("Removed ", num_removed, " invalid geometries."))
-  return(fixed_sf[valid_indices, ])
-}
+# import helper functions
+source("scripts_tools/spatial_processing_functions.R")
 
 cat("read in lookup and pre-filter species IDs\n")
 
@@ -103,42 +75,25 @@ if(any(npts(rl_full_buffered, by_feature=TRUE)>10)){
 
 # filter final data by IUCN category
 L_C1_IUCN_CR_D = filter(rl_full_buffered, category=="CR" & str_detect(criteria,"D")) %>% 
-  st_combine() %>% st_sf() %>% 
-  mutate(Type="Likely", Feature="CR species under criterion D",
-         C1=1,C2=0,C3=0,C4=0,C5=0)
+  st_faster_union() %>%
+  mutate(Type="Likely", Feature="CR species under criterion D")
 L_C1_IUCN_EN_D = filter(rl_full_buffered, category=="EN" & str_detect(criteria,"D")) %>% 
-  st_combine() %>% st_sf() %>% 
-  mutate(Type="Likely", Feature="EN species under criterion D",
-         C1=1,C2=0,C3=0,C4=0,C5=0)
+  st_faster_union() %>% 
+  mutate(Type="Likely", Feature="EN species under criterion D")
 P_C1_IUCN_VU_D2 = filter(rl_full_buffered, category=="VU" & str_detect(criteria,"D2|D1+2")) %>% 
-  st_combine() %>% st_sf() %>% 
-  mutate(Type="Potential", Feature="VU species under criterion D2",
-         C1=1,C2=0,C3=0,C4=0,C5=0)
+  st_faster_union() %>% 
+  mutate(Type="Potential", Feature="VU species under criterion D2")
 
 great_apes = filter(rl_full, family == "HOMINIDAE")
 
 # check output folder for previously made files
 # rename old files (and delete older)
 # save
-cr_file = paste0(output_path,"L_C1_IUCN_CR_D.gpkg")
-en_file = paste0(output_path,"L_C1_IUCN_EN_D.gpkg")
-vu_file = paste0(output_path,"P_C1_IUCN_VU_D2.gpkg")
 
-output_files = c(cr_file,en_file,vu_file)
-old_files = str_replace(output_files,".gpkg","_old.gpkg")
-
-if(any(old_files %in% list.files(output_path, full.names = TRUE))){
-  file.remove(old_files)
-} else{}
-
-if(any(output_files %in% list.files(output_path, full.names = TRUE))){
-  file.rename(output_files,old_files)
-} else{}
-
-cat("saving\n")
-st_write(L_C1_IUCN_CR_D,cr_file)
-st_write(L_C1_IUCN_EN_D,en_file)
-st_write(P_C1_IUCN_VU_D2,vu_file)
+st_save(sf=L_C1_IUCN_CR_D, filename="L_C1_IUCN_CR_D_polys.shp", outpath=output_path)
+st_save(sf=L_C1_IUCN_EN_D, filename="L_C1_IUCN_EN_D_polys.shp", outpath=output_path)
+st_save(sf=P_C1_IUCN_VU_D2, filename="P_C1_IUCN_VU_D2_polys.shp", outpath=output_path)
+st_save(sf=great_apes, filename="great_apes.shp", outpath=output_path)
 
 ## plotting
 # ggplot(gisco_coastallines) +
