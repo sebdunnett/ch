@@ -1,80 +1,57 @@
-################################################################
-#### CREATE DRILL DOWN CRITICAL HABITAT RASTER LAYER in WGS ####
-################################################################
+######################################################################
+#### CREATE DRILL DOWN CRITICAL HABITAT RASTER LAYER IN MOLLWEIDE ####
+######################################################################
 
 # Author: Seb Dunnett
 # Created: 16/02/2023
-
-# This script can be run once the polygon files have been exported from Google Earth Engine
-# These scripts can be found:
-# Potential: https://code.earthengine.google.com/?scriptPath=users%2Fcorinnaravilious%2FUNEP-WCMC_SharedScripts%3Ap08868_Critical_Habitat_Update%2FPotential_Critical_Habitat
-# Likely: https://code.earthengine.google.com/?scriptPath=users%2Fcorinnaravilious%2FUNEP-WCMC_SharedScripts%3Ap08868_Critical_Habitat_Update%2FLikely_Critical_Habitat
+# Modified: 28/07/2023
 
 # Install packages (if required)
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(sf,raster,fasterize,tidyverse,rgeos,units,tictoc,foreign)
+pacman::p_load(sf,terra,tidyverse,units,tictoc, foreign)
 
 # Turns off scientific notation, e.g. 12.0e+12
+# Set terra to default to FLT8S (double float)
 # Required to maintain accuracy of large numbers
 options(scipen = 999)
+terraOptions(datatype="FLT8S", memfrac=0.8)
 
-tic()
+simple_analysis = FALSE
 
-cat("Importing and reprojecting shapefiles...\n")
+# import helper functions
+source("scripts_tools/spatial_processing_functions.R")
+
+# load example raster with appropriate extent (global) and resolution (1/120 degrees ~ 1km)
+if(simple_analysis){
+  cat("running at 10km with simplified polygons\n")
+  raster_WGS <- rast(res=1/12)
+  raster_moll <- project(raster_WGS,"ESRI:54009",res=10000)
+  
+  sphere <- st_graticule(ndiscr = 10000, margin = 10e-6) %>%
+    st_transform(crs = st_crs("ESRI:54009")) %>%
+    st_convex_hull() %>%
+    summarise(geometry = st_union(geometry)) %>% 
+    st_collection_extract("POLYGON") %>% 
+    vect()
+  
+  raster_moll_mask = rasterize(sphere,raster_moll)
+} else{
+  cat("running at 1km with original polygons\n")
+  raster_WGS <- rast(res=1/120)
+  raster_moll <- project(raster_WGS,"ESRI:54009",res=1000)
+}
+
+tic("time to complete")
 
 # set path variables (these will be the only lines that need changing in this script)
 # path to where the GEE output shapefiles are stored
-shapefile_path <- "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/scratch/"
+scratch_path = "scratch/"
 
 # path to where you want the output saved
-output_path <- "O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/outputs/"
+output_path = "outputs/"
 
-# read in WGS shapefiles
-likely_WGS <- st_read(paste0(shapefile_path, "Likely_Critical_Habitat_Polygon.shp"), quiet=TRUE) |>
-  dplyr::select(Type,Feature,C1,C2,C3,C4,C5)
-potential_WGS <- st_read(paste0(shapefile_path, "Potential_Critical_Habitat_Polygon.shp"), quiet=TRUE) |>
-  dplyr::select(Type,Feature,C1,C2,C3,C4,C5)
-
-# create Mollweide shps
-# need to wrap dateline to avoid projection error
-likely_moll <- st_wrap_dateline(likely_WGS,
-                                options = c("WRAPDATELINE=TRUE","DATELINEOFFSET=90")) %>% 
-  st_transform("ESRI:54009") %>% 
-  st_cast("MULTIPOLYGON")
-
-potential_moll <- st_wrap_dateline(potential_WGS,
-                                   options = c("WRAPDATELINE=TRUE","DATELINEOFFSET=90")) %>% 
-  st_transform("ESRI:54009") %>% 
-  st_cast("MULTIPOLYGON")
-
-# load example raster with appropriate extent (global) and resolution (1 km) properties (e.g. NatMod raster from the portal)
-# datatype "FLT8S" required to maintain precision
-raster_WGS <- raster('O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/raw_data/WCMC_natural_modified_habitat_screening_layer/natural_modified_habitat_screening_layer.tif')
-dataType(raster_WGS) <- "FLT8S"
-raster_WGS
-
-# create example raster in Mollweide with global extent and 1km resolution
-# datatype "FLT8S" required to maintain precision
-raster_moll <- raster(crs=st_crs("ESRI:54009")$proj4string,
-                      res=1000,
-                      ext=extent(c(-18040095.7,18040095.7,-9020047.85,9020047.85)))
-dataType(raster_moll) <- "FLT8S"
-raster_moll
-
-# combine potential and likely to final
-final_combined_WGS <- rbind(likely_WGS, potential_WGS)
-
-final_combined_moll <- rbind(likely_moll, potential_moll)
-
-# use Mollweide equal area to calculate areas
-final_combined_WGS$Area <- st_area(final_combined_moll) %>% units::set_units(km2) %>% units::drop_units()
-final_combined_moll$Area <- st_area(final_combined_moll) %>% units::set_units(km2) %>% units::drop_units()
-
-cat("Creating lookup table...\n")
-
-# combine type and feature to one variable, e.g. "Likely; Tiger Conservation Landscapes"
-combined_values <- unique(paste(final_combined_WGS$Type, final_combined_WGS$Feature, sep="; ")) %>% 
-  sort
+lookup = read.csv("scripts_tools/lookup.csv") %>% 
+  arrange(Type,Feature)
 
 # split the number of features into three roughly equal groups
 # R loses precision over ~22 digits
@@ -84,7 +61,7 @@ combined_values <- unique(paste(final_combined_WGS$Type, final_combined_WGS$Feat
 # options(scipen=999)
 # 10^(1:40)
 # this method can handle up to a max of ~60 triggers
-ntriggers = length(combined_values)
+ntriggers = nrow(lookup)
 divs <- rep(ntriggers%/%3, 3)
 mod <- ntriggers%%3
 divs[seq_len(mod)] <- divs[seq_len(mod)] + 1
@@ -98,47 +75,170 @@ values <- c(1,10^(1:(divs[1]-1)),
             5,5*(10^(1:(divs[3]-1))))
 set <- rep(1:3, divs)
 
-# create lookup
-lookup <- data.frame(combined_values, values, set) %>% 
-  separate(combined_values, sep = "; ", into = c("Type","Feature"), remove = FALSE) %>% 
-  left_join(st_drop_geometry(final_combined_WGS), by = c("Type","Feature"))
+lookup$Values = values
+lookup$Set = set
+lookup$Type_Feature = paste0(lookup$Type,"; ",lookup$Feature)
 
-# join lookup table to shapefiles to assign values
-final_combined_WGS <- final_combined_WGS %>%
-  inner_join(dplyr::select(lookup,-C1:-C5), by = c("Type","Feature"))
+################################################################
+#### LIKELY ####################################################
+################################################################
 
-final_combined_moll <- final_combined_moll %>%
-  inner_join(dplyr::select(lookup,-C1:-C5), by = c("Type","Feature"))
+cat("read in likely points and polygons and reproject to Mollweide\n")
 
-cat("Rasterizing shapefiles...\n")
+likely_polys_files = list.files(scratch_path) %>% 
+  keep(.,str_detect(.,"^L_") & str_detect(.,"_polys.shp"))
+likely_pts_files = list.files(scratch_path) %>% 
+  keep(.,str_detect(.,"^L_") & str_detect(.,"_pts.shp"))
 
-# first sum within a group to calculate overlaps within that group
-# e.g. 1001010 or 5055500
-drill_down_raster_moll_set1 <- fasterize(filter(final_combined_moll,set==1), raster_moll,
-                                        field = "values",
-                                        fun = "sum",
-                                        background = 0)
+if(simple_analysis){
+  tic("read in likely polygons")
+  likely_polys = vect(paste0(scratch_path,"likely_simpl.shp")) %>%
+    terra::sort("Feature") %>%
+    terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
+  likely_areas = data.frame(Feature=likely_polys$Feature,Area_polys_sqkm=expanse(likely_polys,unit="km")) %>%
+    mutate(Type="Likely", .before=1)
+  toc()
+  tic("reproject likely polygons to Mollweide")
+  likely_polys = project(likely_polys,"ESRI:54009")
+  toc()
+  } else {
+  likely_polys = vect(lapply(paste0(scratch_path,likely_polys_files),vect)) %>% 
+    terra::sort("Feature") %>% 
+    terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
+  likely_areas = data.frame(Feature=likely_polys$Feature,Area_polys_sqkm=expanse(likely_polys,unit="km")) %>%
+    mutate(Type="Likely", .before=1)
+  likely_polys = project(likely_polys,"ESRI:54009")
+  }
 
-drill_down_raster_moll_set2 <- fasterize(filter(final_combined_moll,set==2), raster_moll,
-                                        field = "values",
-                                        fun = "sum",
-                                        background = 0)
+likely_pts = vect(lapply(paste0(scratch_path,likely_pts_files),vect)) %>%
+  terra::sort("Feature") %>% 
+  terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature')) %>% 
+  project("ESRI:54009")
 
-drill_down_raster_moll_set3 <- fasterize(filter(final_combined_moll,set==3), raster_moll,
-                                        field = "values",
-                                        fun = "sum",
-                                        background = 0)
+correct_lpts_names = sapply(split(likely_pts,"Feature"), function(i) i[["Feature"]][1])
 
-# stack rasters and sum across to also calculate overlaps between groups
-# e.g. 3095400
-# datatype "FLT8S" required to maintain precision
-stack_moll = stack(drill_down_raster_moll_set1,
-                  drill_down_raster_moll_set2,
-                  drill_down_raster_moll_set3)
+cat("rasterising polygons and points\n")
 
-cat("Summing raster stack to calculate overlaps...\n")
+tic("rasterise likely points")
+rasterize(likely_pts, raster_moll, field="Values", by="Feature", fun=function(x) min(x,na.rm=TRUE), background=0, filename=paste0(scratch_path,"likely_moll_pts.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S", names=correct_lpts_names))
+toc()
 
-rs_moll = raster::calc(stack_moll,sum,datatype="FLT8S")
+correct_lpolys_names = sapply(split(likely_polys,"Feature"), function(i) i[["Feature"]][1])
+
+tic("rasterise likely polygons")
+rasterize(likely_polys, raster_moll, field="Values", by="Feature", fun="min", touches=TRUE, background=0, filename=paste0(scratch_path,"likely_moll_polys.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S",names=correct_lpolys_names))
+toc()
+
+cat("importing already rasterised input data\n")
+
+likely_rfiles = list.files(scratch_path) %>% 
+  keep(.,str_detect(.,"^L_") & str_detect(.,"moll.tif"))
+likely_rasters = rast(lapply(paste0(scratch_path,likely_rfiles),rast))
+likely_rasters = likely_rasters[[order(names(likely_rasters))]]
+tic("reclass input rasters")
+likely_rasters = likely_rasters*(lookup[lookup$Feature %in% names(likely_rasters),"Values"])
+toc()
+
+if(simple_analysis){
+  likely_rasters = aggregate(likely_rasters,fact=10,fun="modal") %>% 
+    resample(raster_moll,method="near")
+} else{}
+
+likely = c(rast(paste0(scratch_path,"likely_moll_polys.tif")),
+           rast(paste0(scratch_path,"likely_moll_pts.tif")),
+           likely_rasters)
+
+cat("summing likely raster stack\n")
+tic("summing likely raster stack")
+app(likely,sum,filename=paste0(scratch_path,"likely_moll_sum.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S"))
+toc()
+
+################################################################
+#### POTENTIAL #################################################
+################################################################
+
+cat("read in potential points and polygons and reproject to Mollweide\n")
+
+potential_polys_files = list.files(scratch_path) %>% 
+  keep(.,str_detect(.,"^P_") & str_detect(.,"_polys.shp"))
+potential_pts_files = list.files(scratch_path) %>% 
+  keep(.,str_detect(.,"^P_") & str_detect(.,"_pts.shp"))
+
+if(simple_analysis){
+  tic("read in potential polygons")
+  potential_polys = vect(paste0(scratch_path,"potential_simpl.shp")) %>%
+    terra::sort("Feature") %>%
+    terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
+  toc()
+  potential_areas = data.frame(Feature=potential_polys$Feature,Area_polys_sqkm=expanse(potential_polys,unit="km")) %>%
+    mutate(Type="Potential", .before=1)
+  tic("reproject potential polygons to Mollweide")
+  potential_polys = project(potential_polys,"ESRI:54009")
+  toc()
+} else {
+  potential_polys = vect(lapply(paste0(scratch_path,potential_polys_files),vect)) %>% 
+    terra::sort("Feature") %>% 
+    terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
+  potential_areas = data.frame(Feature=potential_polys$Feature,Area_polys_sqkm=expanse(potential_polys,unit="km")) %>%
+    mutate(Type="Potential", .before=1)
+  potential_polys = project(potential_polys,"ESRI:54009")
+  }
+toc()
+potential_pts = vect(lapply(paste0(scratch_path,potential_pts_files),vect)) %>% 
+  terra::sort("Feature") %>% 
+  terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature')) %>% 
+  project("ESRI:54009")
+
+correct_ppts_names = sapply(split(potential_pts,"Feature"), function(i) i[["Feature"]][1])
+
+cat("rasterising polygons and points\n")
+
+tic("rasterise potential points")
+rasterize(potential_pts, raster_moll, field="Values", by="Feature", fun=function(x) min(x,na.rm=TRUE), background=0, filename=paste0(scratch_path,"potential_moll_pts.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S", names=correct_ppts_names))
+toc()
+
+correct_ppolys_names = sapply(split(potential_polys,"Feature"), function(i) i[["Feature"]][1])
+
+tic("rasterise potential polygons")
+rasterize(potential_polys, raster_moll, field="Values", by="Feature", fun="min", touches=TRUE, background=0, filename=paste0(scratch_path,"potential_moll_polys.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S",names=correct_ppolys_names))
+toc()
+
+cat("importing already rasterised input data\n")
+
+potential_rfiles = list.files(scratch_path) %>% 
+  keep(.,str_detect(.,"^P_") & str_detect(.,"moll.tif"))
+potential_rasters = rast(lapply(paste0(scratch_path,potential_rfiles),rast))
+potential_rasters = potential_rasters[[order(names(potential_rasters))]]
+tic("reclass input rasters")
+potential_rasters = potential_rasters*(lookup[lookup$Feature %in% names(potential_rasters),"Values"])
+toc()
+
+if(simple_analysis){
+  potential_rasters = aggregate(potential_rasters,fact=10,fun="modal") %>% 
+    resample(raster_moll,method="near")
+} else{}
+
+potential = c(rast(paste0(scratch_path,"potential_moll_polys.tif")),
+              rast(paste0(scratch_path,"potential_moll_pts.tif")),
+              potential_rasters)
+
+cat("summing potential raster stack\n")
+tic("summing potential raster stack")
+app(potential,sum,filename=paste0(scratch_path,"potential_moll_sum.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S"))
+toc()
+
+# Combine
+cat("combining likely and potential rasters and saving\n")
+tic("combine likely and potential rasters")
+combined = c(rast(paste0(scratch_path,"potential_moll_sum.tif")),rast(paste0(scratch_path,"likely_moll_sum.tif")))
+app(combined, sum, filename=paste0(scratch_path,"likely_potential_moll_sum.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S"))
+toc()
+
+# save original vector areas
+cat("saving original vector areas to csv\n")
+bind_rows(likely_areas,potential_areas) %>% 
+  arrange(Feature) %>% 
+  write.csv(paste0(output_path,"CH_vector_areas.csv"),row.names=TRUE)
 
 ################################################################################
 # RAT SETUP ####################################################################   
@@ -148,13 +248,14 @@ cat("Extracting unique raster values...\n")
 
 # extract unique values from raster
 # these are all unique combinations of triggers at 1km resolution
-ID = unique(values(rs_moll))
+ID = unique(rast(paste0(scratch_path,"likely_potential_moll_sum.tif"))) %>% 
+  rename(ID=sum)
 
 cat("Creating raster attribute table...\n")
 
 # separate each unique ID value into digits across columns
-rat = data.frame(ID) %>%
-  separate(ID, into = paste0("V",0:max(divs)), sep="", fill="left") %>% 
+rat = ID %>%
+  separate(1, into = paste0("V",0:max(divs)), sep="", fill="left") %>% 
   mutate(across(everything(), ~ na_if(.x,""))) %>% 
   mutate(across(everything(), ~ replace(.x, is.na(.x), 0))) %>% 
   dplyr::select(-V0)
@@ -177,7 +278,7 @@ rats = lapply(1:3, function(x){
   
   rat_out = rat_out[,(1+(ncol(rat_out) - divs[x])):ncol(rat_out)]
   
-  names(rat_out) = filter(lookup,set==x) %>% pull(combined_values) %>% rev
+  names(rat_out) = filter(lookup,Set==x) %>% pull(Type_Feature) %>% rev
   
   rat_out = cbind(ID=ID, rat_out)
   
@@ -190,16 +291,16 @@ rat_full = rats %>% reduce(full_join, by = "ID")
 
 # pivot longer so we have one row for each trigger and ID
 add_cr = rat_full %>%
-  pivot_longer(2:42, names_to = "combined_values", values_to = "value")
+  pivot_longer(2:ncol(.), names_to = "Type_Feature", values_to = "Join")
 
 # add value = 1 to lookup so we only add criteria where a cell has been triggered
 # add 10 for likely, 1 for potential
-cr_df = mutate(lookup, value=1) %>%
-  dplyr::select(value,combined_values,C1:C5) %>% 
+cr_df = mutate(lookup, Join=1) %>%
+  dplyr::select(Join,Type_Feature,C1:C5) %>% 
   mutate(CH = rep(c(10,1),c(table(lookup$Type)[["Likely"]],table(lookup$Type)[["Potential"]])))
 
 # join to pivoted attribute table, replacing NAs (no lookup value)  with 0  
-add_cr = left_join(add_cr,cr_df,by=c("value","combined_values")) %>% 
+add_cr = left_join(add_cr,cr_df,by=c("Join","Type_Feature")) %>% 
   mutate(across(everything(), ~ replace(.x, is.na(.x), 0)))
 
 # group by ID, collapsing to one row per ID
@@ -218,53 +319,44 @@ final_rat = inner_join(cr_rat,rat_full,by="ID")
 cat("Calculating cell frequencies...\n")
 
 # ArcGIS calculates this automatically but good to have for software independence
-cell_counts = freq(rs_moll)[,2]
+cell_counts = freq(rast(paste0(scratch_path,"likely_potential_moll_sum.tif")))
 
 # Replace IDs with a more sensible value so we can save as integer raster
 # e.g. 5003010, 500, 95060601 --> 1,2,3 etc.
 final_rat = final_rat %>%  
   mutate(Value = 1:nrow(final_rat),
-         Count = cell_counts,
+         Count = cell_counts$count,
          .after = ID) %>% 
   dplyr::select(-ID)
 
 # ArcGIS needs shortened field names
-# lookup short name from csv and replace RAT names
-fid_lookup = read.csv("O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/scripts_tools/FID_LOOKUP.csv")
-shorts = fid_lookup$SHORTNAME[match(names(final_rat),fid_lookup$LONGNAME)] %>% discard(is.na(.))
+# match short name from lookup and replace RAT names
+shorts = lookup$Short[match(names(final_rat),lookup$Type_Feature)] %>% discard(is.na(.))
 
 names(final_rat) <- c("VALUE","COUNT","CH","C1","C2","C3","C4","C5",shorts)
 
 cat("Reclassifying raster...\n")
 
 # reclassify output raster to our more sensible values
-rss = reclassify(rs_moll,as.matrix(cbind(sort(ID),1:length(ID))),datatype="INT2U")
+rss = classify(rast(paste0(scratch_path,"likely_potential_moll_sum.tif")),as.matrix(cbind(sort(ID$ID),1:nrow(ID))))
 
 # saving files and removing previous versions
-
-rst_file = paste0(output_path,"Critical_Habitat_Drill_Down_Mollweide.tif")
-
 cat("Saving raster...\n")
-
-if(file.exists(rst_file)){
-  cat("Remove or archive previous version of raster file")
-} else{
-  writeRaster(rss,
-              filename = rst_file,
-              datatype = "INT2U")
-}
+rast_save(rst=rss,filename="Critical_Habitat_Drill_Down_Moll.tif",outpath=output_path,nms="Critical_Habitat_Drill_Down_Moll",dt="INT2U")
 
 cat("Saving RAT...\n")
 
-dbf_file = paste0(output_path,"Critical_Habitat_Drill_Down_Mollweide.tif.vat.dbf")
+dbf_file = paste0(output_path,"Critical_Habitat_Drill_Down_Moll.tif.vat.dbf")
+old_fnm = str_replace(dbf_file,".tif.vat.dbf","_old.tif.vat.dbf")
 
-if(file.exists(dbf_file)){
-  cat("Remove or archive previous version of raster attribute table")
-} else{
-  foreign::write.dbf(as.data.frame(final_rat),
-                     file = dbf_file)
-}
+if(old_fnm %in% list.files(output_path, full.names=TRUE)){
+  file.remove(old_fnm)
+} else{}
 
-cat("Script complete: ")
+if(dbf_file %in% list.files(output_path, full.names=TRUE)){
+  file.rename(dbf_file,old_fnm)
+} else{}
+
+foreign::write.dbf(as.data.frame(final_rat), file = dbf_file)
 
 toc()

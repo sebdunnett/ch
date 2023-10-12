@@ -1,43 +1,47 @@
 Short,Type,Feature,C1,C2,C3,C4,C5
-L-RAMSALL,Likely,All Ramsar sites,0,0,0,1,0
-L-AZE,Likely,Alliance for Zero Extinction Sites,1,1,1,0,0
-L-COLDSEEP,Likely,Cold seeps,0,0,0,0,1
-L-COLDREEF,Likely,Cold water coral reefs - Observed occurence,0,0,0,1,1
-L-CRCRD,Likely,CR species under criterion D,1,0,0,0,0
-L-ENCRD,Likely,EN species under criterion D,1,0,0,0,0
-L-HYDRO,Likely,Hydrothermal Vents,0,1,0,0,1
-L-IMMAB2,Likely,IMMAs under criterion B2,0,0,1,0,0
-L-IFL,Likely,Intact Forest Landscapes,0,0,0,1,0
-L-IRREPL,Likely,Irreplaceable protected areas,0,0,0,1,0
-L-IUCNMGMT,Likely,"IUCN management categories Ia, Ib and II",0,0,0,1,0
-L-KBACREN,Likely,KBAs with triggers including CR/EN species,1,0,0,0,0
-L-KBAENDMC,Likely,KBAs with triggers including endemic species,0,1,0,0,0
-L-KBAMIGRT,Likely,KBAs with triggers including migratory birds/congregations,0,0,1,0,0
-L-KBAOTHER,Likely,KBAs with triggers including other,0,0,0,1,0
-L-MANGROVE,Likely,Mangroves,0,0,0,1,0
-L-WHS,Likely,Natural and mixed World Heritage sites,0,0,0,1,0
-L-RAMS13,Likely,Ramsar sites under criteria 1 and 3,0,0,0,1,0
-L-RAMS56,Likely,Ramsar sites under criteria 5 and 6,0,0,1,0,0
-L-RAMS2,Likely,Ramsar sites under criterion 2,1,0,0,0,0
-L-SALTM,Likely,Saltmarshes,0,0,0,1,0
-L-TRTLCREN,Likely,Sea turtle nesting sites - CR and EN species,1,0,0,0,0
-L-SEAGRSS,Likely,Seagrass beds,0,0,0,1,0
-L-TIGERCL,Likely,Tiger Conservation Landscapes,1,0,0,0,0
-L-MOISTFOR,Likely,Tropical moist forest,0,0,0,1,0
-L-WARMREEF,Likely,Warm water coral reefs,0,0,0,1,1
-P-COLDSEEP,Potential,Cold seeps,0,1,0,0,0
-P-COLDREEF,Potential,Cold water Coral - Modelled occurence,0,0,0,1,1
-P-EVERWET,Potential,Ever-wet tropical forests,0,0,0,1,0
-P-HYDRO,Potential,Hydrothermal Vents,0,0,0,1,0
-P-IMMAC123,Potential,"IMMAs under criteria C1, C2 and C3",0,0,1,0,0
-P-IMMAB1,Potential,IMMAs under criterion A,1,0,0,0,0
-P-IMMAA,Potential,IMMAs under criterion B1,0,1,0,0,0
-P-IMMAD1,Potential,IMMAs under criterion D1,0,1,0,1,0
-P-IMMAD2,Potential,IMMAs under criterion D2,0,0,0,1,0
-P-KBAVU,Potential,KBAs with triggers including VU species,1,0,0,0,0
-P-RAMS4789,Potential,"Ramsar sites under criteria 4, 7, 8 and 9",0,0,1,0,0
-P-TRTLALL,Potential,Sea turtle nesting sites - All species,0,0,1,1,0
-P-SEAMOUNT,Potential,Seamounts,0,0,0,1,0
-P-DRYFOR,Potential,Tropical dry forest,0,0,0,1,0
-P-CLOUDFR,Potential,Tropical montane cloud forests,0,0,0,1,0
-P-VUCRD,Potential,VU species under criterion D2,1,0,0,0,0
+L_RAMSALL,Likely,All Ramsar sites,0,0,0,1,0
+L_AZE,Likely,Alliance for Zero Extinction Sites,1,1,1,0,0
+L_COLDSEEP,Likely,Cold seeps,0,0,0,0,1
+L_COLDREEF,Likely,Cold water coral reefs - Observed occurence,0,0,0,1,1
+L_CRCRD,Likely,CR species under criterion D,1,0,0,0,0
+L_ENCRD,Likely,EN species under criterion D,1,0,0,0,0
+L_HYDRO,Likely,Hydrothermal Vents,0,1,0,0,1
+L_IBAA1,Likely,IBAs under criterion A1,1,0,0,0,0
+L_IMMAB2,Likely,IMMAs under criterion B2,0,0,1,0,0
+L_IFL,Likely,Intact Forest Landscapes,0,0,0,1,0
+L_IRREPL,Likely,Irreplaceable protected areas,0,0,0,1,0
+L_IUCNMGMT,Likely,"IUCN management categories Ia, Ib and II",0,0,0,1,0
+L_KBAA1AE,Likely,KBAs under criteria A1a and A1e,1,0,0,0,0
+L_KBAB1,Likely,KBAs under criterion B1,0,1,0,0,0
+L_KBAD1A,Likely,KBAs under criterion D1a,0,0,1,0,0
+L_KBAD2,Likely,KBAs under criterion D2,0,0,1,0,0
+L_MANGROVE,Likely,Mangroves,0,0,0,1,0
+L_WHS,Likely,Natural and mixed World Heritage sites,0,0,0,1,0
+L_RAMS13,Likely,Ramsar sites under criteria 1 and 3,0,0,0,1,0
+L_RAMS56,Likely,Ramsar sites under criteria 5 and 6,0,0,1,0,0
+L_RAMS2,Likely,Ramsar sites under criterion 2,1,0,0,0,0
+L_SALTM,Likely,Saltmarshes,0,0,0,1,0
+L_TRTLCREN,Likely,Sea turtle nesting sites - CR and EN species,1,0,0,0,0
+L_SEAGRSS,Likely,Seagrass beds,0,0,0,1,0
+L_TIGERCL,Likely,Tiger Conservation Landscapes,1,0,0,0,0
+L_MOISTFOR,Likely,Tropical moist forest,0,0,0,1,0
+L_WARMREEF,Likely,Warm water coral reefs,0,0,0,1,1
+P_COLDSEEP,Potential,Cold seeps,0,1,0,0,0
+P_COLDREEF,Potential,Cold water Coral - Modelled occurence,0,0,0,1,1
+P_EVERWET,Potential,Ever-wet tropical forests,0,0,0,1,0
+P_GRTAPES,Potential,Great Apes species ranges,1,0,0,0,0
+P_HYDRO,Potential,Hydrothermal Vents,0,0,0,1,0
+P_IMMAC123,Potential,"IMMAs under criteria C1, C2 and C3",0,0,1,0,0
+P_IMMAB1,Potential,IMMAs under criterion A,1,0,0,0,0
+P_IMMAA,Potential,IMMAs under criterion B1,0,1,0,0,0
+P_IMMAD1,Potential,IMMAs under criterion D1,0,1,0,1,0
+P_IMMAD2,Potential,IMMAs under criterion D2,0,0,0,1,0
+P_KBAA1B,Potential,KBAs under criterion A1b,1,0,0,0,0
+P_KBAD1B,Potential,KBAs under criterion D1b,0,0,1,0,0
+P_KBAD3,Potential,KBAs under criterion D3,0,0,1,0,0
+P_RAMS4789,Potential,"Ramsar sites under criteria 4, 7, 8 and 9",0,0,1,0,0
+P_TRTLALL,Potential,Sea turtle nesting sites - All species,0,0,1,1,0
+P_SEAMOUNT,Potential,Seamounts,0,0,0,1,0
+P_DRYFOR,Potential,Tropical dry forest,0,0,0,1,0
+P_CLOUDFR,Potential,Tropical montane cloud forests,0,0,0,1,0
+P_VUCRD,Potential,VU species under criterion D2,1,0,0,0,0

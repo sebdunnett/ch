@@ -165,3 +165,31 @@ ggplot(st_crop(wrld,suspects[x,])) +
   geom_sf(data=suspects[x,],fill="red",alpha=.5) +
   ggtitle(paste0(suspects[x,"binomial.x"]," - ",suspects[x,"common_name"]))
 })
+
+rl_full_simpl = st_transform(bind_rows(L_C1_IUCN_CR_D,
+                                       L_C1_IUCN_EN_D,
+                                       P_C1_IUCN_VU_D2),
+                             "ESRI:54009") %>% 
+  st_simplify(dTolerance=1000) %>% 
+  st_transform(4326) %>%
+  fix_sf()
+
+pal = sample(size=1,scico_palette_names())
+pal="lajolla"
+
+plts = lapply(c(3,5,7,10,12,15,17,20,50), function(x){
+  plot_df = rl_full_simpl %>% filter(units::drop_units(st_area(.)) < (x*sd(units::drop_units(st_area(.)))) + mean(units::drop_units(st_area(.))))
+  area_diff_pct = (sum(units::drop_units(st_area(plot_df)))/sum(units::drop_units(st_area(rl_full_simpl))))*100
+  area_diff_pct = signif(area_diff_pct,3)
+  row_diff = nrow(rl_full_simpl)-nrow(plot_df)
+  ggplot(gisco_coastallines %>% st_transform("ESRI:54012")) +
+    geom_sf(col=NA) +
+    geom_sf(data=plot_df,aes(fill=category),alpha=0.85,col=NA) +
+    scale_fill_manual(values=c("#191900","#5A2F22","#C7504B"), name=NULL) +
+    cowplot::theme_map() +
+    labs(title=paste0("SD: ",x),
+         subtitle = paste0(area_diff_pct,"% of total area; ",row_diff," rows missing of ",nrow(rl_full_simpl))) +
+    theme(legend.position="none")
+})
+
+cowplot::plot_grid(plotlist=plts,nrow=3,ncol=3)

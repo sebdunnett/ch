@@ -15,9 +15,9 @@ fix_sf <- function(sf) {
   # Try to fix them
   # First check for features crossing antimeridian as they're rarely fixed properly
   
-  antim_check = st_bbox(c(xmin=-180, ymin=-90, xmax=180, ymax=90), crs = st_crs(4326)) %>%
-    st_as_sfc %>% 
-    st_cast("LINESTRING")
+  antim_check = st_as_sfc(st_bbox(c(xmin=179, ymin=-90, xmax=180, ymax=90), crs = st_crs(4326))) |>
+    rbind(st_as_sfc(st_bbox(c(xmin=-180, ymin=-90, xmax=-179, ymax=90), crs = st_crs(4326)))) |>
+    st_as_sfc(crs=4326)
   
   # spherical off for ease (otherwise might not compute)
   sf_use_s2(FALSE)
@@ -97,30 +97,149 @@ fix_sf <- function(sf) {
 
 st_faster_union <- function(sf) {
   
-  rtn_sf = sf %>%
-    as_geos_geometry() %>%
-    geos_make_collection() %>%
-    geos_make_valid() %>%
-    geos_unary_union() %>%
-    geos_make_valid() %>%
-    st_as_sf()
+  p_load(mapview)
   
-  return(rtn_sf)
+  if(nrow(sf)==0){
+    
+    message("sf object has 0 records")
+    
+    return(sf)
+    
+  } else{}
+  
+  if(all(st_geometry_type(sf) %in% c("POINT","MULTIPOINT"))){
+    
+    rtn_sf = st_union(sf) |>
+      st_sf()
+    
+    return(rtn_sf)
+    
+  } else if(all(st_geometry_type(sf) %in% c("POLYGON","MULTIPOLYGON"))){
+    
+    if(npts(sf)<10000000){
+      
+      rtn_sf = st_union(sf) %>% 
+        st_sf()
+      
+      return(rtn_sf)
+      
+    } else{
+      
+      rtn_sf = sf |>
+        st_wrap_dateline() |>
+        st_transform("ESRI:54009") |>
+        as_geos_geometry() |>
+        geos_make_collection()|>
+        geos_make_valid() |>
+        geos_unary_union() |>
+        geos_make_valid() |>
+        st_as_sf() |>
+        st_transform(4326)
+        
+        return(rtn_sf)
+      
+      }
+    
+  } else{}
+  
 }
 
 st_save <- function(sf,filename,outpath){
-  fnm = paste0(outpath,filename)
-  fnm_list = c(fnm,
-               str_replace(fnm,".shp",c(".shx",".prj",".dbf")))
-  old_fnm = str_replace(fnm,".shp",c("_old.shp","_old.shx","_old.prj","_old.dbf"))
   
-  if(any(old_fnm %in% list.files(outpath, full.names=TRUE))){
+  if(nrow(sf)==0){
+    return()
+  } else{}
+  
+  if(tail(str_split_1(filename, "\\."),n=1)=="shp"){
+    fnm = paste0(outpath,filename)
+    fnm_list = c(fnm,
+                 str_replace(fnm,".shp",c(".shx",".prj",".dbf")))
+    old_fnm = str_replace(fnm,".shp",c("_old.shp","_old.shx","_old.prj","_old.dbf"))
+    if(any(old_fnm %in% list.files(outpath, full.names=TRUE))){
+      file.remove(old_fnm)
+      } else{}
+    if(any(fnm_list %in% list.files(outpath, full.names=TRUE))){
+      file.rename(fnm_list,old_fnm)
+    } else{}
+    
+    st_write(sf,fnm,quiet=TRUE)
+  
+  } else if(tail(str_split_1(filename, "\\."),n=1)=="gpkg"){
+    fnm = paste0(outpath,filename)
+    old_fnm = str_replace(fnm,".gpkg","_old.gpkg")
+    if(old_fnm %in% list.files(outpath, full.names=TRUE)){
+      file.remove(old_fnm)
+    } else{}
+    if(fnm %in% list.files(outpath, full.names=TRUE)){
+      file.rename(fnm,old_fnm)
+    } else{}
+    
+    st_write(sf,fnm,quiet=TRUE)
+    
+  } else{
+    message("Must save file as either shapefile or geopackage.")
+  }
+}
+
+rast_save <- function(rst,filename,outpath,nms,dt){
+  fnm = paste0(outpath,filename)
+  old_fnm = str_replace(fnm,".tif","_old.tif")
+  
+  if(old_fnm %in% list.files(outpath, full.names=TRUE)){
     file.remove(old_fnm)
   } else{}
   
-  if(any(fnm_list %in% list.files(outpath, full.names=TRUE))){
-    file.rename(fnm_list,old_fnm)
+  if(fnm %in% list.files(outpath, full.names=TRUE)){
+    file.rename(fnm,old_fnm)
   } else{}
   
-  st_write(sf,fnm)
+  writeRaster(x=rst, filename=fnm, datatype=dt, names=nms)
 }
+
+st_buffer_antimeridian <- function(sf,dist,max_cells){
+  antim_check = st_as_sfc(st_bbox(c(xmin=179, ymin=-90, xmax=180, ymax=90), crs = st_crs(4326))) |>
+    rbind(st_as_sfc(st_bbox(c(xmin=-180, ymin=-90, xmax=-179, ymax=90), crs = st_crs(4326)))) |>
+    st_as_sfc(crs=4326)
+  
+  idl = st_intersects(sf,antim_check) |>
+    map_int(length)
+  
+  if(sum(idl==0)){
+    message("Data not within 1 degree of antimeridian, using st_buffer")
+    
+    sf_buff = st_buffer(sf,dist=dist,max_cells=max_cells)
+    
+    return(sf_buff)
+    
+  } else{
+    if(length(dist>1)){
+      dist1 = dist[!idl>0]
+      dist2 = dist[idl>0]
+      } else{
+        dist1 = dist
+        dist2 = dist
+      }
+    
+    message("Some data within 1 degree of antimeridian, using modified st_buffer")
+    
+    buffered = sf[!idl>0,] |>
+      st_buffer(dist=dist1,max_cells=max_cells)
+    
+    buffered_antim = sf[idl>0,]
+    
+    west = buffered_antim |>
+      st_buffer(dist2,max_cells=max_cells)|>
+      st_crop(st_bbox(c(xmin=-180,xmax=0,ymin=-90,ymax=90),crs=st_crs(4326))) |>
+      st_make_valid()
+    east = buffered_antim |>
+      st_buffer(dist2,max_cells=max_cells)|>
+      st_crop(st_bbox(c(xmin=0,xmax=180,ymin=-90,ymax=90),crs=st_crs(4326))) |>
+      st_make_valid()
+    
+    sf_buff = bind_rows(buffered,west,east)
+    
+    return(sf_buff)
+    
+  }
+}
+
