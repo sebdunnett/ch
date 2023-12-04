@@ -65,34 +65,37 @@ area_3SD = rl_sd*sd(rl_areas) + mean(rl_areas)
 
 rl_area_trim = rl_full[which(rl_areas<area_3SD),]
 
-# buffer to 50km (sf computes geodesic buffers with lat/long data)
-# sf doesn't handle dateline buffering well; terra does
+# # buffer to 50km (sf computes geodesic buffers with lat/long data)
+# # sf doesn't handle dateline buffering well; terra does
+# 
+# cat("add 50km geodesic buffers\n")
+# 
+# antim_check = st_as_sfc(st_bbox(c(xmin=179, ymin=-90, xmax=180, ymax=90), crs = st_crs(4326))) |>
+#   rbind(st_as_sfc(st_bbox(c(xmin=-180, ymin=-90, xmax=-179, ymax=90), crs = st_crs(4326)))) |>
+#   st_as_sfc(crs=4326)
+# 
+# idl = st_intersects(rl_area_trim,antim_check) |>
+#   map_int(length)
+# 
+# rl_full_buffered = rl_area_trim[!idl>0,] |>
+#   st_buffer(dist=50000,max_cells=5000)
+# 
+# rl_full_buffered_antim = rl_area_trim[idl>0,]
+# 
+# west = rl_full_buffered_antim |>
+#   st_buffer(50000,max_cells=5000)|>
+#   st_crop(st_bbox(c(xmin=-180,xmax=0,ymin=-90,ymax=90),crs=st_crs(4326))) |>
+#   st_make_valid()
+# 
+# east = rl_full_buffered_antim |>
+#   st_buffer(50000,max_cells=5000)|>
+#   st_crop(st_bbox(c(xmin=0,xmax=180,ymin=-90,ymax=90),crs=st_crs(4326))) |>
+#   st_make_valid()
+# 
+# rl_full_buffered_all = bind_rows(rl_full_buffered,west,east)
 
-cat("add 50km geodesic buffers\n")
-
-antim_check = st_as_sfc(st_bbox(c(xmin=179, ymin=-90, xmax=180, ymax=90), crs = st_crs(4326))) |>
-  rbind(st_as_sfc(st_bbox(c(xmin=-180, ymin=-90, xmax=-179, ymax=90), crs = st_crs(4326)))) |>
-  st_as_sfc(crs=4326)
-
-idl = st_intersects(rl_area_trim,antim_check) |>
-  map_int(length)
-
-rl_full_buffered = rl_area_trim[!idl>0,] |>
-  st_buffer(dist=50000,max_cells=5000)
-
-rl_full_buffered_antim = rl_area_trim[idl>0,]
-
-west = rl_full_buffered_antim |>
-  st_buffer(50000,max_cells=5000)|>
-  st_crop(st_bbox(c(xmin=-180,xmax=0,ymin=-90,ymax=90),crs=st_crs(4326))) |>
-  st_make_valid()
-
-east = rl_full_buffered_antim |>
-  st_buffer(50000,max_cells=5000)|>
-  st_crop(st_bbox(c(xmin=0,xmax=180,ymin=-90,ymax=90),crs=st_crs(4326))) |>
-  st_make_valid()
-
-rl_full_buffered_all = bind_rows(rl_full_buffered,west,east)
+# not buffering for the moment
+rl_full_buffered_all = rl_area_trim
 
 # in case any being loaded into Google Earth Engine
 # has a limit of 100k vertices per feature

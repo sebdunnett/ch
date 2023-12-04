@@ -19,7 +19,7 @@ source("scripts_tools/spatial_processing_functions.R")
 tic("read in WDPA and KBAs")
 cat("read in WDPA and KBAs...")
 
-wdpa_gdb = paste0(data_path,"WDPA_Dec2022_Licensed.gdb")
+wdpa_gdb = "O:/f00_data/Protected_Planet_Initiative/WDPA_Monthly_Versions/Latest WDPA Version/WDPA_Nov2023_Licensed.gdb"
 
 wdpa_poly_layer = st_layers(wdpa_gdb)$name %>% keep(.,str_detect(.,"poly"))
 wdpa_pt_layer = st_layers(wdpa_gdb)$name %>% keep(.,str_detect(.,"point"))
@@ -27,8 +27,8 @@ wdpa_pt_layer = st_layers(wdpa_gdb)$name %>% keep(.,str_detect(.,"point"))
 wdpa_polys = st_read(wdpa_gdb, layer=wdpa_poly_layer, quiet=TRUE)
 wdpa_pts = st_read(wdpa_gdb, layer=wdpa_pt_layer, quiet=TRUE)
 
-kba_aze_iba_polys = st_read(dsn = "O:/f00_data/Birdlife-001-KBA-IBA-AZE/KBAsGlobal_2023_March_01_Criteria/KBAsGlobal_2023_March_01_POL.shp", quiet=TRUE)
-kba_aze_iba_pts = st_read(dsn = "O:/f00_data/Birdlife-001-KBA-IBA-AZE/KBAsGlobal_2023_March_01_Criteria/KBAsGlobal_2023_March_01_PNT.shp", quiet=TRUE)
+kba_aze_iba_polys = st_read(dsn = "O:/f00_data/Birdlife-001-KBA-IBA-AZE/KBAsGlobal_2023_September_02_Criteria_TriggerSpecies/KBAsGlobal_2023_September_02_POL.shp", quiet=TRUE)
+kba_aze_iba_pts = st_read(dsn = "O:/f00_data/Birdlife-001-KBA-IBA-AZE/KBAsGlobal_2023_September_02_Criteria_TriggerSpecies/KBAsGlobal_2023_September_02_PNT.shp", quiet=TRUE)
 
 cat("done\n")
 toc()
@@ -257,179 +257,183 @@ toc()
 #### KBAs (POLYGON) ############################################
 ################################################################
 
-cat("kbas...")
-
-tic("kbas fix and union")
-kba_polys = filter(kba_aze_iba_polys, KbaStatus == "confirmed") %>%
-  dplyr::select(Criteria) %>%
-  fix_sf()
-
-kba_pts = filter(kba_aze_iba_pts, KbaStatus == "confirmed") %>%
-  mutate(sitarea = as.numeric(sitarea)) %>%
-  drop_na(sitarea)
-
-kba_pts_buff = st_buffer_antimeridian(kba_pts, dist = sqrt((kba_pts$sitarea*10000)/pi), max_cells=5000) %>%
-  fix_sf() %>%
-  select(Criteria)
-
-kba = bind_rows(kba_polys,kba_pts_buff)
-
-L_C1_KBAs_A1ae = filter(kba, str_detect(Criteria,"A1a|A1e")) %>%
-  st_faster_union() %>%
-  mutate(Type = "Likely", Feature = "KBAs under criteria A1a and A1e")
-
-P_C1_KBAs_A1b = filter(kba, str_detect(Criteria,"A1b")) %>%
-  st_faster_union() %>%
-  mutate(Type = "Potential", Feature = "KBAs under criterion A1b")
-
-P_C1_KBAs_E = filter(kba, str_detect(Criteria,"E")) %>%
- st_faster_union() %>%
- mutate(Type = "Potential", Feature = "KBAs under criterion E")
-
-L_C2_KBAs_B1 = filter(kba, str_detect(Criteria,"B1")) %>%
-  st_faster_union() %>%
-  mutate(Type = "Likely", Feature = "KBAs under criterion B1")
-
-L_C3_KBAs_D1a = filter(kba, str_detect(Criteria,"D1a")) %>%
-  st_faster_union() %>%
-  mutate(Type = "Likely", Feature = "KBAs under criterion D1a")
-
-P_C3_KBAs_D1b = filter(kba, str_detect(Criteria,"D1b")) %>%
-  st_faster_union() %>%
-  mutate(Type = "Potential", Feature = "KBAs under criterion D1b")
-
-L_C3_KBAs_D2 = filter(kba, str_detect(Criteria,"D2")) %>%
-  st_faster_union() %>%
-  mutate(Type = "Likely", Feature = "KBAs under criterion D2")
-
-P_C3_KBAs_D3 = filter(kba, str_detect(Criteria,"D3")) %>%
-  st_faster_union() %>%
-  mutate(Type = "Potential", Feature = "KBAs under criterion D3")
-
-L_C4_KBAs_A2a = filter(kba, str_detect(Criteria,"A2a")) %>%
- st_faster_union() %>%
- mutate(Type = "Likely", Feature = "KBAs under criterion A2a")
-
-P_C4_KBAs_A2b = filter(kba, str_detect(Criteria,"A2b")) %>%
-  st_faster_union() %>%
-  mutate(Type = "Potential", Feature = "KBAs under criterion A2b")
-
-P_C4_KBAs_B4 = filter(kba, str_detect(Criteria,"B4")) %>%
-  st_faster_union() %>%
-  mutate(Type = "Potential", Feature = "KBAs under criterion B4")
-
-P_C4_KBAs_C = filter(kba, str_detect(Criteria,"C")) %>%
-  st_faster_union() %>%
-  mutate(Type = "Potential", Feature = "KBAs under criterion C")
-
-toc()
-
-cat("saving...")
-
-# criterion 1
-st_save(sf=L_C1_KBAs_A1ae, filename="L_C1_KBAs_A1ae_polys.shp", outpath=output_path)
-st_save(sf=P_C1_KBAs_A1b, filename="P_C1_KBAs_A1b_polys.shp", outpath=output_path)
-st_save(sf=P_C1_KBAs_E, filename="P_C1_KBAs_E_polys.shp", outpath=output_path)
-
-# criterion 2
-st_save(sf=L_C2_KBAs_B1, filename="L_C2_KBAs_B1_polys.shp", outpath=output_path)
-
-# criterion 3
-st_save(sf=L_C3_KBAs_D1a, filename="L_C3_KBAs_D1a_polys.shp", outpath=output_path)
-st_save(sf=P_C3_KBAs_D1b, filename="P_C3_KBAs_D1b_polys.shp", outpath=output_path)
-st_save(sf=L_C3_KBAs_D2, filename="L_C3_KBAs_D2_polys.shp", outpath=output_path)
-st_save(sf=P_C3_KBAs_D3, filename="P_C3_KBAs_D3_polys.shp", outpath=output_path)
-
-# criterion 4
-st_save(sf=L_C4_KBAs_A2a, filename="L_C4_KBAs_A2a_polys.shp", outpath=output_path)
-st_save(sf=P_C4_KBAs_A2b, filename="P_C4_KBAs_A2b_polys.shp", outpath=output_path)
-st_save(sf=P_C4_KBAs_B4, filename="P_C4_KBAs_B4_polys.shp", outpath=output_path)
-st_save(sf=P_C4_KBAs_C, filename="P_C4_KBAs_C_polys.shp", outpath=output_path)
-
-cat("done\n")
+# cat("kbas...")
+# 
+# tic("kbas fix and union")
+# kba_polys = filter(kba_aze_iba_polys, KbaStatus == "confirmed") %>%
+#   dplyr::select(Criteria) %>%
+#   fix_sf()
+# 
+# kba_pts = filter(kba_aze_iba_pts, kbastatus == "confirmed") %>%
+#   mutate(sitarea = as.numeric(sitarea)) %>%
+#   drop_na(sitarea)
+# 
+# kba_pts_buff = st_buffer_antimeridian(kba_pts, dist = sqrt((kba_pts$sitarea*10000)/pi), max_cells=5000) %>%
+#   fix_sf() %>%
+#   select(Criteria)
+# 
+# kba = bind_rows(kba_polys,kba_pts_buff)
+# 
+# L_C1_KBAs_A1ae = filter(kba, str_detect(Criteria,"A1a|A1e")) %>%
+#   st_faster_union() %>%
+#   mutate(Type = "Likely", Feature = "KBAs under criteria A1a and A1e")
+# 
+# P_C1_KBAs_A1b = filter(kba, str_detect(Criteria,"A1b")) %>%
+#   st_faster_union() %>%
+#   mutate(Type = "Potential", Feature = "KBAs under criterion A1b")
+# 
+# P_C1_KBAs_E = filter(kba, str_detect(Criteria,"E")) %>%
+#  st_faster_union() %>%
+#  mutate(Type = "Potential", Feature = "KBAs under criterion E")
+# 
+# L_C2_KBAs_B1 = filter(kba, str_detect(Criteria,"B1")) %>%
+#   st_faster_union() %>%
+#   mutate(Type = "Likely", Feature = "KBAs under criterion B1")
+# 
+# L_C3_KBAs_D1a = filter(kba, str_detect(Criteria,"D1a")) %>%
+#   st_faster_union() %>%
+#   mutate(Type = "Likely", Feature = "KBAs under criterion D1a")
+# 
+# P_C3_KBAs_D1b = filter(kba, str_detect(Criteria,"D1b")) %>%
+#   st_faster_union() %>%
+#   mutate(Type = "Potential", Feature = "KBAs under criterion D1b")
+# 
+# L_C3_KBAs_D2 = filter(kba, str_detect(Criteria,"D2")) %>%
+#   st_faster_union() %>%
+#   mutate(Type = "Likely", Feature = "KBAs under criterion D2")
+# 
+# P_C3_KBAs_D3 = filter(kba, str_detect(Criteria,"D3")) %>%
+#   st_faster_union() %>%
+#   mutate(Type = "Potential", Feature = "KBAs under criterion D3")
+# 
+# L_C4_KBAs_A2a = filter(kba, str_detect(Criteria,"A2a")) %>%
+#  st_faster_union() %>%
+#  mutate(Type = "Likely", Feature = "KBAs under criterion A2a")
+# 
+# P_C4_KBAs_A2b = filter(kba, str_detect(Criteria,"A2b")) %>%
+#   st_faster_union() %>%
+#   mutate(Type = "Potential", Feature = "KBAs under criterion A2b")
+# 
+# P_C4_KBAs_B4 = filter(kba, str_detect(Criteria,"B4")) %>%
+#   st_faster_union() %>%
+#   mutate(Type = "Potential", Feature = "KBAs under criterion B4")
+# 
+# P_C4_KBAs_C = filter(kba, str_detect(Criteria,"C")) %>%
+#   st_faster_union() %>%
+#   mutate(Type = "Potential", Feature = "KBAs under criterion C")
+# 
+# toc()
+# 
+# cat("saving...")
+# 
+# # criterion 1
+# st_save(sf=L_C1_KBAs_A1ae, filename="L_C1_KBAs_A1ae_polys.shp", outpath=output_path)
+# st_save(sf=P_C1_KBAs_A1b, filename="P_C1_KBAs_A1b_polys.shp", outpath=output_path)
+# st_save(sf=P_C1_KBAs_E, filename="P_C1_KBAs_E_polys.shp", outpath=output_path)
+# 
+# # criterion 2
+# st_save(sf=L_C2_KBAs_B1, filename="L_C2_KBAs_B1_polys.shp", outpath=output_path)
+# 
+# # criterion 3
+# st_save(sf=L_C3_KBAs_D1a, filename="L_C3_KBAs_D1a_polys.shp", outpath=output_path)
+# st_save(sf=P_C3_KBAs_D1b, filename="P_C3_KBAs_D1b_polys.shp", outpath=output_path)
+# st_save(sf=L_C3_KBAs_D2, filename="L_C3_KBAs_D2_polys.shp", outpath=output_path)
+# st_save(sf=P_C3_KBAs_D3, filename="P_C3_KBAs_D3_polys.shp", outpath=output_path)
+# 
+# # criterion 4
+# st_save(sf=L_C4_KBAs_A2a, filename="L_C4_KBAs_A2a_polys.shp", outpath=output_path)
+# st_save(sf=P_C4_KBAs_A2b, filename="P_C4_KBAs_A2b_polys.shp", outpath=output_path)
+# st_save(sf=P_C4_KBAs_B4, filename="P_C4_KBAs_B4_polys.shp", outpath=output_path)
+# st_save(sf=P_C4_KBAs_C, filename="P_C4_KBAs_C_polys.shp", outpath=output_path)
+# 
+# cat("done\n")
 
 ################################################################
 #### AZEs (POLYGON) ############################################
 ################################################################
 
-cat("azes...")
-
-tic("azes fix and union")
-aze_polys = filter(kba_aze_iba_polys, AzeStatus == "confirmed") %>%
-  fix_sf() %>%
-  dplyr::select(last_col())
-
-aze_pts = filter(kba_aze_iba_pts, AZEStatus == "confirmed") %>% #error in dataset
-  mutate(sitarea = as.numeric(sitarea)) %>%
-  drop_na(sitarea) %>%
-  dplyr::select(last_col())
-
-aze_pts_buff = st_buffer_antimeridian(aze_pts, dist = sqrt((aze_pts$sitarea*10000)/pi), max_cells=5000) %>%
-  fix_sf()
-
-L_C1_C2_C3_AZEs = bind_rows(aze_polys,aze_pts_buff) %>%
-  st_faster_union() %>%
-  mutate(Type = "Likely", Feature = "Alliance for Zero Extinction Sites")
-toc()
-
-cat("saving...")
-
-st_save(sf=L_C1_C2_C3_AZEs, filename="L_C1_C2_C3_AZEs_polys.shp", outpath=output_path)
-
-cat("done\n")
+# cat("azes...")
+# 
+# tic("azes fix and union")
+# aze_polys = filter(kba_aze_iba_polys, AzeStatus == "confirmed") %>%
+#   fix_sf() %>%
+#   dplyr::select(last_col())
+# 
+# aze_pts = filter(kba_aze_iba_pts, azestatus == "confirmed") %>% #error in dataset
+#   mutate(sitarea = as.numeric(sitarea)) %>%
+#   drop_na(sitarea) %>%
+#   dplyr::select(sitarea,last_col())
+# 
+# aze_pts_buff = st_buffer_antimeridian(aze_pts, dist = sqrt((aze_pts$sitarea*10000)/pi), max_cells=5000) %>%
+#   fix_sf() %>% 
+#   dplyr::select(-sitarea)
+# 
+# L_C1_C2_C3_AZEs = bind_rows(aze_polys,aze_pts_buff) %>%
+#   st_faster_union() %>%
+#   mutate(Type = "Likely", Feature = "Alliance for Zero Extinction Sites")
+# toc()
+# 
+# cat("saving...")
+# 
+# st_save(sf=L_C1_C2_C3_AZEs, filename="L_C1_C2_C3_AZEs_polys.shp", outpath=output_path)
+# 
+# cat("done\n")
 
 ################################################################
 #### IBAs (POLYGON) ############################################
 ################################################################
 
-cat("ibas...")
-
-tic("ibas fix and union")
-iba_polys = filter(kba_aze_iba_polys, IbaStatus == "confirmed") %>%
-  dplyr::select(Criteria) %>%
-  fix_sf()
-
-iba_pts = filter(kba_aze_iba_pts, IbaStatus == "confirmed") %>%
-  mutate(sitarea = as.numeric(sitarea)) %>%
-  drop_na(sitarea)
-
-iba_pts_buff = st_buffer_antimeridian(iba_pts, dist = sqrt((iba_pts$sitarea*10000)/pi), max_cells=5000) %>%
-  fix_sf() %>%
-  select(Criteria)
-
-iba = bind_rows(iba_polys,iba_pts_buff)
-
-L_C1_IBAs_A1 = filter(iba, str_detect(Criteria,"A1")) %>%
-  st_faster_union() %>%
-  mutate(Type = "Likely", Feature = "IBAs under criterion A1")
-
-P_C1_IBAs_B1b = filter(iba, str_detect(Criteria,"B1b")) %>%
-  st_faster_union() %>%
-  mutate(Type = "Potential", Feature = "IBAs under criterion B1b")
-
-P_C2_IBAs_A2 = filter(iba, str_detect(Criteria,"A2")) %>%
-  st_faster_union() %>%
-  mutate(Type = "Potential", Feature = "IBAs under criterion A2")
-
-L_C3_IBAs_A4 = filter(iba, str_detect(Criteria,"A4")) %>%
-  st_faster_union() %>%
-  mutate(Type = "Likely", Feature = "IBAs under criterion A4")
-
-P_C4_IBAs_A3 = filter(iba, str_detect(Criteria,"A3")) %>%
-  st_faster_union() %>%
-  mutate(Type = "Potential", Feature = "IBAs under criterion A3")
-
-toc()
-
-cat("saving...")
-
-st_save(sf=L_C1_IBAs_A1, filename="L_C1_IBAs_A1_polys.shp", outpath=output_path)
-st_save(sf=P_C1_IBAs_B1b, filename="P_C1_IBAs_B1b_polys.shp", outpath=output_path)
-st_save(sf=P_C2_IBAs_A2, filename="P_C2_IBAs_A2_polys.shp", outpath=output_path)
-st_save(sf=L_C3_IBAs_A4, filename="L_C3_IBAs_A4_polys.shp", outpath=output_path)
-st_save(sf=P_C4_IBAs_A3, filename="P_C4_IBAs_A3_polys.shp", outpath=output_path)
-
-cat("done\n")
+# cat("ibas...")
+# 
+# tic("ibas fix and union")
+# iba_polys = st_read(paste0(data_path,"IBAsGlobal_2023_September_02/IBAsGlobal_2023_September_POL_02.shp"), quiet=TRUE) %>%
+#   dplyr::select(SitRecID) %>%
+#   fix_sf()
+# 
+# iba_pts = st_read(paste0(data_path,"IBAsGlobal_2023_September_02/IBAsGlobal_2023_September_PNT_02.shp"), quiet=TRUE) %>%
+#   drop_na(SitArea)
+# 
+# iba_pts_buff = st_buffer_antimeridian(iba_pts, dist = sqrt((iba_pts$SitArea*10000)/pi), max_cells=5000) %>%
+#   fix_sf() %>%
+#   select(SitRecID)
+# 
+# iba = bind_rows(iba_polys,iba_pts_buff)
+# 
+# iba_crit_lookup = read.csv(paste0(data_path,"IBAsGlobal_2023_September_02/TriggerSpecies.csv"))
+# 
+# iba = left_join(iba,iba_crit_lookup,by="SitRecID")
+# 
+# L_C1_IBAs_A1 = filter(iba, str_detect(SitCriSumConfirmed,"A1")) %>%
+#   st_faster_union() %>%
+#   mutate(Type = "Likely", Feature = "IBAs under criterion A1")
+# 
+# P_C1_IBAs_B1b = filter(iba, str_detect(SitCriSumConfirmed,"B1b")) %>%
+#   st_faster_union() %>%
+#   mutate(Type = "Potential", Feature = "IBAs under criterion B1b")
+# 
+# P_C2_IBAs_A2 = filter(iba, str_detect(SitCriSumConfirmed,"A2")) %>%
+#   st_faster_union() %>%
+#   mutate(Type = "Potential", Feature = "IBAs under criterion A2")
+# 
+# L_C3_IBAs_A4 = filter(iba, str_detect(SitCriSumConfirmed,"A4")) %>%
+#   st_faster_union() %>%
+#   mutate(Type = "Likely", Feature = "IBAs under criterion A4")
+# 
+# P_C4_IBAs_A3 = filter(iba, str_detect(SitCriSumConfirmed,"A3")) %>%
+#   st_faster_union() %>%
+#   mutate(Type = "Potential", Feature = "IBAs under criterion A3")
+# 
+# toc()
+# 
+# cat("saving...")
+# 
+# st_save(sf=L_C1_IBAs_A1, filename="L_C1_IBAs_A1_polys.shp", outpath=output_path)
+# st_save(sf=P_C1_IBAs_B1b, filename="P_C1_IBAs_B1b_polys.shp", outpath=output_path)
+# st_save(sf=P_C2_IBAs_A2, filename="P_C2_IBAs_A2_polys.shp", outpath=output_path)
+# st_save(sf=L_C3_IBAs_A4, filename="L_C3_IBAs_A4_polys.shp", outpath=output_path)
+# st_save(sf=P_C4_IBAs_A3, filename="P_C4_IBAs_A3_polys.shp", outpath=output_path)
+# 
+# cat("done\n")
 
 ################################################################
 #### RAMSAR (POINT & POLY) #####################################
@@ -521,24 +525,24 @@ cat("done\n")
 #### WORLD HERITAGE SITES (POLYGON) ############################
 ################################################################
 
-# cat("world heritage sites...")
-# 
-# tic("world heritage sites fix and union")
-# whs = filter(wdpa_polys, STATUS %ni% c("Proposed","Established","Not Reported") &
-#                DESIG_ENG == "World Heritage Site (natural or mixed)" &
-#                DESIG_TYPE == "International") %>%
-#   fix_sf()
-# 
-# L_C4_WHS = whs %>%
-#   st_faster_union() %>%
-#   mutate(Type = "Likely", Feature = "Natural and mixed World Heritage sites")
-# toc()
-# 
-# cat("saving...")
-# 
-# st_save(sf=L_C4_WHS, filename="L_C4_WHS_polys.shp", outpath=output_path)
-# 
-# cat("done\n")
+cat("world heritage sites...")
+
+tic("world heritage sites fix and union")
+whs = filter(wdpa_polys, STATUS %ni% c("Proposed","Established","Not Reported") &
+               DESIG_ENG == "World Heritage Site (natural or mixed)" &
+               DESIG_TYPE == "International") %>%
+  fix_sf()
+
+L_C4_WHS = whs %>%
+  st_faster_union() %>%
+  mutate(Type = "Likely", Feature = "Natural and mixed World Heritage sites")
+toc()
+
+cat("saving...")
+
+st_save(sf=L_C4_WHS, filename="L_C4_WHS_polys.shp", outpath=output_path)
+
+cat("done\n")
 
 ################################################################
 #### SALTMARSH (POINT & POLY) ##################################

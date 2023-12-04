@@ -95,8 +95,6 @@ if(simple_analysis){
   likely_polys = vect(paste0(scratch_path,"likely_simpl.shp")) %>%
     terra::sort("Feature") %>%
     terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
-  likely_areas = data.frame(Feature=likely_polys$Feature,Area_polys_sqkm=expanse(likely_polys,unit="km")) %>%
-    mutate(Type="Likely", .before=1)
   toc()
   tic("reproject likely polygons to Mollweide")
   likely_polys = project(likely_polys,"ESRI:54009")
@@ -105,8 +103,6 @@ if(simple_analysis){
   likely_polys = vect(lapply(paste0(scratch_path,likely_polys_files),vect)) %>% 
     terra::sort("Feature") %>% 
     terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
-  likely_areas = data.frame(Feature=likely_polys$Feature,Area_polys_sqkm=expanse(likely_polys,unit="km")) %>%
-    mutate(Type="Likely", .before=1)
   likely_polys = project(likely_polys,"ESRI:54009")
   }
 
@@ -170,8 +166,6 @@ if(simple_analysis){
     terra::sort("Feature") %>%
     terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
   toc()
-  potential_areas = data.frame(Feature=potential_polys$Feature,Area_polys_sqkm=expanse(potential_polys,unit="km")) %>%
-    mutate(Type="Potential", .before=1)
   tic("reproject potential polygons to Mollweide")
   potential_polys = project(potential_polys,"ESRI:54009")
   toc()
@@ -179,8 +173,6 @@ if(simple_analysis){
   potential_polys = vect(lapply(paste0(scratch_path,potential_polys_files),vect)) %>% 
     terra::sort("Feature") %>% 
     terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
-  potential_areas = data.frame(Feature=potential_polys$Feature,Area_polys_sqkm=expanse(potential_polys,unit="km")) %>%
-    mutate(Type="Potential", .before=1)
   potential_polys = project(potential_polys,"ESRI:54009")
   }
 toc()
@@ -233,12 +225,6 @@ tic("combine likely and potential rasters")
 combined = c(rast(paste0(scratch_path,"potential_moll_sum.tif")),rast(paste0(scratch_path,"likely_moll_sum.tif")))
 app(combined, sum, filename=paste0(scratch_path,"likely_potential_moll_sum.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S"))
 toc()
-
-# save original vector areas
-cat("saving original vector areas to csv\n")
-bind_rows(likely_areas,potential_areas) %>% 
-  arrange(Feature) %>% 
-  write.csv(paste0(output_path,"CH_vector_areas.csv"),row.names=TRUE)
 
 ################################################################################
 # RAT SETUP ####################################################################   

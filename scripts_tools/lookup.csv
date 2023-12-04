@@ -6,7 +6,6 @@ L_COLDREEF,Likely,Cold water coral reefs - Observed occurence,0,0,0,1,1
 L_CRCRD,Likely,CR species under criterion D,1,0,0,0,0
 L_ENCRD,Likely,EN species under criterion D,1,0,0,0,0
 L_HYDRO,Likely,Hydrothermal Vents,0,1,0,0,1
-L_IBAA1,Likely,IBAs under criterion A1,1,0,0,0,0
 L_IMMAB2,Likely,IMMAs under criterion B2,0,0,1,0,0
 L_IFL,Likely,Intact Forest Landscapes,0,0,0,1,0
 L_IRREPL,Likely,Irreplaceable protected areas,0,0,0,1,0
@@ -45,3 +44,8 @@ P_SEAMOUNT,Potential,Seamounts,0,0,0,1,0
 P_DRYFOR,Potential,Tropical dry forest,0,0,0,1,0
 P_CLOUDFR,Potential,Tropical montane cloud forests,0,0,0,1,0
 P_VUCRD,Potential,VU species under criterion D2,1,0,0,0,0
+L_IBAA1,Likely,IBAs under criterion A1,1,0,0,0,0
+P_IBAB1B,Potential,IBAs under criterion B1b,1,0,0,0,0
+P_IBAA2,Potential,IBAs under criterion A2,0,1,0,0,0
+L_IBAA4,Likely,IBAs under criterion A4,0,0,1,0,0
+P_IBAA3,Potential,IBAs under criterion A3,0,0,0,1,0
