@@ -1,0 +1,194 @@
+---
+title: "An update to the global critical habitat screening layer"
+author:
+  - name: Sebastian Dunnett
+    orcid: 0000-0002-4238-2508
+    email: sebastian.dunnett@unep-wcmc.org
+    affiliations:
+      - name: United Nations Environment Programme World Conservation Monitoring Centre
+        address: 219 Huntingdon Road
+        city: Cambridge
+        postal-code: CB3 0DL
+        id: unep-wcmc
+  - name: Alfred Muge
+    affiliations:
+      - ref: unep-wcmc
+  - name: Alex Ross
+    affiliations:
+      - ref: unep-wcmc
+  - name: Joe Turner
+    affiliations:
+      - name: The Biodiversity Consultancy
+        address: 3E King's Parade
+        city: Cambridge
+        postal-code: CB2 1SJ
+        id: tbc
+  - name: Neil Burgess
+    affiliations:
+      - ref: unep-wcmc
+  - name: Matt Jones
+    affiliations:
+      - ref: unep-wcmc
+format: html
+---
+
+```{r setup}
+#| include: false
+# Install packages (if required)
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse,terra,sf,giscoR,scico,tmap)
+terraOptions(progress=0,memfrac=0.9)
+```
+
+```{r import-rasters}
+#| include: false
+
+raster_WGS <- rast(res=1/12)
+
+raster_eq <- project(raster_WGS,"EPSG:8857",res=10000)
+
+sphere <- st_graticule(ndiscr = 10000, margin = 10e-6) %>%
+  st_transform(crs = st_crs("ESRI:54009")) %>%
+  st_convex_hull() %>%
+  summarise(geometry = st_union(geometry)) |>
+  st_buffer(1000) |> st_union() |> st_buffer(-1000) |>
+  st_transform("EPSG:8857")
+
+ch2023 = rast("../../outputs/Basic_Critical_Habitat_Raster_WGS.tif") |>
+  aggregate(fact=10,fun="modal") |> project(raster_eq,method="near",mask=TRUE)
+levels(ch2023) = data.frame(id=c(0,1,10), ch2023=c("U","P","L"))
+
+ch2023_1km = rast("../../outputs/Basic_Critical_Habitat_Raster_Moll.tif")
+levels(ch2023_1km) = data.frame(id=c(0,1,10), ch2023=c("U","P","L"))
+
+ch2018 = rast("../../crhab_lpu") |>
+  classify(rbind(c(1,0),c(2,10),c(3,1)))
+
+crs(ch2018) = "ESRI:102100"
+
+ch2018 = project(ch2018, raster_eq, method="near", mask=TRUE)
+levels(ch2018) = data.frame(id=c(0,1,10), ch2018=c("Unclassified","Potential","Likely"))
+
+ch_combined = c(ch2018,ch2023)
+names(ch_combined) = c("2018","2023")
+
+wrld = st_read("../../raw_data/UN map borders/Countries_Combined_with_associated_territories.json",quiet=TRUE) |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+```
+
+## Introduction
+
+The **International Finance Corporation (IFC)**, a member of the World Bank Group, recognizes the importance of protecting critical habitat as part of its commitment to sustainable development and environmental stewardship. Critical habitat refers to the areas that are essential for the survival and well-being of species and ecosystems.
+
+## Why Critical Habitat Matters
+
+Critical habitat is vital for various reasons:
+
+- **Biodiversity Conservation:** It provides a home for diverse species of plants, animals, and microorganisms, preserving the richness of ecosystems.
+
+- **Ecosystem Services:** Healthy habitats offer essential services like clean water, air purification, pollination, and carbon sequestration, benefiting both nature and people.
+
+- **Resilience to Climate Change:** Robust ecosystems in critical habitats can enhance resilience to climate change impacts, such as extreme weather events and rising temperatures.
+
+- **Cultural Significance:** Many critical habitats hold cultural and spiritual significance for indigenous communities and local populations.
+
+## IFC's Commitment to Protect Critical Habitat
+
+IFC has established guidelines and principles to ensure that projects it supports or finances do not harm critical habitat. These guidelines include:
+
+1. **Identification and Assessment:** IFC requires project proponents to identify and assess critical habitat in the project area. This assessment helps in understanding the potential impacts and risks associated with the project.
+
+2. **Avoidance and Mitigation:** Whenever possible, projects should avoid critical habitat. If avoidance is not feasible, mitigation measures must be implemented to minimize harm and maintain ecological integrity.
+
+3. **No-Go Areas:** In some cases, projects may not proceed if they are likely to have significant adverse impacts on critical habitat that cannot be adequately mitigated.
+
+4. **Stakeholder Engagement:** IFC emphasizes the importance of engaging with local communities and indigenous peoples to ensure their knowledge and concerns are taken into account during project planning and implementation.
+
+5. **Biodiversity Conservation Plans:** Projects should develop and implement biodiversity conservation plans that aim to protect and restore critical habitat and biodiversity in the project area.
+
+## Reporting and Accountability
+
+IFC requires project proponents to regularly report on their compliance with critical habitat guidelines. Non-compliance can result in the suspension or cancellation of financial support.
+
+## Conclusion
+
+Protecting critical habitat is not only a moral imperative but also crucial for the long-term sustainability of our planet. IFC's commitment to critical habitat guidelines demonstrates its dedication to balancing economic development with environmental protection, promoting a more sustainable and equitable future.
+
+For more detailed information on IFC's critical habitat guidelines and specific requirements, please refer to the official IFC documentation.
+
+```{r}
+#| eval: false
+par(mfrow=c(2,2))
+lapply(scico_palette_names(),function(x){
+    pal = scico(palette=x,n=3)
+    plot(ch, col=c(pal[1],pal[3],pal[2]), main=x, sort=TRUE)
+    pal = rev(pal)
+    plot(ch, col=c(pal[1],pal[3],pal[2]), main=paste0(x,": rev"), sort=TRUE)
+})
+```
+
+```{r ch-plot-2023-10km}
+#| echo: false
+#| fig-cap: Global distribution of critical habitat at 1km resolution (2023). Data aggregated to 10km for visibility.
+#| fig-width: 8
+#| fig-height: 5
+pal = rev(scico(palette="acton", n=3))
+plot(ch2023,
+     col=pal, box=FALSE, axes=FALSE,
+     fun=function()lines(wrld))
+```
+
+```{r ch-plot-2023-1km}
+#| echo: false
+#| fig-cap: Global distribution of critical habitat at 1km resolution (2023).
+#| fig-width: 8
+#| fig-height: 5
+pal = rev(scico(palette="acton", n=3))
+plot(ch2023_1km,
+     col=pal, box=FALSE, axes=FALSE,
+     fun=function()lines(wrld))
+```
+
+```{r ch-plot-2018}
+#| echo: false
+#| fig-cap: Global distribution of critical habitat at 1km resolution (2018). Data aggregated to 10km for visibility.
+#| fig-width: 8
+#| fig-height: 5
+pal = rev(scico(palette="acton", n=3))
+plot(ch2018,
+     col=pal, box=FALSE, axes=FALSE, legend=FALSE,
+     fun=function()lines(wrld))
+tm_shape(ch2018) +
+  tm_raster(style="cat", palette=pal)
+
+```
+
+```{r ch-changes}
+#| fig-cap: Changes in Critical Habitat coverage.
+#| fig-width: 8
+#| fig-height: 5
+#| echo: false
+
+ch_changes = c(ch2018==1 & ch2023==10,
+            ch2018==0 & ch2023==1,
+            ch2018==0 & ch2023==10,
+            ch2018==10 & ch2023==1,
+            ch2018==1 & ch2023==0,
+            ch2018==10 & ch2023==0)
+
+ch_upgrade = ch_changes[[1]]
+ch_addition = app(ch_changes[[2:3]],any)
+ch_downgrade = ch_changes[[4]]
+ch_removal = app(ch_changes[[5:6]],any)
+
+ch_changes_out = c(ch_upgrade,ch_addition,ch_downgrade,ch_removal)*c(1,2,-1,-2)
+ch_changes_out = app(ch_changes_out,sum)
+
+levels(ch_changes_out) = data.frame(id=-2:2, Change=c("Removal","Downgrade","No change","Upgrade","Addition"))
+
+plot(ch_changes_out, box=FALSE, axes=FALSE, legend=TRUE,
+     fun=function()lines(wrld), col=scico(palette="bam",n=5))
+```

@@ -11,7 +11,7 @@ docs/
 info/
 kba-2022-10.zip
 mapdocs/
-outputs/
+outputs/*
 !outputs/paper/
 outputs/paper/ch_paper_files/
 outputs/paper/ch_paper_supp_cache/
