@@ -72,11 +72,15 @@ ch_areas = expanse(c(ch2023,ch2018,ch_changes_out),unit="km",zones=wrldr,byValue
   select(-layer,-value) |>
   pivot_wider(id_cols=c("zone","total_country_area_km2"),names_from="name",values_from="area")
 
+ch_areas = left_join(st_drop_geometry(wrld_eez),ch_areas,by=c("objectid"="zone"))
+
 ch_areas_pct = ch_areas |>
-  mutate(across(3:13, ~ .x/total_country_area_km2))
+  mutate(across("2023_Unclassified":"ch_Addition", ~ .x/total_country_area_km2))
 
 write.csv(ch_areas,"O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/outputs/paper/wrld_ch_areas.csv", row.names = FALSE)
 write.csv(ch_areas_pct,"O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/outputs/paper/wrld_ch_areas_pct.csv", row.names = FALSE)
+
+writeRaster(ch_changes_out,"O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/outputs/paper/changes_2018_2023.tif")
 
 ch2023_drill_down = rast("outputs/Critical_Habitat_Drill_Down_WGS.tif")
 activeCat(ch2023_drill_down) <- "VALUE"
@@ -144,3 +148,8 @@ ch2023_drill_down_stack = mask(ch2023_drill_down,ch2023_binary,maskvalue=0)[[2:3
 names(ch2023_drill_down_stack) <- c("Potential","Likely")
 
 features_count_stack = classify(ch2023_drill_down_stack,features_count)
+
+write.csv(df,"O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/outputs/paper/drill_down_change_areas.csv", row.names = FALSE)
+
+writeRaster(features_count_stack[[1]],"O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/outputs/paper/potential_nfeatures.tif")
+writeRaster(features_count_stack[[2]],"O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/outputs/paper/likely_nfeatures.tif")

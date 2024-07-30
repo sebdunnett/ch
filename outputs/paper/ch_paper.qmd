@@ -34,10 +34,14 @@ format: html
 
 ```{r setup}
 #| include: false
+
 # Install packages (if required)
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse,terra,sf,giscoR,scico,tmap)
+pacman::p_load(tidyverse,terra,sf,giscoR,scico,tmap,cowplot)
 terraOptions(progress=0,memfrac=0.9)
+
+ch_pal = c("#8400a8","#ff00c5","#e8e8e8")
+
 ```
 
 ```{r import-rasters}
@@ -54,28 +58,65 @@ sphere <- st_graticule(ndiscr = 10000, margin = 10e-6) %>%
   st_buffer(1000) |> st_union() |> st_buffer(-1000) |>
   st_transform("EPSG:8857")
 
-ch2023 = rast("../../outputs/Basic_Critical_Habitat_Raster_WGS.tif") |>
-  aggregate(fact=10,fun="modal") |> project(raster_eq,method="near",mask=TRUE)
-levels(ch2023) = data.frame(id=c(0,1,10), ch2023=c("U","P","L"))
+ch2023_1km = rast("../../outputs/Basic_Critical_Habitat_Raster_WGS.tif")
 
-ch2023_1km = rast("../../outputs/Basic_Critical_Habitat_Raster_Moll.tif")
-levels(ch2023_1km) = data.frame(id=c(0,1,10), ch2023=c("U","P","L"))
+ch2023 = rast("../../outputs/paper/ch2023_10km.tif") |>
+project(raster_eq,method="near",mask=TRUE)
+levels(ch2023) = data.frame(id=c(0,1,10), ch2023=c("Unclassified","Potential Critical Habitat","Likely Critical Habitat"))
 
-ch2018 = rast("../../crhab_lpu") |>
-  classify(rbind(c(1,0),c(2,10),c(3,1)))
-
-crs(ch2018) = "ESRI:102100"
-
-ch2018 = project(ch2018, raster_eq, method="near", mask=TRUE)
-levels(ch2018) = data.frame(id=c(0,1,10), ch2018=c("Unclassified","Potential","Likely"))
+ch2018 = rast("../../outputs/paper/ch2018_10km.tif") |>
+project(raster_eq,method="near",mask=TRUE)
+levels(ch2018) = data.frame(id=c(0,1,10), ch2018=c("Unclassified","Potential Critical Habitat","Likely Critical Habitat"))
 
 ch_combined = c(ch2018,ch2023)
 names(ch_combined) = c("2018","2023")
+
+ch_combined_df = as.data.frame(ch_combined,xy=TRUE) |>
+  pivot_longer(3:4,names_to="year",values_to="ch") |>
+  mutate(year=factor(year,levels=c("2018","2023")),
+         ch=factor(ch,levels=c("Likely Critical Habitat","Potential Critical Habitat","Unclassified")))
+  
+ch_changes = rast("../../outputs/paper/changes_2018_2023.tif") |>
+  aggregate(fact=10,fun="modal") |>
+  project(raster_eq,method="near",mask=TRUE)
+
+ch_changes_df = as.data.frame(ch_changes,xy=TRUE) |>
+  rename("change"=3) |>
+  mutate(change=case_match(change,
+                           -2 ~ "Removal",
+                           -1 ~ "Downgrade",
+                           0 ~ "No change",
+                           1 ~ "Upgrade",
+                           2 ~ "Addition") |>
+           factor(levels=c("Removal","Downgrade","No change","Upgrade","Addition")))
 
 wrld = st_read("../../raw_data/UN map borders/Countries_Combined_with_associated_territories.json",quiet=TRUE) |>
   st_wrap_dateline() |>
   st_transform("EPSG:8857") |>
   st_simplify(dTolerance=1000)
+
+```
+
+```{r}
+#| fig-width: 8
+#| fig-height: 7
+
+a = ggplot(ch_combined_df) +
+  geom_raster(aes(x=x,y=y,fill=ch)) +
+  geom_sf(data=st_transform(gisco_coastallines,"EPSG:8857"),fill=NA) +
+  theme_void() +
+  facet_wrap(~year) +
+  scale_fill_manual(values=ch_pal,name=NULL) + 
+  theme(legend.position="bottom")
+
+b = ggplot(ch_changes_df) +
+  geom_raster(aes(x=x,y=y,fill=factor(change))) +
+  geom_sf(data=st_transform(gisco_coastallines,"EPSG:8857"),fill=NA) +
+  theme_void() +
+  scale_fill_scico_d(palette="bam",name=NULL) +
+  theme(legend.position="bottom")
+
+plot_grid(a,b,rel_heights=c(0.3,0.7),nrow=2)
 
 ```
 
@@ -118,77 +159,3 @@ IFC requires project proponents to regularly report on their compliance with cri
 Protecting critical habitat is not only a moral imperative but also crucial for the long-term sustainability of our planet. IFC's commitment to critical habitat guidelines demonstrates its dedication to balancing economic development with environmental protection, promoting a more sustainable and equitable future.
 
 For more detailed information on IFC's critical habitat guidelines and specific requirements, please refer to the official IFC documentation.
-
-```{r}
-#| eval: false
-par(mfrow=c(2,2))
-lapply(scico_palette_names(),function(x){
-    pal = scico(palette=x,n=3)
-    plot(ch, col=c(pal[1],pal[3],pal[2]), main=x, sort=TRUE)
-    pal = rev(pal)
-    plot(ch, col=c(pal[1],pal[3],pal[2]), main=paste0(x,": rev"), sort=TRUE)
-})
-```
-
-```{r ch-plot-2023-10km}
-#| echo: false
-#| fig-cap: Global distribution of critical habitat at 1km resolution (2023). Data aggregated to 10km for visibility.
-#| fig-width: 8
-#| fig-height: 5
-pal = rev(scico(palette="acton", n=3))
-plot(ch2023,
-     col=pal, box=FALSE, axes=FALSE,
-     fun=function()lines(wrld))
-```
-
-```{r ch-plot-2023-1km}
-#| echo: false
-#| fig-cap: Global distribution of critical habitat at 1km resolution (2023).
-#| fig-width: 8
-#| fig-height: 5
-pal = rev(scico(palette="acton", n=3))
-plot(ch2023_1km,
-     col=pal, box=FALSE, axes=FALSE,
-     fun=function()lines(wrld))
-```
-
-```{r ch-plot-2018}
-#| echo: false
-#| fig-cap: Global distribution of critical habitat at 1km resolution (2018). Data aggregated to 10km for visibility.
-#| fig-width: 8
-#| fig-height: 5
-pal = rev(scico(palette="acton", n=3))
-plot(ch2018,
-     col=pal, box=FALSE, axes=FALSE, legend=FALSE,
-     fun=function()lines(wrld))
-tm_shape(ch2018) +
-  tm_raster(style="cat", palette=pal)
-
-```
-
-```{r ch-changes}
-#| fig-cap: Changes in Critical Habitat coverage.
-#| fig-width: 8
-#| fig-height: 5
-#| echo: false
-
-ch_changes = c(ch2018==1 & ch2023==10,
-            ch2018==0 & ch2023==1,
-            ch2018==0 & ch2023==10,
-            ch2018==10 & ch2023==1,
-            ch2018==1 & ch2023==0,
-            ch2018==10 & ch2023==0)
-
-ch_upgrade = ch_changes[[1]]
-ch_addition = app(ch_changes[[2:3]],any)
-ch_downgrade = ch_changes[[4]]
-ch_removal = app(ch_changes[[5:6]],any)
-
-ch_changes_out = c(ch_upgrade,ch_addition,ch_downgrade,ch_removal)*c(1,2,-1,-2)
-ch_changes_out = app(ch_changes_out,sum)
-
-levels(ch_changes_out) = data.frame(id=-2:2, Change=c("Removal","Downgrade","No change","Upgrade","Addition"))
-
-plot(ch_changes_out, box=FALSE, axes=FALSE, legend=TRUE,
-     fun=function()lines(wrld), col=scico(palette="bam",n=5))
-```

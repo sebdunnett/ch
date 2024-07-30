@@ -153,6 +153,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>a <span class="ot">=</span> <span class="fu">ggplot</span>(ch_combined_df) <span class="sc">+</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>(<span class="fu">aes</span>(<span class="at">x=</span>x,<span class="at">y=</span>y,<span class="at">fill=</span>ch)) <span class="sc">+</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data=</span><span class="fu">st_transform</span>(gisco_coastallines,<span class="st">"EPSG:8857"</span>),<span class="at">fill=</span><span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>year) <span class="sc">+</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values=</span>ch_pal,<span class="at">name=</span><span class="cn">NULL</span>) <span class="sc">+</span> </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position=</span><span class="st">"bottom"</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>b <span class="ot">=</span> <span class="fu">ggplot</span>(ch_changes_df) <span class="sc">+</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>(<span class="fu">aes</span>(<span class="at">x=</span>x,<span class="at">y=</span>y,<span class="at">fill=</span><span class="fu">factor</span>(change))) <span class="sc">+</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data=</span><span class="fu">st_transform</span>(gisco_coastallines,<span class="st">"EPSG:8857"</span>),<span class="at">fill=</span><span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_scico_d</span>(<span class="at">palette=</span><span class="st">"bam"</span>,<span class="at">name=</span><span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position=</span><span class="st">"bottom"</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_grid</span>(a,b,<span class="at">rel_heights=</span><span class="fu">c</span>(<span class="fl">0.3</span>,<span class="fl">0.7</span>),<span class="at">nrow=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="ch_paper_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
 <p>The <strong>International Finance Corporation (IFC)</strong>, a member of the World Bank Group, recognizes the importance of protecting critical habitat as part of its commitment to sustainable development and environmental stewardship. Critical habitat refers to the areas that are essential for the survival and well-being of species and ecosystems.</p>
@@ -186,66 +207,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
 <p>Protecting critical habitat is not only a moral imperative but also crucial for the long-term sustainability of our planet. IFC’s commitment to critical habitat guidelines demonstrates its dedication to balancing economic development with environmental protection, promoting a more sustainable and equitable future.</p>
 <p>For more detailed information on IFC’s critical habitat guidelines and specific requirements, please refer to the official IFC documentation.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">2</span>))</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">lapply</span>(<span class="fu">scico_palette_names</span>(),<span class="cf">function</span>(x){</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    pal <span class="ot">=</span> <span class="fu">scico</span>(<span class="at">palette=</span>x,<span class="at">n=</span><span class="dv">3</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(ch, <span class="at">col=</span><span class="fu">c</span>(pal[<span class="dv">1</span>],pal[<span class="dv">3</span>],pal[<span class="dv">2</span>]), <span class="at">main=</span>x, <span class="at">sort=</span><span class="cn">TRUE</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    pal <span class="ot">=</span> <span class="fu">rev</span>(pal)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(ch, <span class="at">col=</span><span class="fu">c</span>(pal[<span class="dv">1</span>],pal[<span class="dv">3</span>],pal[<span class="dv">2</span>]), <span class="at">main=</span><span class="fu">paste0</span>(x,<span class="st">": rev"</span>), <span class="at">sort=</span><span class="cn">TRUE</span>)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="ch_paper_files/figure-html/ch-plot-2023-10km-1.png" class="img-fluid figure-img" width="768"></p>
-<figcaption class="figure-caption">Global distribution of critical habitat at 1km resolution (2023). Data aggregated to 10km for visibility.</figcaption>
-</figure>
-</div>
-</div>
-</div>
-<div class="cell">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="ch_paper_files/figure-html/ch-plot-2023-1km-1.png" class="img-fluid figure-img" width="768"></p>
-<figcaption class="figure-caption">Global distribution of critical habitat at 1km resolution (2023).</figcaption>
-</figure>
-</div>
-</div>
-</div>
-<div class="cell">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="ch_paper_files/figure-html/ch-plot-2018-1.png" class="img-fluid figure-img" width="768"></p>
-<figcaption class="figure-caption">Global distribution of critical habitat at 1km resolution (2018). Data aggregated to 10km for visibility.</figcaption>
-</figure>
-</div>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>stars object downsampled to 1433 by 698 cells. See tm_shape manual (argument raster.downsample)</code></pre>
-</div>
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="ch_paper_files/figure-html/ch-plot-2018-2.png" class="img-fluid figure-img" width="768"></p>
-<figcaption class="figure-caption">Global distribution of critical habitat at 1km resolution (2018). Data aggregated to 10km for visibility.</figcaption>
-</figure>
-</div>
-</div>
-</div>
-<div class="cell">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="ch_paper_files/figure-html/ch-changes-1.png" class="img-fluid figure-img" width="768"></p>
-<figcaption class="figure-caption">Changes in Critical Habitat coverage.</figcaption>
-</figure>
-</div>
-</div>
-</div>
 </section>
 
 </main>
