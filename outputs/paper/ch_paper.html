@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.3.450">
+<meta name="generator" content="quarto-1.3.433">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -26,41 +26,26 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-/* CSS for syntax highlighting */
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
 }
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
 }
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
 }
-</style>
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
 
 <script src="ch_paper_files/libs/clipboard/clipboard.min.js"></script>
@@ -73,6 +58,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="ch_paper_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="ch_paper_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="ch_paper_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+<script src="ch_paper_files/libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="ch_paper_files/libs/lightable-0.0.1/lightable.css" rel="stylesheet">
 
 
 </head>
@@ -150,66 +138,765 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     
   </div>
   
+<div>
+  <div class="abstract">
+    <div class="abstract-title">Abstract</div>
+    Critical Habitat has become an increasingly important concept used by the finance sector and businesses to identify areas of high biodiversity value. The International Finance Corporation (IFC) defines Critical Habitat in their highly influential Performance Standard 6 (PS6), requiring projects in Critical Habitat to achieve a net gain of biodiversity. Here we present a global screening layer of Critical Habitat in the terrestrial realm, derived from global spatial datasets covering the distributions of 12 biodiversity features aligned with guidance provided by the IFC. Each biodiversity feature is categorised as ‘likely’ or ‘potential’ Critical Habitat based on: 1. Alignment between the biodiversity feature and the IFC Critical Habitat definition; and 2. Suitability of the spatial resolution for indicating a feature’s presence on the ground. Following the initial screening process, Critical Habitat must then be assessed in-situ by a qualified assessor. This analysis indicates that a total of 10% and 5% of the global terrestrial environment can be considered as likely and potential Critical Habitat, respectively, while the remaining 85% did not overlap with any of the biodiversity features assessed and was classified as ‘unknown’. Likely Critical Habitat was determined principally by the occurrence of Key Biodiversity Areas and Protected Areas. Potential Critical Habitat was predominantly characterised by data representing highly threatened and unique ecosystems such as ever-wet tropical forests and tropical dry forests. The areas we identified as likely or potential Critical Habitat are based on the best available global-scale data for the terrestrial realm that is aligned with IFC’s Critical Habitat definition. Our results can help businesses screen potential development sites at the early project stage based on a range of biodiversity features. However, the study also demonstrates several important data gaps and highlights the need to incorporate new and improved global spatial datasets as they become available. Test = 2
+  </div>
+</div>
 
 </header>
 
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>a <span class="ot">=</span> <span class="fu">ggplot</span>(ch_combined_df) <span class="sc">+</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>(<span class="fu">aes</span>(<span class="at">x=</span>x,<span class="at">y=</span>y,<span class="at">fill=</span>ch)) <span class="sc">+</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data=</span><span class="fu">st_transform</span>(gisco_coastallines,<span class="st">"EPSG:8857"</span>),<span class="at">fill=</span><span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>year) <span class="sc">+</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values=</span>ch_pal,<span class="at">name=</span><span class="cn">NULL</span>) <span class="sc">+</span> </span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position=</span><span class="st">"bottom"</span>)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>b <span class="ot">=</span> <span class="fu">ggplot</span>(ch_changes_df) <span class="sc">+</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_raster</span>(<span class="fu">aes</span>(<span class="at">x=</span>x,<span class="at">y=</span>y,<span class="at">fill=</span><span class="fu">factor</span>(change))) <span class="sc">+</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data=</span><span class="fu">st_transform</span>(gisco_coastallines,<span class="st">"EPSG:8857"</span>),<span class="at">fill=</span><span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_scico_d</span>(<span class="at">palette=</span><span class="st">"bam"</span>,<span class="at">name=</span><span class="cn">NULL</span>) <span class="sc">+</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position=</span><span class="st">"bottom"</span>)</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_grid</span>(a,b,<span class="at">rel_heights=</span><span class="fu">c</span>(<span class="fl">0.3</span>,<span class="fl">0.7</span>),<span class="at">nrow=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<p><img src="ch_paper_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid" width="768"></p>
-</div>
-</div>
-<section id="introduction" class="level2">
-<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>The <strong>International Finance Corporation (IFC)</strong>, a member of the World Bank Group, recognizes the importance of protecting critical habitat as part of its commitment to sustainable development and environmental stewardship. Critical habitat refers to the areas that are essential for the survival and well-being of species and ecosystems.</p>
-</section>
-<section id="why-critical-habitat-matters" class="level2">
-<h2 class="anchored" data-anchor-id="why-critical-habitat-matters">Why Critical Habitat Matters</h2>
-<p>Critical habitat is vital for various reasons:</p>
-<ul>
-<li><p><strong>Biodiversity Conservation:</strong> It provides a home for diverse species of plants, animals, and microorganisms, preserving the richness of ecosystems.</p></li>
-<li><p><strong>Ecosystem Services:</strong> Healthy habitats offer essential services like clean water, air purification, pollination, and carbon sequestration, benefiting both nature and people.</p></li>
-<li><p><strong>Resilience to Climate Change:</strong> Robust ecosystems in critical habitats can enhance resilience to climate change impacts, such as extreme weather events and rising temperatures.</p></li>
-<li><p><strong>Cultural Significance:</strong> Many critical habitats hold cultural and spiritual significance for indigenous communities and local populations.</p></li>
-</ul>
-</section>
-<section id="ifcs-commitment-to-protect-critical-habitat" class="level2">
-<h2 class="anchored" data-anchor-id="ifcs-commitment-to-protect-critical-habitat">IFC’s Commitment to Protect Critical Habitat</h2>
-<p>IFC has established guidelines and principles to ensure that projects it supports or finances do not harm critical habitat. These guidelines include:</p>
+<section id="background-summary" class="level2">
+<h2 class="anchored" data-anchor-id="background-summary">Background &amp; Summary</h2>
+<p>The <strong>International Finance Corporation (IFC)</strong>, a member of the World Bank Group, recognizes the importance of protecting critical habitat as part of its commitment to sustainable development and environmental stewardship. Critical habitat refers to the areas that are essential for the survival and well-being of species and ecosystems <span class="citation" data-cites="brauneder2018">(<a href="#ref-brauneder2018" role="doc-biblioref">Brauneder et al. 2018</a>)</span>.</p>
 <ol type="1">
-<li><p><strong>Identification and Assessment:</strong> IFC requires project proponents to identify and assess critical habitat in the project area. This assessment helps in understanding the potential impacts and risks associated with the project.</p></li>
-<li><p><strong>Avoidance and Mitigation:</strong> Whenever possible, projects should avoid critical habitat. If avoidance is not feasible, mitigation measures must be implemented to minimize harm and maintain ecological integrity.</p></li>
-<li><p><strong>No-Go Areas:</strong> In some cases, projects may not proceed if they are likely to have significant adverse impacts on critical habitat that cannot be adequately mitigated.</p></li>
-<li><p><strong>Stakeholder Engagement:</strong> IFC emphasizes the importance of engaging with local communities and indigenous peoples to ensure their knowledge and concerns are taken into account during project planning and implementation.</p></li>
-<li><p><strong>Biodiversity Conservation Plans:</strong> Projects should develop and implement biodiversity conservation plans that aim to protect and restore critical habitat and biodiversity in the project area.</p></li>
+<li>Critically Endangered or Endangered species</li>
+<li>Endemic and/or restricted-range species</li>
+<li>Globally significant concentration of migratory or congregatory species</li>
+<li>Highly threatened and/or unique ecosystems</li>
+<li>Key evolutionary processes</li>
 </ol>
 </section>
-<section id="reporting-and-accountability" class="level2">
-<h2 class="anchored" data-anchor-id="reporting-and-accountability">Reporting and Accountability</h2>
-<p>IFC requires project proponents to regularly report on their compliance with critical habitat guidelines. Non-compliance can result in the suspension or cancellation of financial support.</p>
+<section id="methods" class="level2">
+<h2 class="anchored" data-anchor-id="methods">Methods</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="ch_paper_files/figure-html/class-grid-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
 </section>
-<section id="conclusion" class="level2">
-<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
-<p>Protecting critical habitat is not only a moral imperative but also crucial for the long-term sustainability of our planet. IFC’s commitment to critical habitat guidelines demonstrates its dedication to balancing economic development with environmental protection, promoting a more sustainable and equitable future.</p>
-<p>For more detailed information on IFC’s critical habitat guidelines and specific requirements, please refer to the official IFC documentation.</p>
+<section id="data-records" class="level2">
+<h2 class="anchored" data-anchor-id="data-records">Data Records</h2>
+</section>
+<section id="technical-validation" class="level2">
+<h2 class="anchored" data-anchor-id="technical-validation">Technical validation</h2>
+</section>
+<section id="usage-notes" class="level2">
+<h2 class="anchored" data-anchor-id="usage-notes">Usage notes</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="ch_paper_files/figure-html/main-plot-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<table data-quarto-postprocess="true" class="table table-sm table-striped small">
+<caption>Areas and percentage coverage of each Critical Habitat category in 2018 and 2023 across Areas Beyond National Jurisdiction (ABNJ), Economic Exclusion Zones (EEZ) and Land. </caption>
+<colgroup>
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th" style="text-align: left; empty-cells: hide; border-bottom: hidden;"></th>
+<th colspan="6" data-quarto-table-cell-role="th" style="text-align: center; border-bottom: hidden; padding-bottom: 0; padding-left: 3px; padding-right: 3px;"><div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+2018
+</div></th>
+<th colspan="6" data-quarto-table-cell-role="th" style="text-align: center; border-bottom: hidden; padding-bottom: 0; padding-left: 3px; padding-right: 3px;"><div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+2023
+</div></th>
+</tr>
+<tr class="odd">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Domain</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Likely</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">%</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Potential</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">%</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Unclassified</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">%</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Likely</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">%</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Potential</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">%</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Unclassified</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">%</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">ABNJ</td>
+<td style="text-align: right;">2386.08</td>
+<td style="text-align: left;">9.1%</td>
+<td style="text-align: right;">51.58</td>
+<td style="text-align: left;">0.5%</td>
+<td style="text-align: right;">219783.1</td>
+<td style="text-align: left;">46.4%</td>
+<td style="text-align: right;">5046.19</td>
+<td style="text-align: left;">9.8%</td>
+<td style="text-align: right;">3176.84</td>
+<td style="text-align: left;">19.1%</td>
+<td style="text-align: right;">213997.8</td>
+<td style="text-align: left;">48.5%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">EEZ</td>
+<td style="text-align: right;">8937.12</td>
+<td style="text-align: left;">34.1%</td>
+<td style="text-align: right;">2474.29</td>
+<td style="text-align: left;">24.6%</td>
+<td style="text-align: right;">129108.9</td>
+<td style="text-align: left;">27.3%</td>
+<td style="text-align: right;">13990.54</td>
+<td style="text-align: left;">27.1%</td>
+<td style="text-align: right;">5657.36</td>
+<td style="text-align: left;">34.0%</td>
+<td style="text-align: right;">120872.4</td>
+<td style="text-align: left;">27.4%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Land</td>
+<td style="text-align: right;">14886.10</td>
+<td style="text-align: left;">56.8%</td>
+<td style="text-align: right;">7521.77</td>
+<td style="text-align: left;">74.9%</td>
+<td style="text-align: right;">124523.1</td>
+<td style="text-align: left;">26.3%</td>
+<td style="text-align: right;">32602.88</td>
+<td style="text-align: left;">63.1%</td>
+<td style="text-align: right;">7782.59</td>
+<td style="text-align: left;">46.8%</td>
+<td style="text-align: right;">106545.4</td>
+<td style="text-align: left;">24.1%</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'criteria'. You can override using the
+`.groups` argument.</code></pre>
+</div>
+<div class="cell-output-display">
+<table data-quarto-postprocess="true" class="table table-sm table-striped small">
+<caption>Areas and percentage cover of each IFC PS6 criteria to Potential and Likely Critical Habitat. Percentages add up to &gt;100 due to overlapping areas. </caption>
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th" style="text-align: left; empty-cells: hide; border-bottom: hidden;"></th>
+<th colspan="2" data-quarto-table-cell-role="th" style="text-align: center; border-bottom: hidden; padding-bottom: 0; padding-left: 3px; padding-right: 3px;"><div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Likely
+</div></th>
+<th colspan="2" data-quarto-table-cell-role="th" style="text-align: center; border-bottom: hidden; padding-bottom: 0; padding-left: 3px; padding-right: 3px;"><div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Potential
+</div></th>
+</tr>
+<tr class="odd">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Criteria</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: right;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">1. Critically Endangered or Endangered species</td>
+<td style="text-align: right;">26,064.2</td>
+<td style="text-align: left;">50%</td>
+<td style="text-align: right;">10,270</td>
+<td style="text-align: left;">61.8%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2. Endemic and/or restricted-range species</td>
+<td style="text-align: right;">13,198.4</td>
+<td style="text-align: left;">26%</td>
+<td style="text-align: right;">1,742</td>
+<td style="text-align: left;">10.5%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">3. Globally significant concentration of migratory or congregatory species</td>
+<td style="text-align: right;">20,397.5</td>
+<td style="text-align: left;">39%</td>
+<td style="text-align: right;">6,999</td>
+<td style="text-align: left;">42.1%</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">4. Highly threatened and/or unique ecosystems</td>
+<td style="text-align: right;">38,151.8</td>
+<td style="text-align: left;">74%</td>
+<td style="text-align: right;">5,222</td>
+<td style="text-align: left;">31.4%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">5. Key evolutionary processes</td>
+<td style="text-align: right;">560.1</td>
+<td style="text-align: left;">1%</td>
+<td style="text-align: right;">1,123</td>
+<td style="text-align: left;">6.8%</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<table data-quarto-postprocess="true" class="table table-sm table-striped small">
+<caption>Biodiversity features included in the analysis, their alignment with IFC PS6 Critical Habitat criteria and classification as ‘Likely’ or ‘Potential’ Critical Habitat. ‘CR’: Critically Endangered; ‘EN’: Endangered; ‘L’: Likely; ‘P’: Potential. </caption>
+<colgroup>
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th colspan="2" data-quarto-table-cell-role="th" style="text-align: left; empty-cells: hide; border-bottom: hidden;"></th>
+<th colspan="5" data-quarto-table-cell-role="th" style="text-align: center; border-bottom: hidden; padding-bottom: 0; padding-left: 3px; padding-right: 3px;"><div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+IFC PS6 criteria
+</div></th>
+<th data-quarto-table-cell-role="th" style="text-align: left; empty-cells: hide; border-bottom: hidden;"></th>
+</tr>
+<tr class="odd">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Biodiversity features</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Designation criterion / Trigger</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">1</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">2</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">3</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">4</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">5</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Classification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Cold seeps</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left;">Likely/Potential</td>
+</tr>
+<tr class="even">
+<td rowspan="2" style="text-align: left; vertical-align: middle !important;">Cold water corals</td>
+<td style="text-align: left;">Modelled occurrence</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Observed occurrence</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Ever-wet tropical forest</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="odd">
+<td rowspan="2" style="text-align: left; vertical-align: middle !important;">Hydrothermal vents</td>
+<td style="text-align: left;">Active</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Inactive</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="odd">
+<td rowspan="13" style="text-align: left; vertical-align: middle !important;">Key Biodiversity Areas</td>
+<td style="text-align: left;">Alliance for Zero Extinction Sites</td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">A1a and A1e</td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">A1b</td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">A2a</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">A2b</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B1</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">B4</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">C</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">D1a</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">D1b</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">D2</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">D3</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">E</td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="even">
+<td rowspan="5" style="text-align: left; vertical-align: middle !important;">Important Bird and Biodiversity Areas</td>
+<td style="text-align: left;">A1</td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">A2</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">A3</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">A4</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B1b</td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="odd">
+<td rowspan="6" style="text-align: left; vertical-align: middle !important;">Important Marine Mammal Sites</td>
+<td style="text-align: left;">A</td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">B1</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">B2</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">C1, C2, and C3</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">D1</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">D2</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Intact Forest Landscapes</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Irreplaceable protected areas</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="odd">
+<td rowspan="3" style="text-align: left; vertical-align: middle !important;">IUCN Red List of Threatened Species</td>
+<td style="text-align: left;">CR under criterion D</td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">EN under criterion D2</td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Great Apes species ranges</td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mangroves</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Saltmarsh</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="even">
+<td rowspan="2" style="text-align: left; vertical-align: middle !important;">Sea turtle nesting sites</td>
+<td style="text-align: left;">All sea turtle species</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CR and EN sea turtle species</td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Seagrass beds</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Seamounts</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Tiger Conservation Landscapes</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Tropical dry forest</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Tropical moist forest</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Tropical montane cloud forests</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Warm water coral reefs</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="odd">
+<td rowspan="7" style="text-align: left; vertical-align: middle !important;">World Database on Protected Areas</td>
+<td style="text-align: left;">All Ramsar sites</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Ramsar sites under criterion 2</td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ramsar sites under criteria 5 and 6</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Ramsar sites under criteria 1 and 3</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ramsar sites under criteria 4, 7, 8 and 9</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(255, 0, 255, 255) !important;">P</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Potential</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Protected areas under IUCN management categories I and II</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Natural and mixed World Heritage Sites</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left; font-weight: bold; color: rgba(178, 58, 238, 255) !important;">L</td>
+<td style="text-align: left; font-weight: bold; color: FALSE !important;"></td>
+<td style="text-align: left;">Likely</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+
 </section>
 
-</main>
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-brauneder2018" class="csl-entry" role="listitem">
+Brauneder, Kerstin M., Chloe Montes, Simon Blyth, Leon Bennun, Stuart H. M. Butchart, Michael Hoffmann, Neil D. Burgess, et al. 2018. <span>“Global Screening for Critical Habitat in the Terrestrial Realm.”</span> Edited by Shijo Joseph. <em>PLOS ONE</em> 13 (3): e0193102. <a href="https://doi.org/10.1371/journal.pone.0193102">https://doi.org/10.1371/journal.pone.0193102</a>.
+</div>
+</div></section></div></main>
 <!-- /main column -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
