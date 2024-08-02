@@ -30,6 +30,8 @@ author:
     affiliations:
       - ref: unep-wcmc
 format: html
+bibliography: references.bib
+abstract: "Critical Habitat has become an increasingly important concept used by the finance sector and businesses to identify areas of high biodiversity value. The International Finance Corporation (IFC) defines Critical Habitat in their highly influential Performance Standard 6 (PS6), requiring projects in Critical Habitat to achieve a net gain of biodiversity. Here we present a global screening layer of Critical Habitat in the terrestrial realm, derived from global spatial datasets covering the distributions of 12 biodiversity features aligned with guidance provided by the IFC. Each biodiversity feature is categorised as ‘likely’ or ‘potential’ Critical Habitat based on: 1. Alignment between the biodiversity feature and the IFC Critical Habitat definition; and 2. Suitability of the spatial resolution for indicating a feature’s presence on the ground. Following the initial screening process, Critical Habitat must then be assessed in-situ by a qualified assessor. This analysis indicates that a total of 10% and 5% of the global terrestrial environment can be considered as likely and potential Critical Habitat, respectively, while the remaining 85% did not overlap with any of the biodiversity features assessed and was classified as ‘unknown’. Likely Critical Habitat was determined principally by the occurrence of Key Biodiversity Areas and Protected Areas. Potential Critical Habitat was predominantly characterised by data representing highly threatened and unique ecosystems such as ever-wet tropical forests and tropical dry forests. The areas we identified as likely or potential Critical Habitat are based on the best available global-scale data for the terrestrial realm that is aligned with IFC’s Critical Habitat definition. Our results can help businesses screen potential development sites at the early project stage based on a range of biodiversity features. However, the study also demonstrates several important data gaps and highlights the need to incorporate new and improved global spatial datasets as they become available. Test = `r 1+1`"
 ---
 
 ```{r setup}
@@ -37,7 +39,7 @@ format: html
 
 # Install packages (if required)
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse,terra,sf,giscoR,scico,tmap,cowplot)
+pacman::p_load(tidyverse,terra,sf,giscoR,scico,cowplot,kableExtra,scales)
 terraOptions(progress=0,memfrac=0.9)
 
 ch_pal = c("#8400a8","#ff00c5","#e8e8e8")
@@ -59,6 +61,8 @@ sphere <- st_graticule(ndiscr = 10000, margin = 10e-6) %>%
   st_transform("EPSG:8857")
 
 ch2023_1km = rast("../../outputs/Basic_Critical_Habitat_Raster_WGS.tif")
+
+ch2023_areas = expanse(ch2023_1km,unit="km",byValue=TRUE)[,2:3]
 
 ch2023 = rast("../../outputs/paper/ch2023_10km.tif") |>
 project(raster_eq,method="near",mask=TRUE)
@@ -97,9 +101,63 @@ wrld = st_read("../../raw_data/UN map borders/Countries_Combined_with_associated
 
 ```
 
-```{r}
+## Background & Summary
+
+The **International Finance Corporation (IFC)**, a member of the World Bank Group, recognizes the importance of protecting critical habitat as part of its commitment to sustainable development and environmental stewardship. Critical habitat refers to the areas that are essential for the survival and well-being of species and ecosystems [@brauneder2018].
+
+1.  Critically Endangered or Endangered species
+2.  Endemic and/or restricted-range species
+3.  Globally significant concentration of migratory or congregatory species
+4.  Highly threatened and/or unique ecosystems
+5.  Key evolutionary processes
+
+## Methods
+
+```{r class-grid}
+#| fig-width: 8
+#| fig-height: 8
+#| echo: false
+
+classGrid = data.frame(xmin=c(0,0,0.5,0.5),
+                xmax=c(0.5,0.5,1,1),
+                ymin=c(0,0.5,0,0.5),
+                ymax=c(0.5,1,0.5,1),
+                ch=c("Unclassified","Potential Critical Habitat","Potential Critical Habitat","Likely Critical Habitat"),
+                labx=c(0.25,0.25,0.75,0.75),
+                laby=c(0.25,0.75,0.25,0.75))
+
+c = ggplot(classGrid) +
+  geom_rect(aes(xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,fill=ch)) +
+  geom_text(aes(label=ch,x=labx,y=laby),fontface="bold") +
+  theme_void() +
+  scale_fill_manual(values=ch_pal) +
+  theme(legend.position = "none",
+        plot.margin = unit(c(rep(0.5,4)),"in"),
+        axis.line.y = element_line(arrow=grid::arrow(ends="last",type="open",length=unit(0.1,"in"))),
+        axis.line.x = element_line(arrow=grid::arrow(ends="last",type="open",length=unit(0.1,"in"))),
+        axis.title.x = element_text(),
+        axis.title.y = element_text(angle=90)) +
+  xlab("\nAlignment / relevance to IFC PS6") +
+  ylab("Presence on the ground\n")
+
+ggdraw(c) +
+  draw_text("Potential",x=0.15,y=0.07,size=13,fontface="italic") +
+  draw_text("Likely",x=0.9,y=0.07,size=13,fontface="italic") +
+  draw_text("Uncertain",x=0.075,y=0.15,size=13,fontface="italic",angle=90) +
+  draw_text("Certain",x=0.075,y=0.9,size=13,fontface="italic",angle=90)
+
+```
+
+## Data Records
+
+## Technical validation
+
+## Usage notes
+
+```{r main-plot}
 #| fig-width: 8
 #| fig-height: 7
+#| echo: false
 
 a = ggplot(ch_combined_df) +
   geom_raster(aes(x=x,y=y,fill=ch)) +
@@ -120,42 +178,77 @@ plot_grid(a,b,rel_heights=c(0.3,0.7),nrow=2)
 
 ```
 
-## Introduction
+```{r ch-coverage-table}
+#| echo: false
+#| tbl-cap: "Areas and percentage coverage of each Critical Habitat category in 2018 and 2023 across Areas Beyond National Jurisdiction (ABNJ), Economic Exclusion Zones (EEZ) and Land."
 
-The **International Finance Corporation (IFC)**, a member of the World Bank Group, recognizes the importance of protecting critical habitat as part of its commitment to sustainable development and environmental stewardship. Critical habitat refers to the areas that are essential for the survival and well-being of species and ecosystems.
+wrld_ch_areas = read.csv("wrld_ch_areas.csv",check.names = F) |>
+  group_by(type) |>
+  summarise(across(starts_with(c("2018","2023")),~round(sum(.x,na.rm=TRUE)/1000,digits=2)))
 
-## Why Critical Habitat Matters
+wrld_ch_pct = wrld_ch_areas |>
+  reframe(across(2:7,~label_percent(accuracy=.1)(.x/sum(.x)))) |>
+  rename_with(~paste0(.x,"_pct"))
 
-Critical habitat is vital for various reasons:
+wrld_ch_areas_pct = cbind(wrld_ch_areas,wrld_ch_pct) %>% 
+  select(type,sort(names(.)))
 
-- **Biodiversity Conservation:** It provides a home for diverse species of plants, animals, and microorganisms, preserving the richness of ecosystems.
+kable(wrld_ch_areas_pct,
+      col.names = c("Domain","Likely","%","Potential","%","Unclassified","%","Likely","%","Potential","%","Unclassified","%")) |>
+  add_header_above(header=c(" "=1,"2018"=6,"2023"=6))
 
-- **Ecosystem Services:** Healthy habitats offer essential services like clean water, air purification, pollination, and carbon sequestration, benefiting both nature and people.
+```
 
-- **Resilience to Climate Change:** Robust ecosystems in critical habitats can enhance resilience to climate change impacts, such as extreme weather events and rising temperatures.
+```{r criteria-areas-table}
+#| echo: false
+#| tbl-cap: "Areas and percentage cover of each IFC PS6 criteria to Potential and Likely Critical Habitat. Percentages add up to >100 due to overlapping areas."
 
-- **Cultural Significance:** Many critical habitats hold cultural and spiritual significance for indigenous communities and local populations.
+criteria_areas = read.csv("drill_down_change_areas.csv", check.names = F) |>
+  select(CH,C1:C5,area) |>
+  pivot_longer(C1:C5,values_to="present",names_to="criteria") |>
+  filter(present>0) |>
+  group_by(criteria,CH) |>
+  summarise(area=sum(area)/1000) |>
+  pivot_wider(id_cols=1,names_from="CH",values_from="area") |>
+  ungroup() |>
+  mutate(total_potential=ch2023_areas[ch2023_areas$value==1,2],
+         total_likely=ch2023_areas[ch2023_areas$value==10,2],
+         likely_pct=label_percent()(`10`/(total_likely/1000)),
+         potential_pct=label_percent()(`1`/(total_potential/1000)),
+         criteria=case_match(criteria,
+                             "C1" ~ "1. Critically Endangered or Endangered species",
+                             "C2" ~ "2. Endemic and/or restricted-range species",
+                             "C3" ~ "3. Globally significant concentration of migratory or congregatory species",
+                             "C4" ~ "4. Highly threatened and/or unique ecosystems",
+                             "C5" ~ "5. Key evolutionary processes")) |>
+  select(criteria,`10`,likely_pct,`1`,potential_pct)
 
-## IFC's Commitment to Protect Critical Habitat
+kable(criteria_areas,
+      col.names = c("Criteria","","","",""),
+      format.args = list(digits=4,big.mark=",")) |>
+  add_header_above(c(" "=1,"Likely"=2,"Potential"=2))
 
-IFC has established guidelines and principles to ensure that projects it supports or finances do not harm critical habitat. These guidelines include:
+```
 
-1. **Identification and Assessment:** IFC requires project proponents to identify and assess critical habitat in the project area. This assessment helps in understanding the potential impacts and risks associated with the project.
+```{r features-table}
+#| echo: false
+#| tbl-cap: "Biodiversity features included in the analysis, their alignment with IFC PS6 Critical Habitat criteria and classification as 'Likely' or 'Potential' Critical Habitat. 'CR': Critically Endangered; 'EN': Endangered; 'L': Likely; 'P': Potential."
 
-2. **Avoidance and Mitigation:** Whenever possible, projects should avoid critical habitat. If avoidance is not feasible, mitigation measures must be implemented to minimize harm and maintain ecological integrity.
+fts = read.csv("features_table.csv") |>
+  rename(`Biodiversity features`=1,
+         `Designation criterion / Trigger`=2,
+         `1`=3,`2`=4,`3`=5,`4`=6,`5`=7,
+         `Classification`=8)
 
-3. **No-Go Areas:** In some cases, projects may not proceed if they are likely to have significant adverse impacts on critical habitat that cannot be adequately mitigated.
+fts |>
+  kable() |>
+  add_header_above(header=c(" "=2,"IFC PS6 criteria"=5," "=1)) |>
+  column_spec(3, color = ifelse(fts$`1` == "L", "darkorchid2", ifelse(fts$`1` == "P","magenta1",FALSE)), bold = TRUE) |>
+  column_spec(4, color = ifelse(fts$`2` == "L", "darkorchid2", ifelse(fts$`2` == "P","magenta1",FALSE)), bold = TRUE) |>
+  column_spec(5, color = ifelse(fts$`3` == "L", "darkorchid2", ifelse(fts$`3` == "P","magenta1",FALSE)), bold = TRUE) |>
+  column_spec(6, color = ifelse(fts$`4` == "L", "darkorchid2", ifelse(fts$`4` == "P","magenta1",FALSE)), bold = TRUE) |>
+  column_spec(7, color = ifelse(fts$`5` == "L", "darkorchid2", ifelse(fts$`5` == "P","magenta1",FALSE)), bold = TRUE) |>
+  collapse_rows(1)
+  
 
-4. **Stakeholder Engagement:** IFC emphasizes the importance of engaging with local communities and indigenous peoples to ensure their knowledge and concerns are taken into account during project planning and implementation.
-
-5. **Biodiversity Conservation Plans:** Projects should develop and implement biodiversity conservation plans that aim to protect and restore critical habitat and biodiversity in the project area.
-
-## Reporting and Accountability
-
-IFC requires project proponents to regularly report on their compliance with critical habitat guidelines. Non-compliance can result in the suspension or cancellation of financial support.
-
-## Conclusion
-
-Protecting critical habitat is not only a moral imperative but also crucial for the long-term sustainability of our planet. IFC's commitment to critical habitat guidelines demonstrates its dedication to balancing economic development with environmental protection, promoting a more sustainable and equitable future.
-
-For more detailed information on IFC's critical habitat guidelines and specific requirements, please refer to the official IFC documentation.
+```
