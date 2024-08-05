@@ -31,7 +31,12 @@ author:
       - ref: unep-wcmc
 format: html
 bibliography: references.bib
-abstract: "Critical Habitat has become an increasingly important concept used by the finance sector and businesses to identify areas of high biodiversity value. The International Finance Corporation (IFC) defines Critical Habitat in their highly influential Performance Standard 6 (PS6), requiring projects in Critical Habitat to achieve a net gain of biodiversity. Here we present a global screening layer of Critical Habitat in the terrestrial realm, derived from global spatial datasets covering the distributions of 12 biodiversity features aligned with guidance provided by the IFC. Each biodiversity feature is categorised as ‘likely’ or ‘potential’ Critical Habitat based on: 1. Alignment between the biodiversity feature and the IFC Critical Habitat definition; and 2. Suitability of the spatial resolution for indicating a feature’s presence on the ground. Following the initial screening process, Critical Habitat must then be assessed in-situ by a qualified assessor. This analysis indicates that a total of 10% and 5% of the global terrestrial environment can be considered as likely and potential Critical Habitat, respectively, while the remaining 85% did not overlap with any of the biodiversity features assessed and was classified as ‘unknown’. Likely Critical Habitat was determined principally by the occurrence of Key Biodiversity Areas and Protected Areas. Potential Critical Habitat was predominantly characterised by data representing highly threatened and unique ecosystems such as ever-wet tropical forests and tropical dry forests. The areas we identified as likely or potential Critical Habitat are based on the best available global-scale data for the terrestrial realm that is aligned with IFC’s Critical Habitat definition. Our results can help businesses screen potential development sites at the early project stage based on a range of biodiversity features. However, the study also demonstrates several important data gaps and highlights the need to incorporate new and improved global spatial datasets as they become available. Test = `r 1+1`"
+abstract: "The International Finance Corporation (IFC) defines Critical Habitat as areas of high biodiversity value in their Performance Standard 6 (PS6), requiring projects located in Critical Habitat to achieve a net gain of biodiversity. IFC's definition of Critical Habitat has since been frequently used by the finance sector and businesses to identify areas of high biodiversity value. Here we present an update to previous global screening layers of Critical Habitat in the marine and terrestrial realms, derived from global spatial datasets covering the distributions of 54 biodiversity features aligned with guidance provided by the IFC. As with previous layers, each biodiversity feature is categorised as 'Likely' or 'Potential' Critical Habitat based on: 1. Alignment between the biodiversity feature and the IFC Critical Habitat definition; and 2. Suitability of the spatial resolution for indicating a feature's presence on the ground. This analysis indicates that a total of 51.6 million km^2^ (10%) and 16.6 million km^2^ (3%) of the globe can be considered as Likely and Potential Critical Habitat respectively, while the remaining 441.8 million km^2^ (87%) did not overlap with any of the biodiversity features assessed. This represents a significant increase to the 26.2 million km^2^ (5%) and 10 million km^2^ (2%) Likely and Potential Critical Habitat identified previously. Classification of Likely Critical Habitat was dominated by Important Bird and Biodiversity Areas, Intact Forest Landscapes, and protected areas; Potential Critical Habitat by Important Marine Mammal Areas (IMMAs) and ranges of species classified as Vulnerable by the International Union for Conservation of Nature (IUCN) Red List of Threatened Species. Our results can aid businesses to prioritise impact avoidance by screening potential development sites at an early project stage for biodiversity features."
+knitr:
+  opts_knit: 
+    R.options:
+      digits: 4
+      knitr.digits.signif: true #true for signif(), false for round()
 ---
 
 ```{r setup}
@@ -43,6 +48,10 @@ pacman::p_load(tidyverse,terra,sf,giscoR,scico,cowplot,kableExtra,scales)
 terraOptions(progress=0,memfrac=0.9)
 
 ch_pal = c("#8400a8","#ff00c5","#e8e8e8")
+
+knitr::knit_hooks$set(inline = function(x) {
+      prettyNum(x, big.mark=",",digits=4)
+    })
 
 ```
 
@@ -99,11 +108,17 @@ wrld = st_read("../../raw_data/UN map borders/Countries_Combined_with_associated
   st_transform("EPSG:8857") |>
   st_simplify(dTolerance=1000)
 
+features_table = read.csv("features_table.csv",check.names=F)
+
 ```
 
 ## Background & Summary
 
-The **International Finance Corporation (IFC)**, a member of the World Bank Group, recognizes the importance of protecting critical habitat as part of its commitment to sustainable development and environmental stewardship. Critical habitat refers to the areas that are essential for the survival and well-being of species and ecosystems [@brauneder2018].
+More than US\$60 trillion of infrastructure spending is likely required to meet 2040 societal goals, with an additional 1.2 million km^2^ urbanised land by 2030, an additional 3-4.7 million km of roads by 2050 [@setoGlobalForecastsUrban2012; @meijerGlobalPatternsCurrent2018a; @globalinfrastructurehubGlobalInfrastructureOutlook2017]. During the relatively modest infrastucture expansion of the late twentieth and early twenty-first centuries, biodiversity has continued to decline precipitously, with governments collectively failing every single one of the Aichi Biodiversity Targets set by the United Nations (UN) Convention on Biological Diversity (CBD) in 2011. Much of the potential expansion of infrastructure is predicted to occur in some of the world's highest integrity ecosystems [@lauranceReducingGlobalEnvironmental2015; @latrubesseDammingRiversAmazon2017a; @alamgirHighriskInfrastructureProjects2019; @ermgassenRoleNoNet2019].
+
+Business and biodiversity para [@addisonUsingConservationScience2019]: suggests more accountable businesses will direct corporate action with Critical Habitat screening. Citigroup uses \* [@jacobMarineBiodiversityOffsets2020]: half of marine Critical Habitat not formally protected.
+
+In 2012, the International Finance Corporation (IFC; a member of the World Bank Group) developed *Performance Standard 6: Biodiversity Conservation and Sustainable Management of Living Natural Resources* (hereafter IFC PS6), one of eight Performance Standards any client of the organisation must meet throughout the life of an investment [@internationalfinancecorporationPerformanceStandardBiodiversity2012]. PS6 draws heavily on robust conservation datasets such as the World Database on Protected Areas (WDPA) and the IUCN Red List of Threatened Species (hereafter IUCN Red List) [@WDPA2023; @iucnIUCNRedList2022; @binghamSixtyYearsTracking2019]. The standard is seen as the benchmark for sustainable investment with 130 financial institutions following its social and environmental classification process as signatories to the Equator Principles [@equatprprinciplesassociationSignatoriesEPFIReporting2024]. Critical Habitat is defined by IFC using the following criteria:
 
 1.  Critically Endangered or Endangered species
 2.  Endemic and/or restricted-range species
@@ -111,11 +126,72 @@ The **International Finance Corporation (IFC)**, a member of the World Bank Grou
 4.  Highly threatened and/or unique ecosystems
 5.  Key evolutionary processes
 
+Previous work by @martinGlobalMapAid2015 and @braunederGlobalScreeningCritical2018 produced global 1 km^2^ screening layers for the marine and terrestrial realms respectively. These studies identified global biodiversity feature data with sufficient resolution and alignment with the IFC PS6 criteria to produce global maps of Likely and Potential Critical Habitat. @martinGlobalMapAid2015 classified 1.6% of the ocean as Likely Critical Habitat and 2.1% as Potential Critical Habitat. @braunederGlobalScreeningCritical2018 identified 10% of the terrestrial surface as Likely Critical Habitat and 5% as Potential Critical Habitat. The screening layers, as well as the amalgamated marine plus terrestrial Critical Habitat screening map made available through the UN Environment Programme World Conservation Monitoring Centre's data portal, have been used in a number of subsequent studies. @bullGlobalExtentBiodiversity2018a analysed the impact of PS6 on biodiversity offset implementation. Many of the studies focus on the threat to biodiversity of China's Belt and Road Initiative, a programme to link sixty-five countries with a network of transport and energy infrastructure. Researchers have used the global Critical Habitat screening layer to estimate that 50% of loans intersect with Critical Habitat [@yangRisksGlobalBiodiversity2021]. Full 49 Chinese-funded dams have a total of 149 km^2^ Critical Habitat in close proximity (i.e. within 1 km) and dams funded by multilateral development banks (MDBs) have much lower average areas of Critical Habitat per area of dam at risk relative to Chinese-funded dams [@narainBiodiversityRisksSafeguards2022]. Researchers have also identified 12,000 km^2^ of Critical Habitat within 1 km of the Belt and Road Initiative's linear infrastructure [@narainBestpracticeBiodiversitySafeguards2020]. In a decarbonising world, 20% of mining locations in Africa trigger a Critical Habitat classification for something other than Great Ape habitat [@junkerThreatMiningAfrican2024].
+
+Between November 2018 and June 2019, IFC updated the 2012 PS6 Guidance Note that had accompanied the initial release [@internationalfinancecorporationInternationalFinanceCorporation2019]. The update significantly changed the Critical Habitat criteria to better align the standard with the then newly developed *Global Standard for the Identification of Key Biodiversity Areas* (KBAs) [@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019; @tbl-update]. This meant that the original Critical Habitat global screening layers were now out of sync with the latest criteria. At the same time, many of the datasets that underpinned the original analyses have been updated multiple times since (e.g. the WDPA is updated monthly). Finally, many eligible datasets have been produced in the years since that meet the completeness and alignment criteria of the layer.
+
++--------------------------------------------------------------------------+---------------+--------------+-------------------------------------------------+
+| Criteria                                                                 | GN 2012       | GN 2018      | Implications                                    |
++==========================================================================+===============+==============+=================================================+
+| Critically Endangered or Endangered species                              | Tier 1: 10%   | 0.5%         | Small increase in threshold                     |
+|                                                                          |               |              |                                                 |
+|                                                                          | Tier 2: \>0%  |              | Reduction in overall Potential Critical Habitat |
++--------------------------------------------------------------------------+---------------+--------------+-------------------------------------------------+
+| Endemic and/or restricted-range species                                  | Tier 1: 95%   | 10%          | Threshold significantly higher                  |
+|                                                                          |               |              |                                                 |
+|                                                                          | Tier 2: 1%    |              | Reduction in overall Potential Critical Habitat |
++--------------------------------------------------------------------------+---------------+--------------+-------------------------------------------------+
+| Globally significant concentrations of migratory or congregatory species | Tier 1: 95%   | 1%           | Threshold unchanged                             |
+|                                                                          |               |              |                                                 |
+|                                                                          | Tier 2: 1%    |              | No change to overall Potential Critical Habitat |
++--------------------------------------------------------------------------+---------------+--------------+-------------------------------------------------+
+| Highly threatened and/or unique ecosystems                               | Qualitative   | 5%           | New threshold                                   |
+|                                                                          |               |              |                                                 |
+|                                                                          | No thresholds |              |                                                 |
++--------------------------------------------------------------------------+---------------+--------------+-------------------------------------------------+
+| Key evolutionary processes                                               | Qualitative   | Qualitative  | Unchanged                                       |
+|                                                                          |               |              |                                                 |
+|                                                                          | No threshold  | No threshold |                                                 |
++--------------------------------------------------------------------------+---------------+--------------+-------------------------------------------------+
+
+: Changes to the IFC PS6 criteria post-2018. Adapted from @unep-wcmcInternationalFinanceCorporation2019. {#tbl-updates}
+
+It is critical, for businesses to manage their biodiversity impacts in areas of high biodiversity value, to provide an updated Critical Habitat layer that fully aligns with the 2018/2019 update of PS6. In this Data Descriptor, we describe a new, updated global Critical Habitat screening layer. The new data incorporates updated datasets, as well as new sources identified through a comprehensive search for any that could meet the eligibility criteria. Most importantly, we describe and make available a methodology whereby the layer can be updated as and when new data are found or updated.
+
 ## Methods
+
+### Critical Habitat criteria
+
+IFC define Critical Habitat according to five criteria (@tbl-updates) with associated thresholds for Criteria 1-4. The 2018/2019 update to the accompanying Guidance Note made a number of changes to the classification of Critical Habitat of relevance to any updated methodology:
+
+-   **Changes to thresholds**: thresholds have been updated to better align with the Global KBA Standard [@iucnGlobalStandardIdentification2016a]. Criteria 1, 3 and 4 now directly align with the standard, and Criteria 1-3 have streamlined thresholds that largely sit between the previous Tier 1 and Tier 2 thresholds. Quantitative thresholds have been added for Criterion 4, based on the developing IUCN Red List of Ecosystems [@iucnRedListEcosystems2024].
+-   **Specified exceptional circumstances**: IFC now specify three circumstances that trigger special considerations.
+    -   Great Apes: the presence of Great Ape species is likely to trigger Critical Habitat regardless of thresholds. Where present, clients are expected to inform both IFC and the IUCN Species Survival Commission's Primate Specialist Group.
+    -   Unapprovable sites:
+        -   World Heritage Sites (Natural or Mixed).
+        -   Alliance for Zero Extinction sites.
+-   **Addition of IUCN Vulnerable species**: IFC added a threshold for Criteria 1 that now explicitly includes species classified as Vulnerable (VU) by the IUCN Red List where:
+    - Globally important populations are present.
+    - The loss of the population would lead to the species being upgraded to Endangered (EN) or Critically Endangered (CR).
+    - The population in question would then trigger Criterion 1a (the area supports >=0.5% of the global population and >=5 reproductive units).
+
+### Data screening and classification
+
+Using the updated criteria, we proceeded with data screening and classification as with previous studies [@martinGlobalMapAid2015;@braunederGlobalScreeningCritical2018]. Datasets were identified through expert knowledge and consultation, using the criteria adapted from @martinGlobalMapAid2015:
+
+1. Direct relevance to one or more Critical Habitat criteria.
+2. Global in extent.
+3. Assembled using a standardised protocol.
+4. The best available data for the biodiversity feature of interest.
+5. Sufficiently high resolution to indicate presence of biodiversity on the ground at scales relevant to business operations.
+
+Datasets that met our criteria were classified as one of three classes: Likely, Potential, and Unclassified. The classification was done by expert judgement, weighing the alignment with PS6 criteria and the likely presence on the ground ({#fig-class-grid}).
 
 ```{r class-grid}
 #| fig-width: 8
 #| fig-height: 8
+#| label: fig-class-grid
+#| fig-cap: "Classification of data as Likely or Potential Critical Habitat is based on the preceived strength of alignment with PS6 criteria and the spatial resolution of the data. Adapted from [@braunederGlobalScreeningCritical2018]."
 #| echo: false
 
 classGrid = data.frame(xmin=c(0,0,0.5,0.5),
@@ -148,15 +224,32 @@ ggdraw(c) +
 
 ```
 
+### Data processing and spatial analysis
+
+Spatial data analysis was conducted in **R** using predominatly the `terra` and `sf` packages. See Supplementary Information for more detailed methodology.
+
+For the greatest accuracy, vector data were processed using the `sf` package and `S2` library. This allows spatial processing, e.g. intersections and buffers, using Great Circle distances. Data were prepared for the analysis in three steps: first, data were made valid on the sphere. Second, data were unioned to remove duplicates from point data and any overlaping area in polygon data. Finally, data were filtered as detailed by (a) their respective guidance, and (b) to produce the data subset required for the analysis. For example, Key Biodiversity Areas (KBAs) must first be filtered by those whose status is confirmed (`KbaStatus=="confirmed"`) and then by the criterion/criteria required to create the subset (e.g. sites designated under KBA Criterion B1). Not all input data were available in vector format. For raster data, preprocessing varies by source but generally involves aggregating to the correct resolution (`r 1/120` degrees) before reprojecting the data to a template raster in WGS 84.
+
+Data are then converted to binary maps of presence/absence. For vector data, this was done by a process called rasterisation, whereby any grid cell in contact with the vector data assumes the value of the vector data. In keeping with the precautionary nature of the screening layer, we chose to rasterise based on any intersection, not requiring polygon data to cross the midpoint of the grid cell. Point data transferred their values to the grid cells they occupy. For raster data, where necessary (i.e. the data were not already binary), a classification threshold was set. Again, in keeping with the precautionary nature of the data, we set this at 0.5. This meant that any cell with >=50% of the feature was classified as a presence.
+
+Binary raster data were then combined so that each grid cell's unique combination of biodiversity features has a unique value. Based on what features comprised the value, the grid cell was categorised hierarchically: Likely > Potential > Unclassified. See Supplementary Information for a map of unique feature combinations. 
+
 ## Data Records
 
-## Technical validation
+We find that Critical Habitat, as defined by the IFC, covers `r sum(ch2023_areas[2:3,2])/1000000` million km^2^ globally (@fig-main): `r ch2023_areas[3,2]/1000000` million km^2^ (`r label_percent(accuracy=.2)(sum(ch2023_areas[3,2])/sum(ch2023_areas[,2]))`) is Likely Critical Habitat and `r ch2023_areas[2,2]/1000000` million km^2^ (`r label_percent(accuracy=.2)(sum(ch2023_areas[2,2])/sum(ch2023_areas[,2]))`) is Potential Critical Habitat.
 
-## Usage notes
+These data are presented in two formats at `r 1/120` degree resolution in WGS 84 projection, and represent the best publicly available global screening layer for Critical Habitat:
+
+1.  Basic Critical Habitat layer
+    *Basic_Critical_Habitat_WGS.tif*
+2.  Drill down Critical Habitat layer
+    
 
 ```{r main-plot}
 #| fig-width: 8
 #| fig-height: 7
+#| fig-cap: Global screening layer for Critical Habitat. Reprojected to Equal Earth and aggregated to 10 x 10 km for visualisation.
+#| label: fig-main
 #| echo: false
 
 a = ggplot(ch_combined_df) +
@@ -178,23 +271,46 @@ plot_grid(a,b,rel_heights=c(0.3,0.7),nrow=2)
 
 ```
 
+## Technical validation
+
+We identified `r length(unique(features_table[,1]))` biodiversity feature datasets that are split into `r length(unique(paste0(features_table[,1],features_table[,2])))` separate triggers (@tbl-features).
+
+```{r features-table}
+#| echo: false
+#| tbl-cap: "Biodiversity features included in the analysis, their alignment with IFC PS6 Critical Habitat criteria and classification as 'Likely' or 'Potential' Critical Habitat. 'CR': Critically Endangered; 'EN': Endangered; 'L': Likely; 'P': Potential."
+#| label: tbl-features
+
+features_table |>
+  kable() |>
+  add_header_above(header=c(" "=2,"IFC PS6 criteria"=5," "=1)) |>
+  column_spec(3, color = ifelse(features_table$`1` == "L", "darkorchid2", ifelse(features_table$`1` == "P","magenta1",FALSE)), bold = TRUE) |>
+  column_spec(4, color = ifelse(features_table$`2` == "L", "darkorchid2", ifelse(features_table$`2` == "P","magenta1",FALSE)), bold = TRUE) |>
+  column_spec(5, color = ifelse(features_table$`3` == "L", "darkorchid2", ifelse(features_table$`3` == "P","magenta1",FALSE)), bold = TRUE) |>
+  column_spec(6, color = ifelse(features_table$`4` == "L", "darkorchid2", ifelse(features_table$`4` == "P","magenta1",FALSE)), bold = TRUE) |>
+  column_spec(7, color = ifelse(features_table$`5` == "L", "darkorchid2", ifelse(features_table$`5` == "P","magenta1",FALSE)), bold = TRUE) |>
+  collapse_rows(1)
+  
+
+```
+
 ```{r ch-coverage-table}
 #| echo: false
 #| tbl-cap: "Areas and percentage coverage of each Critical Habitat category in 2018 and 2023 across Areas Beyond National Jurisdiction (ABNJ), Economic Exclusion Zones (EEZ) and Land."
 
 wrld_ch_areas = read.csv("wrld_ch_areas.csv",check.names = F) |>
   group_by(type) |>
-  summarise(across(starts_with(c("2018","2023")),~round(sum(.x,na.rm=TRUE)/1000,digits=2)))
+  summarise(across(starts_with(c("2018","2023")),~sum(.x,na.rm=TRUE)/1000000))
 
 wrld_ch_pct = wrld_ch_areas |>
-  reframe(across(2:7,~label_percent(accuracy=.1)(.x/sum(.x)))) |>
+  reframe(across(2:7,~label_percent(accuracy=.2)(.x/sum(.x)))) |>
   rename_with(~paste0(.x,"_pct"))
 
 wrld_ch_areas_pct = cbind(wrld_ch_areas,wrld_ch_pct) %>% 
   select(type,sort(names(.)))
 
 kable(wrld_ch_areas_pct,
-      col.names = c("Domain","Likely","%","Potential","%","Unclassified","%","Likely","%","Potential","%","Unclassified","%")) |>
+      col.names = c("Domain","Likely","%","Potential","%","Unclassified","%","Likely","%","Potential","%","Unclassified","%"),
+      format.args = list(digits=4,big.mark=",")) |>
   add_header_above(header=c(" "=1,"2018"=6,"2023"=6))
 
 ```
@@ -208,13 +324,13 @@ criteria_areas = read.csv("drill_down_change_areas.csv", check.names = F) |>
   pivot_longer(C1:C5,values_to="present",names_to="criteria") |>
   filter(present>0) |>
   group_by(criteria,CH) |>
-  summarise(area=sum(area)/1000) |>
+  summarise(area=sum(area)/1000000,.groups="drop") |>
   pivot_wider(id_cols=1,names_from="CH",values_from="area") |>
   ungroup() |>
   mutate(total_potential=ch2023_areas[ch2023_areas$value==1,2],
          total_likely=ch2023_areas[ch2023_areas$value==10,2],
-         likely_pct=label_percent()(`10`/(total_likely/1000)),
-         potential_pct=label_percent()(`1`/(total_potential/1000)),
+         likely_pct=label_percent(accuracy=.2)(`10`/(total_likely/1000000)),
+         potential_pct=label_percent(accuracy=.2)(`1`/(total_potential/1000000)),
          criteria=case_match(criteria,
                              "C1" ~ "1. Critically Endangered or Endangered species",
                              "C2" ~ "2. Endemic and/or restricted-range species",
@@ -230,25 +346,6 @@ kable(criteria_areas,
 
 ```
 
-```{r features-table}
-#| echo: false
-#| tbl-cap: "Biodiversity features included in the analysis, their alignment with IFC PS6 Critical Habitat criteria and classification as 'Likely' or 'Potential' Critical Habitat. 'CR': Critically Endangered; 'EN': Endangered; 'L': Likely; 'P': Potential."
+## Usage notes
 
-fts = read.csv("features_table.csv") |>
-  rename(`Biodiversity features`=1,
-         `Designation criterion / Trigger`=2,
-         `1`=3,`2`=4,`3`=5,`4`=6,`5`=7,
-         `Classification`=8)
-
-fts |>
-  kable() |>
-  add_header_above(header=c(" "=2,"IFC PS6 criteria"=5," "=1)) |>
-  column_spec(3, color = ifelse(fts$`1` == "L", "darkorchid2", ifelse(fts$`1` == "P","magenta1",FALSE)), bold = TRUE) |>
-  column_spec(4, color = ifelse(fts$`2` == "L", "darkorchid2", ifelse(fts$`2` == "P","magenta1",FALSE)), bold = TRUE) |>
-  column_spec(5, color = ifelse(fts$`3` == "L", "darkorchid2", ifelse(fts$`3` == "P","magenta1",FALSE)), bold = TRUE) |>
-  column_spec(6, color = ifelse(fts$`4` == "L", "darkorchid2", ifelse(fts$`4` == "P","magenta1",FALSE)), bold = TRUE) |>
-  column_spec(7, color = ifelse(fts$`5` == "L", "darkorchid2", ifelse(fts$`5` == "P","magenta1",FALSE)), bold = TRUE) |>
-  collapse_rows(1)
-  
-
-```
+## References
