@@ -1,0 +1,47 @@
+$if(title)$
+\title{$title$}
+$endif$
+
+$if(by-author)$
+    $for(by-author)$
+        $if(it.name)$
+            $if(it.affiliations)$
+                $if(it.attributes.corresponding)$
+                    $if(it.attributes.equal-contributor)$
+                        \author[$for(it.affiliations)$$it.number$$sep$,$endfor$*\dag]{$it.name.literal$$if(it.orcid)$\orcidlink{$it.orcid$}$endif$}
+                    $else$
+                        \author[$for(it.affiliations)$$it.number$$sep$,$endfor$*]{$it.name.literal$$if(it.orcid)$\orcidlink{$it.orcid$}$endif$}
+                    $endif$
+                $else$
+                    $if(it.attributes.equal-contributor)$
+                        \author[$for(it.affiliations)$$it.number$$sep$,$endfor$\dag]{$it.name.literal$$if(it.orcid)$\orcidlink{$it.orcid$}$endif$}
+                    $else$
+                        \author[$for(it.affiliations)$$it.number$$sep$,$endfor$]{$it.name.literal$$if(it.orcid)$\orcidlink{$it.orcid$}$endif$}
+                    $endif$
+                $endif$
+            $else$
+                \author[]{$it.name.literal$}
+            $endif$
+            $else$
+            \author{$it.name.literal$}
+        $endif$
+    $endfor$
+$endif$
+
+$for(by-affiliation)$
+    \affil[$it.number$]{$if(it.name)$$it.name$$endif$$if(it.department)$, $it.department$$endif$$if(it.address)$, $it.address$$endif$$if(it.city)$, $it.city$$endif$$if(it.country)$, $it.country$$endif$$if(it.postcode)$, $it.postcode$$endif$}
+$endfor$
+
+$for(by-author)$
+    $if(by-author.attributes.corresponding)$
+        \affil[*]{corresponding author(s): $by-author.name.literal$ $by-author.email$}
+    $endif$
+$endfor$
+
+$if(equal-authors)$
+\affil[$$\dag$$]{these authors contributed equally to this work}
+$endif$
+
+\begin{abstract}
+$abstract$
+\end{abstract}

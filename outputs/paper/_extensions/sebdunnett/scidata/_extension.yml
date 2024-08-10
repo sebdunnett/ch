@@ -1,0 +1,35 @@
+title: Scientific Data Data Descriptor Template
+author: Seb Dunnett
+contributes:
+  formats:
+    common:
+      shortcodes:
+        - shortcodes.lua
+      knitr:
+        opts_chunk:
+          echo: false
+    pdf:
+      documentclass: wlscirep
+      colorlinks: true
+      urlcolor: blue
+      biblio-style: naturemag-doi
+      cite-method: natbib
+      biblio-config: false
+      header-includes: |
+        \usepackage{orcidlink}
+        \RequirePackage[numbers,super]{natbib}
+      template-partials:
+        - "partials/pandoc.tex"
+        - "partials/title.tex"
+        - "partials/before-body.tex"
+        - "partials/doc-class.tex"
+      format-resources:
+        - wlscirep.cls
+        - jabbrv-ltwa-all.ldf
+        - jabbrv-ltwa-en.ldf
+        - naturemag-doi.bst
+        - jabbrv.sty
+    html:
+      number-sections: true
+      toc: true
+      csl: https://www.zotero.org/styles/nature

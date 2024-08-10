@@ -1,0 +1,18 @@
+$-- Required to use Pandoc highlighting feature
+$if(highlighting-macros)$
+$highlighting-macros$
+$endif$
+
+$-- Provides the tight list command required for Pandoc lists feature
+$tightlist.tex()$
+$-- Provides configuration for the output of tables, table captioning, and footnotes within tables.
+$tables.tex()$
+$-- Provides image scaling and placement configuration.
+$graphics.tex()$
+$-- When using CSL references, provides configuration and commands for outputing the bibliography.
+$citations.tex()$
+
+$-- Required for inclusion of includes in header
+$for(header-includes)$
+$header-includes$
+$endfor$
