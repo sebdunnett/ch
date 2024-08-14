@@ -385,18 +385,24 @@ wrld_ch_pct = wrld_ch_areas |>
 wrld_ch_areas_pct = cbind(wrld_ch_areas,wrld_ch_pct) %>% 
   select(type,sort(names(.)))
 
+wrld_ch_areas_pct = cbind(wrld_ch_areas,wrld_ch_pct) %>% 
+  select(type,sort(names(.)))
+
 names(wrld_ch_areas_pct) <- NULL
 
-# kable(wrld_ch_areas_pct,
-#       format.args = list(digits=2,big.mark=",")) |>
-#   add_header_above(header=c("Domain"=1,"Likely"=2:3,"Potential"=3:4,"Unclassified"=5:6,
-#                            "Likely"=7:8,"Potential"=9:10,"Unclassified"=11:12)) |>
-#   add_header_above(header=c(" "=1,"2018"=2:4,"2023"=5:7)) |>
-#   column_spec(1,width="1cm") |>
-#   column_spec(c(3,5,7,9,11,13),width="0.5cm") |>
-#   column_spec(c(2,4,6,8,10,12),width="1cm") |>
-#   kable_styling(font_size=8) |>
-#   footnote(general="Areas in million $km^2$.",escape=F)
+kable(wrld_ch_areas_pct,
+      format.args = list(digits=2,big.mark=","),
+      format="latex",
+      booktabs=T,
+      longtable=T) |>
+  add_header_above(header=c("Domain"=1,"Likely"=2,"Potential"=2,"Unclassified"=2,
+                           "Likely"=2,"Potential"=2,"Unclassified"=2)) |>
+  add_header_above(header=c(" "=1,"2018"=6,"2023"=6)) |>
+  column_spec(1,width="1cm") |>
+  column_spec(c(3,5,7,9,11,13),width="1cm") |>
+  column_spec(c(2,4,6,8,10,12),width="0.5cm") |>
+  kable_styling(font_size=8) |>
+  footnote(general="Areas in million $km^2$.",escape=F)
 
 ```
 
@@ -431,9 +437,6 @@ kable(criteria_areas,
 
 ```
 
-
 :::
 
 ## Usage notes
-
-## References
