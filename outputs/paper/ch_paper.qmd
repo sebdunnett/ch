@@ -24,9 +24,15 @@ author:
         postal-code: CB2 1SJ
         id: tbc
   - name: Neil Burgess
+    orcid: 0000-0003-2291-4535
     affiliations:
       - ref: unep-wcmc
   - name: Matt Jones
+    orcid: 0000-0002-5690-4274
+    affiliations:
+      - ref: unep-wcmc
+  - name: Sharon Brooks
+    orcid: 0000-0001-8744-3557
     affiliations:
       - ref: unep-wcmc
 format: scidata-pdf
@@ -126,7 +132,7 @@ In 2012, the International Finance Corporation (IFC; a member of the World Bank 
 4.  Highly threatened and/or unique ecosystems
 5.  Key evolutionary processes
 
-Previous work by @martinGlobalMapAid2015 and @braunederGlobalScreeningCritical2018 produced global 1 km^2^ screening layers for the marine and terrestrial realms respectively. These studies identified global biodiversity feature data with sufficient resolution and alignment with the IFC PS6 criteria to produce global maps of Likely and Potential Critical Habitat. @martinGlobalMapAid2015 classified 1.6% of the ocean as Likely Critical Habitat and 2.1% as Potential Critical Habitat. @braunederGlobalScreeningCritical2018 identified 10% of the terrestrial surface as Likely Critical Habitat and 5% as Potential Critical Habitat. The screening layers, as well as the amalgamated marine plus terrestrial Critical Habitat screening map made available through the UN Environment Programme World Conservation Monitoring Centre's data portal, have been used in a number of subsequent studies. @bullGlobalExtentBiodiversity2018a analysed the impact of PS6 on biodiversity offset implementation. Many of the studies focus on the threat to biodiversity of China's Belt and Road Initiative, a programme to link sixty-five countries with a network of transport and energy infrastructure. Researchers have used the global Critical Habitat screening layer to estimate that 50% of loans intersect with Critical Habitat [@yangRisksGlobalBiodiversity2021]. Full 49 Chinese-funded dams have a total of 149 km^2^ Critical Habitat in close proximity (i.e. within 1 km) and dams funded by multilateral development banks (MDBs) have much lower average areas of Critical Habitat per area of dam at risk relative to Chinese-funded dams [@narainBiodiversityRisksSafeguards2022]. Researchers have also identified 12,000 km^2^ of Critical Habitat within 1 km of the Belt and Road Initiative's linear infrastructure [@narainBestpracticeBiodiversitySafeguards2020]. In a decarbonising world, 20% of mining locations in Africa trigger a Critical Habitat classification for something other than Great Ape habitat [@junkerThreatMiningAfrican2024].
+Previous work by Martin *et al.*[@martinGlobalMapAid2015] and Brauneder *et al.*[@braunederGlobalScreeningCritical2018] produced global 1 km^2^ screening layers for the marine and terrestrial realms respectively. These studies identified global biodiversity feature data with sufficient resolution and alignment with the IFC PS6 criteria to produce global maps of Likely and Potential Critical Habitat. Martin *et al.*[@martinGlobalMapAid2015] classified 1.6% of the ocean as Likely Critical Habitat and 2.1% as Potential Critical Habitat. Brauneder *et al.*[@braunederGlobalScreeningCritical2018] identified 10% of the terrestrial surface as Likely Critical Habitat and 5% as Potential Critical Habitat. The screening layers, as well as the amalgamated marine plus terrestrial Critical Habitat screening map made available through the UN Environment Programme World Conservation Monitoring Centre's data portal, have been used in a number of subsequent studies, including analysis of the impact of PS6 on biodiversity offset implementation [@bullGlobalExtentBiodiversity2018a]. Many of the studies focus on the threat to biodiversity of China's Belt and Road Initiative, a programme to link sixty-five countries with a network of transport and energy infrastructure. Researchers have used the global Critical Habitat screening layer to estimate that 50% of loans intersect with Critical Habitat [@yangRisksGlobalBiodiversity2021]. Full 49 Chinese-funded dams have a total of 149 km^2^ Critical Habitat in close proximity (i.e. within 1 km) and dams funded by multilateral development banks (MDBs) have much lower average areas of Critical Habitat per area of dam at risk relative to Chinese-funded dams [@narainBiodiversityRisksSafeguards2022]. Researchers have also identified 12,000 km^2^ of Critical Habitat within 1 km of the Belt and Road Initiative's linear infrastructure [@narainBestpracticeBiodiversitySafeguards2020]. In a decarbonising world, 20% of mining locations in Africa trigger a Critical Habitat classification for something other than Great Ape habitat [@junkerThreatMiningAfrican2024].
 
 Between November 2018 and June 2019, IFC updated the 2012 PS6 Guidance Note that had accompanied the initial release [@internationalfinancecorporationInternationalFinanceCorporation2019]. The update significantly changed the Critical Habitat criteria to better align the standard with the then newly developed *Global Standard for the Identification of Key Biodiversity Areas* (KBAs) [@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019; @tbl-updates]. This meant that the original Critical Habitat global screening layers were now out of sync with the latest criteria. At the same time, many of the datasets that underpinned the original analyses have been updated multiple times since (e.g. the WDPA is updated monthly). Finally, many eligible datasets have been produced in the years since that meet the completeness and alignment criteria of the layer.
 
@@ -154,7 +160,7 @@ Between November 2018 and June 2019, IFC updated the 2012 PS6 Guidance Note that
 |                                                                          | No threshold  | No threshold |                                                 |
 +--------------------------------------------------------------------------+---------------+--------------+-------------------------------------------------+
 
-: Changes to the IFC PS6 criteria post-2018. Adapted from @unep-wcmcInternationalFinanceCorporation2019. {#tbl-updates}
+: Changes to the IFC PS6 criteria post-2018. Adapted from UNEP-WCMC[@unep-wcmcInternationalFinanceCorporation2019]. {#tbl-updates}
 
 It is critical, for businesses to manage their biodiversity impacts in areas of high biodiversity value, to provide an updated Critical Habitat layer that fully aligns with the 2018/2019 update of PS6. In this Data Descriptor, we describe a new, updated global Critical Habitat screening layer. The new data incorporates updated datasets, as well as new sources identified through a comprehensive search for any that could meet the eligibility criteria. Most importantly, we describe and make available a methodology whereby the layer can be updated as and when new data are found or updated.
 
@@ -171,21 +177,21 @@ IFC define Critical Habitat according to five criteria (@tbl-updates) with assoc
         -   World Heritage Sites (Natural or Mixed).
         -   Alliance for Zero Extinction sites.
 -   **Addition of IUCN Vulnerable species**: IFC added a threshold for Criteria 1 that now explicitly includes species classified as Vulnerable (VU) by the IUCN Red List where:
-    - Globally important populations are present.
-    - The loss of the population would lead to the species being upgraded to Endangered (EN) or Critically Endangered (CR).
-    - The population in question would then trigger Criterion 1a (the area supports >=0.5% of the global population and >=5 reproductive units).
+    -   Globally important populations are present.
+    -   The loss of the population would lead to the species being upgraded to Endangered (EN) or Critically Endangered (CR).
+    -   The population in question would then trigger Criterion 1a (the area supports \>=0.5% of the global population and \>=5 reproductive units).
 
 ### Data screening and classification
 
-Using the updated criteria, we proceeded with data screening and classification as with previous studies [@martinGlobalMapAid2015;@braunederGlobalScreeningCritical2018]. Datasets were identified through expert knowledge and consultation, using the criteria adapted from @martinGlobalMapAid2015:
+Using the updated criteria, we proceeded with data screening and classification as with previous studies [@martinGlobalMapAid2015; @braunederGlobalScreeningCritical2018]. Datasets were identified through expert knowledge and consultation, using the criteria adapted from Martin *et al.*[@martinGlobalMapAid2015]:
 
-1. Direct relevance to one or more Critical Habitat criteria.
-2. Global in extent.
-3. Assembled using a standardised protocol.
-4. The best available data for the biodiversity feature of interest.
-5. Sufficiently high resolution to indicate presence of biodiversity on the ground at scales relevant to business operations.
+1.  Direct relevance to one or more Critical Habitat criteria.
+2.  Global in extent.
+3.  Assembled using a standardised protocol.
+4.  The best available data for the biodiversity feature of interest.
+5.  Sufficiently high resolution to indicate presence of biodiversity on the ground at scales relevant to business operations.
 
-Datasets that met our criteria were classified as one of three classes: Likely, Potential, and Unclassified. The classification was done by expert judgement, weighing the alignment with PS6 criteria and the likely presence on the ground ({#fig-class-grid}).
+Datasets that met our criteria were classified as one of three classes: Likely, Potential, and Unclassified. The classification was done by expert judgement, weighing the alignment with PS6 criteria and the likely presence on the ground (@fig-class-grid).
 
 ```{r class-grid}
 #| fig-width: 8
@@ -226,24 +232,17 @@ ggdraw(c) +
 
 ### Data processing and spatial analysis
 
-Spatial data analysis was conducted in **R** using predominatly the `terra` and `sf` packages. See Supplementary Information for more detailed methodology.
+Spatial data analysis was conducted in **R** using predominatly the `terra` and `sf` packages.
 
 For the greatest accuracy, vector data were processed using the `sf` package and `S2` library. This allows spatial processing, e.g. intersections and buffers, using Great Circle distances. Data were prepared for the analysis in three steps: first, data were made valid on the sphere. Second, data were unioned to remove duplicates from point data and any overlaping area in polygon data. Finally, data were filtered as detailed by (a) their respective guidance, and (b) to produce the data subset required for the analysis. For example, Key Biodiversity Areas (KBAs) must first be filtered by those whose status is confirmed (`KbaStatus=="confirmed"`) and then by the criterion/criteria required to create the subset (e.g. sites designated under KBA Criterion B1). Not all input data were available in vector format. For raster data, preprocessing varies by source but generally involves aggregating to the correct resolution (`r 1/120` degrees) before reprojecting the data to a template raster in WGS 84.
 
-Data are then converted to binary maps of presence/absence. For vector data, this was done by a process called rasterisation, whereby any grid cell in contact with the vector data assumes the value of the vector data. In keeping with the precautionary nature of the screening layer, we chose to rasterise based on any intersection, not requiring polygon data to cross the midpoint of the grid cell. Point data transferred their values to the grid cells they occupy. For raster data, where necessary (i.e. the data were not already binary), a classification threshold was set. Again, in keeping with the precautionary nature of the data, we set this at 0.5. This meant that any cell with >=50% of the feature was classified as a presence.
+Data are then converted to binary maps of presence/absence. For vector data, this was done by a process called rasterisation, whereby any grid cell in contact with the vector data assumes the value of the vector data. In keeping with the precautionary nature of the screening layer, we chose to rasterise based on any intersection, not requiring polygon data to cross the midpoint of the grid cell. Point data transferred their values to the grid cells they occupy. For raster data, where necessary (i.e. the data were not already binary), a classification threshold was set. Again, in keeping with the precautionary nature of the data, we set this at 0.5. This meant that any cell with \>=50% of the feature was classified as a presence.
 
-Binary raster data were then combined so that each grid cell's unique combination of biodiversity features has a unique value. Based on what features comprised the value, the grid cell was categorised hierarchically: Likely > Potential > Unclassified. See Supplementary Information for a map of unique feature combinations. 
+Binary raster data were then combined so that each grid cell's unique combination of biodiversity features has a unique value. Based on what features comprised the value, the grid cell was categorised hierarchically: Likely \> Potential \> Unclassified.
 
 ## Data Records
 
 We find that Critical Habitat, as defined by the IFC, covers `r sum(ch2023_areas[2:3,2])/1000000` million km^2^ globally (@fig-main): `r ch2023_areas[3,2]/1000000` million km^2^ (`r label_percent(accuracy=.2)(sum(ch2023_areas[3,2])/sum(ch2023_areas[,2]))`) is Likely Critical Habitat and `r ch2023_areas[2,2]/1000000` million km^2^ (`r label_percent(accuracy=.2)(sum(ch2023_areas[2,2])/sum(ch2023_areas[,2]))`) is Potential Critical Habitat.
-
-These data are presented in two formats at `r 1/120` degree resolution in WGS 84 projection, and represent the best publicly available global screening layer for Critical Habitat:
-
-1.  Basic Critical Habitat layer
-    *Basic_Critical_Habitat_WGS.tif*
-2.  Drill down Critical Habitat layer
-    
 
 ```{r main-plot}
 #| fig-width: 8
@@ -271,12 +270,51 @@ plot_grid(a,b,rel_heights=c(0.3,0.7),nrow=2)
 
 ```
 
+These data are presented in two formats at `r 1/120` degree resolution in WGS 84 projection, and represent the best publicly available global screening layer for Critical Habitat:
+
+### Basic Critical Habitat layer
+
+*Basic_Critical_Habitat_WGS.tif*
+
+Basic global layer at `r 1/120` resolution in WGS 84 projection containing three values: 0 (Unclassified), 1 (Potential Critical Habitat), and 10 (Likely Critical Habitat).
+
+### Drill down Critical Habitat layer
+
+*Critical_Habitat_Drill_Down_WGS.tif* and *Critical_Habitat_Drill_Down_WGS.tif.vat.dbf*
+    
+More detailed global layer at `r 1/120` resolution in WGS 84 projection. The spatial grid (*Critical_Habitat_Drill_Down_WGS.tif*) works in conjunction with the raster attribute table (RAT: *Critical_Habitat_Drill_Down_WGS.tif.vat.dbf*) to detail what biodiversity features trigger any cell's Critical Habitat classification. Values in the `TIFF` file correspond to unique identifiers in the RAT that reveal the underlying data (@tbl-rat-lookup).
+
+```{r features-table-html}
+#| echo: false
+#| tbl-cap: "Codes for biodiversity features in the raster attribute table."
+#| label: tbl-rat-lookup
+
+shortcodes = read.csv("../../scripts_tools/lookup.csv")[,c(1,3)] |>
+  rename("Shortcode"=1,"Description"=2) |>
+  mutate(Description=paste0("Binary variable indicating presence of ",Description))
+
+shortcodes_add = data.frame(
+  Shortcode = c("VALUE","COUNT","CH","C1","C2","C3","C4","C5"),
+  Description = c("Unique identifier relating cells in the raster to data in this database",
+                  "Number of cells with this unique combination of features",
+                  "Critical Habitat classification",
+                  "Binary variable indicating IFC PS6 Criteria 1 triggered",
+                  "Binary variable indicating IFC PS6 Criteria 2 triggered",
+                  "Binary variable indicating IFC PS6 Criteria 3 triggered",
+                  "Binary variable indicating IFC PS6 Criteria 4 triggered",
+                  "Binary variable indicating IFC PS6 Criteria 5 triggered")
+)
+
+kable(rbind(shortcodes_add,shortcodes)) |>
+  kable_styling(font_size=10)
+
+```
+
 ## Technical validation
 
-We identified `r length(unique(features_table[,1]))` biodiversity feature datasets that are split into `r length(unique(paste0(features_table[,1],features_table[,2])))` separate triggers (@tbl-features).
+We identified `r length(unique(features_table[,1]))` biodiversity feature datasets that are split into `r length(unique(paste0(features_table[,1],features_table[,2])))` separate triggers [(@tbl-features-pdf)]{.content-visible when-format="pdf"} [(@tbl-features-html)]{.content-visible when-format="html"}.
 
-:::{.content-visible when-format="html"}
-
+::: {.content-visible when-format="html"}
 ```{r features-table-html}
 #| echo: false
 #| tbl-cap: "Biodiversity features included in the analysis, their alignment with IFC PS6 Critical Habitat criteria and classification as 'Likely' or 'Potential' Critical Habitat. 'CR': Critically Endangered; 'EN': Endangered; 'L': Likely; 'P': Potential."
@@ -346,11 +384,9 @@ kable(criteria_areas,
   add_header_above(c(" "=1,"Likely"=2,"Potential"=2))
 
 ```
-
 :::
 
-:::{.content-visible when-format="pdf"}
-
+::: {.content-visible when-format="pdf"}
 ```{r features-table-pdf}
 #| echo: false
 #| tbl-cap: "Biodiversity features included in the analysis, their alignment with IFC PS6 Critical Habitat criteria and classification as 'Likely' or 'Potential' Critical Habitat."
@@ -436,7 +472,30 @@ kable(criteria_areas,
   column_spec(1,width="8cm")
 
 ```
-
 :::
 
+### IUCN Red List species ranges
+
+![Placeholder for IUCN sensitivity analysis](../../outputs/paper/ch_paper_supp_files/figure-html/fig-rl-sensitivity-1.png)
+
 ## Usage notes
+
+As noted by Martin *et al.*[@martinGlobalMapAid2015] and Brauneder *et al.*[@braunederGlobalScreeningCritical2018], the global Critical Habitat screening layer does not replace detailed on the ground Critical Habitat assessments. The data allow users to identify areas that need further investigation.
+
+We recommend working mostly with the raster data. While the polygon layer allows for more information to be stored about the relevant biodiversity triggers, it is susceptible to misuse if users mistake it for actual vector data and start performing advanced spatial operations on the layer.
+
+Due to precision restrictions inherent with **R**, the number of biodiversity feature triggers that this workflow can handle is 60 (this analysis uses `r length(unique(paste0(features_table[,1],features_table[,2])))`, [see @tbl-features-pdf]{.content-visible when-format="pdf"} [see @tbl-features-html]{.content-visible when-format="html"}).
+
+## Code availability
+
+The code used to compile this update of the global Critical Habitat screening layer is publicly available through the *Zenodo* repository [REF]. The analysis is split across seven **R** scripts:
+
+- *0 spatial_processing_functions.R*. Provides custom spatial processing functions required (see Methods).
+- *1.1 Red_List_Preprocessing.R*. Initial processing of the IUCN Red List data, including filtering out species ranges with areas larger than a set amount of standard deviations above the mean (see Technical Validation).
+- *1.2 Data_Preprocessing_Raster.R*. Preprocessing for the few datasets not available in vector format to produce standardised binary rasters for the next stage of the analysis.
+- *1.3 Data_Preprocessing_Vector.R*. Preprocessing for vector input datasets to produce flat, dissolved layers for the next stage of the analysis.
+- *2 Create_Drill_Down_Critical_Habitat_Raster_Layer.R*. Contains the lion's share of processing. Converts the input flat vector layers to binary raster data and combines with the existing binary raster data in a process akin to the *Combine* tool in ArcGIS to produce a layer with a unique value for every resultant combination of input datasets. The script also produces the accompanying raster attribute table (RAT).
+- *3 Create_Basic_Critical_Habitat_Raster_Layers.R*. Converts the detailed raster data into the basic Critical Habitat file.
+- *4 Create_Drill_Down_Polygons.R*. Polygonises the drill down raster data to produce a vector layer that allows more information to be stored in the file than allowed in the sptial grid + RAT.
+
+We regret that we cannot provide the full suite of input data due to copyright restrictions. All data are available on request from their respective owners.
