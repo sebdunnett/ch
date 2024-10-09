@@ -36,8 +36,10 @@ P_IMMAA,Potential,IMMAs under criterion B1,0,1,0,0,0
 P_IMMAD1,Potential,IMMAs under criterion D1,0,1,0,1,0
 P_IMMAD2,Potential,IMMAs under criterion D2,0,0,0,1,0
 P_KBAA1B,Potential,KBAs under criterion A1b,1,0,0,0,0
+P_KBAB4,Potential,KBAs under criterion B4,0,0,0,1,0
 P_KBAD1B,Potential,KBAs under criterion D1b,0,0,1,0,0
 P_KBAD3,Potential,KBAs under criterion D3,0,0,1,0,0
+P_KBAE,Potential,KBAs under criterion E,1,0,0,0,0
 P_RAMS4789,Potential,"Ramsar sites under criteria 4, 7, 8 and 9",0,0,1,0,0
 P_TRTLALL,Potential,Sea turtle nesting sites - All species,0,0,1,1,0
 P_SEAMOUNT,Potential,Seamounts,0,0,0,1,0

@@ -20,11 +20,11 @@ lookup = read.csv("scripts_tools/lookup.csv") %>%
 
 feature_lookup = pull(lookup,Feature,Short)
 
-ch_rast = rast(paste0(output_path,"Critical_Habitat_Drill_Down_WGS.tif"))
+ch_rast = rast(paste0(output_path,"Drill_Down_Critical_Habitat.tif"))
 activeCat(ch_rast) = "VALUE"
 ch_polys = as.polygons(ch_rast) |>
   st_as_sf()
-ch_df = foreign::read.dbf(paste0(output_path,"Critical_Habitat_Drill_Down_WGS.tif.vat.dbf"))
+ch_df = foreign::read.dbf(paste0(output_path,"Drill_Down_Critical_Habitat.tif.vat.dbf"))
 ch_polys_full = left_join(ch_polys,ch_df,by="VALUE")
 
 criteria_join = ch_df |>
@@ -57,4 +57,4 @@ out = reduce(list(ch_polys,dplyr::select(ch_df,VALUE,CH),criteria_join,features_
   dplyr::select(-VALUE) |>
   arrange(CH,CRITERIA,ALL_FEATURES)
 
-st_save(sf=out,filename="Critical_Habitat_Drill_Down_Polygons.gpkg",outpath=output_path)
+st_save(sf=out,filename="Drill_Down_Critical_Habitat_Polygons.gpkg",outpath=output_path)

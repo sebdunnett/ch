@@ -243,3 +243,26 @@ st_buffer_antimeridian <- function(sf,dist,max_cells){
   }
 }
 
+query_unepwcmc <- function(dataset=NULL,feature_layer=0,q="1=1"){
+  
+  if (!require('httr')) install.packages('httr'); library('httr')
+  
+  if(is.null(dataset)){
+    return("Please select a dataset")
+  } else {}
+  
+  url = parse_url("https://data-gis.unep-wcmc.org/server/rest/services")
+  
+  url$path <- paste(url$path, dataset,"FeatureServer",feature_layer,"query", sep = "/")
+  
+  url$query <- list(
+    where = q,
+    outFields = "*",
+    f = "geojson"
+  )
+  
+  sf = build_url(url) |>
+    st_read()
+  
+  return(sf)
+}

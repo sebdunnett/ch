@@ -1,10 +1,9 @@
-################################################################
-#### CREATE DRILL DOWN CRITICAL HABITAT RASTER LAYER IN WGS ####
-################################################################
+#########################################################
+#### CREATE DRILL DOWN CRITICAL HABITAT RASTER LAYER ####
+#########################################################
 
 # Author: Seb Dunnett
 # Created: 16/02/2023
-# Modified: 28/07/2023
 
 # Install packages (if required)
 if (!require("pacman")) install.packages("pacman")
@@ -99,19 +98,19 @@ correct_lpts_names = sapply(split(likely_pts,"Feature"), function(i) i[["Feature
 cat("rasterising polygons and points\n")
 
 tic("rasterise likely points")
-rasterize(likely_pts, raster_WGS, field="Values", by="Feature", fun=function(x) min(x,na.rm=TRUE), background=0, filename=paste0(scratch_path,"likely_WGS_pts.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S", names=correct_lpts_names))
+rasterize(likely_pts, raster_WGS, field="Values", by="Feature", fun=function(x) min(x,na.rm=TRUE), background=0, filename=paste0(scratch_path,"likely_pts.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S", names=correct_lpts_names))
 toc()
 
 correct_lpolys_names = sapply(split(likely_polys,"Feature"), function(i) i[["Feature"]][1])
 
 tic("rasterise likely polygons")
-rasterize(likely_polys, raster_WGS, field="Values", by="Feature", fun="min", touches=TRUE, background=0, filename=paste0(scratch_path,"likely_WGS_polys.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S",names=correct_lpolys_names))
+rasterize(likely_polys, raster_WGS, field="Values", by="Feature", fun="min", touches=TRUE, background=0, filename=paste0(scratch_path,"likely_polys.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S",names=correct_lpolys_names))
 toc()
 
 cat("importing already rasterised input data\n")
 
 likely_rfiles = list.files(scratch_path) %>% 
-  keep(.,str_detect(.,"^L_") & str_detect(.,"WGS.tif"))
+  keep(.,str_detect(.,"^L_") & str_detect(.,".tif"))
 likely_rasters = rast(lapply(paste0(scratch_path,likely_rfiles),rast))
 likely_rasters = likely_rasters[[order(names(likely_rasters))]]
 tic("reclass input rasters")
@@ -123,8 +122,8 @@ if(simple_analysis){
     resample(raster_WGS,method="near")
 } else{}
 
-likely = c(rast(paste0(scratch_path,"likely_WGS_polys.tif")),
-              rast(paste0(scratch_path,"likely_WGS_pts.tif")),
+likely = c(rast(paste0(scratch_path,"likely_polys.tif")),
+              rast(paste0(scratch_path,"likely_pts.tif")),
               likely_rasters)
 
 likely_duplicates = duplicated(names(likely)) | duplicated(names(likely),fromLast=TRUE)
@@ -147,7 +146,7 @@ if(any(likely_duplicates)){
 
 cat("summing likely raster stack\n")
 tic("summing likely raster stack")
-app(likely,sum,filename=paste0(scratch_path,"likely_WGS_sum.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S"))
+app(likely,sum,filename=paste0(scratch_path,"likely_sum.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S"))
 toc()
 
 ################################################################
@@ -181,19 +180,19 @@ correct_ppts_names = sapply(split(potential_pts,"Feature"), function(i) i[["Feat
 cat("rasterising polygons and points\n")
 
 tic("rasterise potential points")
-rasterize(potential_pts, raster_WGS, field="Values", by="Feature", fun=function(x) min(x,na.rm=TRUE), background=0, filename=paste0(scratch_path,"potential_WGS_pts.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S", names=correct_ppts_names))
+rasterize(potential_pts, raster_WGS, field="Values", by="Feature", fun=function(x) min(x,na.rm=TRUE), background=0, filename=paste0(scratch_path,"potential_pts.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S", names=correct_ppts_names))
 toc()
 
 correct_ppolys_names = sapply(split(potential_polys,"Feature"), function(i) i[["Feature"]][1])
 
 tic("rasterise potential polygons")
-rasterize(potential_polys, raster_WGS, field="Values", by="Feature", fun="min", touches=TRUE, background=0, filename=paste0(scratch_path,"potential_WGS_polys.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S",names=correct_ppolys_names))
+rasterize(potential_polys, raster_WGS, field="Values", by="Feature", fun="min", touches=TRUE, background=0, filename=paste0(scratch_path,"potential_polys.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S",names=correct_ppolys_names))
 toc()
 
 cat("importing already rasterised input data\n")
 
 potential_rfiles = list.files(scratch_path) %>% 
-  keep(.,str_detect(.,"^P_") & str_detect(.,"WGS.tif"))
+  keep(.,str_detect(.,"^P_") & str_detect(.,".tif"))
 potential_rasters = rast(lapply(paste0(scratch_path,potential_rfiles),rast))
 potential_rasters = potential_rasters[[order(names(potential_rasters))]]
 tic("reclass input rasters")
@@ -205,8 +204,8 @@ if(simple_analysis){
     resample(raster_WGS,method="near")
 } else{}
 
-potential = c(rast(paste0(scratch_path,"potential_WGS_polys.tif")),
-              rast(paste0(scratch_path,"potential_WGS_pts.tif")),
+potential = c(rast(paste0(scratch_path,"potential_polys.tif")),
+              rast(paste0(scratch_path,"potential_pts.tif")),
               potential_rasters)
 
 potential_duplicates = duplicated(names(potential)) | duplicated(names(potential),fromLast=TRUE)
@@ -229,15 +228,15 @@ if(any(potential_duplicates)){
 
 cat("summing potential raster stack\n")
 tic("summing potential raster stack")
-app(potential,sum,filename=paste0(scratch_path,"potential_WGS_sum.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S"))
+app(potential,sum,filename=paste0(scratch_path,"potential_sum.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S"))
 toc()
 
 # Combine
 cat("combining likely and potential rasters and saving\n")
 tic("combine likely and potential rasters")
-combined = c(rast(paste0(scratch_path,"potential_WGS_sum.tif")),rast(paste0(scratch_path,"likely_WGS_sum.tif")))
+combined = c(rast(paste0(scratch_path,"potential_sum.tif")),rast(paste0(scratch_path,"likely_sum.tif")))
 
-app(combined, sum, filename=paste0(scratch_path,"likely_potential_WGS_sum.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S"))
+app(combined, sum, filename=paste0(scratch_path,"likely_potential_sum.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S"))
 toc()
 
 ################################################################################
@@ -248,7 +247,7 @@ cat("Extracting unique raster values...\n")
 
 # extract unique values from raster
 # these are all unique combinations of triggers at 1km resolution
-ID = unique(rast(paste0(scratch_path,"likely_potential_WGS_sum.tif"))) %>% 
+ID = unique(rast(paste0(scratch_path,"likely_potential_sum.tif"))) %>% 
   rename(ID=sum)
 
 cat("Creating raster attribute table...\n")
@@ -319,7 +318,7 @@ final_rat = inner_join(cr_rat,rat_full,by="ID")
 cat("Calculating cell frequencies...\n")
 
 # ArcGIS calculates this automatically but good to have for software independence
-cell_counts = freq(rast(paste0(scratch_path,"likely_potential_WGS_sum.tif")))
+cell_counts = freq(rast(paste0(scratch_path,"likely_potential_sum.tif")))
 
 # Replace IDs with a more sensible value so we can save as integer raster
 # e.g. 5003010, 500, 95060601 --> 1,2,3 etc.
@@ -341,16 +340,16 @@ cat("Reclassifying raster...\n")
 final_rat = final_rat %>% dplyr::select(VALUE:C5,sort(shorts))
 
 # reclassify output raster to our more sensible values
-rss = classify(rast(paste0(scratch_path,"likely_potential_WGS_sum.tif")),as.matrix(cbind(sort(ID$ID),1:nrow(ID))))
+rss = classify(rast(paste0(scratch_path,"likely_potential_sum.tif")),as.matrix(cbind(sort(ID$ID),1:nrow(ID))))
 
 # saving files and removing previous versions
 cat("Saving raster...\n")
 
-rast_save(rst=rss,filename="Critical_Habitat_Drill_Down_WGS.tif",outpath=output_path,nms="Critical_Habitat_Drill_Down_WGS",dt="INT2U")
+rast_save(rst=rss,filename="Drill_Down_Critical_Habitat.tif",outpath=output_path,nms="Drill_Down_Critical_Habitat",dt="INT2U")
 
 cat("Saving RAT...\n")
 
-dbf_file = paste0(output_path,"Critical_Habitat_Drill_Down_WGS.tif.vat.dbf")
+dbf_file = paste0(output_path,"Drill_Down_Critical_Habitat.tif.vat.dbf")
 old_fnm = str_replace(dbf_file,".tif.vat.dbf","_old.tif.vat.dbf")
 
 if(old_fnm %in% list.files(output_path, full.names=TRUE)){
