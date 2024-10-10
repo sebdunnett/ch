@@ -11,10 +11,6 @@ pacman::p_load(sf,tidyverse,terra,tictoc,geos)
 
 data_path = "raw_data/"
 
-if (!dir.exists("scratch")) {
-  dir.create("scratch")
-}
-
 output_path = "scratch/"
 
 # import helper functions

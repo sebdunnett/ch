@@ -13,10 +13,6 @@ tic("processing RL ranges")
 # location of full Red List geodatabase
 rl_gdb = "E:/Seb D/Critical habitat/IUCN_RL_2023_1_Species_Data/IUCN_RL_2023_1_Species_Data.gdb"
 
-if (!dir.exists("scratch")) {
-  dir.create("scratch")
-}
-
 output_path = "scratch/"
 
 # import helper functions

@@ -7,7 +7,7 @@
 
 # Install packages (if required)
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(sf,terra,tidyverse,units,tictoc, foreign)
+pacman::p_load(sf,terra,tidyverse,units,tictoc,foreign)
 
 # Turns off scientific notation, e.g. 12.0e+12
 # Set terra to default to FLT8S (double float)
@@ -15,19 +15,8 @@ pacman::p_load(sf,terra,tidyverse,units,tictoc, foreign)
 options(scipen = 999)
 terraOptions(datatype="FLT8S", memfrac=0.8)
 
-simple_analysis = FALSE
-
 # import helper functions
 source("scripts_tools/0 spatial_processing_functions.R")
-
-# load example raster with appropriate extent (global) and resolution (1/120 degrees ~ 1km)
-if(simple_analysis){
-  cat("running at 10km with simplified polygons\n")
-  raster_WGS <- rast(res=1/12)
-} else{
-  cat("running at 1km with original polygons\n")
-  raster_WGS <- rast(res=1/120)
-}
 
 tic("time to complete")
 
@@ -73,59 +62,69 @@ lookup$Type_Feature = paste0(lookup$Type,"; ",lookup$Feature)
 
 cat("read in likely points and polygons\n")
 
+# list all polygon files in scratch folder
 likely_polys_files = list.files(scratch_path) %>% 
   keep(.,str_detect(.,"^L_") & str_detect(.,"_polys.shp"))
+# list all multipoint files in scratch folder
 likely_pts_files = list.files(scratch_path) %>% 
   keep(.,str_detect(.,"^L_") & str_detect(.,"_pts.shp"))
 
+# read in likely polygons
+# merge with values we need to transfer when rasterising
 tic("time to read in likely polygons")
-if(simple_analysis){
-likely_polys = vect(paste0(scratch_path,"likely_simpl.shp")) %>%
-  terra::sort("Feature") %>%
-  terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
-} else {
-likely_polys = vect(lapply(paste0(scratch_path,likely_polys_files),vect)) %>% 
+likely_polys = vect(lapply(paste0(scratch_path,likely_polys_files),vect)) %>%
   terra::sort("Feature") %>% 
   terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
-}
 toc()
+
+# read in likely multipoints
+# merge with values we need to transfer when rasterising
 likely_pts = vect(lapply(paste0(scratch_path,likely_pts_files),vect)) %>%
   terra::sort("Feature") %>% 
   terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
 
+# terra::rasterize does not currently always correctly transfer names when rasterising
+# this is a safeguard against it
 correct_lpts_names = sapply(split(likely_pts,"Feature"), function(i) i[["Feature"]][1])
 
 cat("rasterising polygons and points\n")
 
+# rasterise likely multipoints
+# transfer values for binary info retention when summing features
 tic("rasterise likely points")
 rasterize(likely_pts, raster_WGS, field="Values", by="Feature", fun=function(x) min(x,na.rm=TRUE), background=0, filename=paste0(scratch_path,"likely_pts.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S", names=correct_lpts_names))
 toc()
 
+# terra::rasterize does not currently always correctly transfer names when rasterising
+# this is a safeguard against it
 correct_lpolys_names = sapply(split(likely_polys,"Feature"), function(i) i[["Feature"]][1])
 
+# rasterise likely polygons
+# transfer values for binary info retention when summing features
 tic("rasterise likely polygons")
 rasterize(likely_polys, raster_WGS, field="Values", by="Feature", fun="min", touches=TRUE, background=0, filename=paste0(scratch_path,"likely_polys.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S",names=correct_lpolys_names))
 toc()
 
 cat("importing already rasterised input data\n")
 
+# some input data are already rasterised
+# list files, import and stack
+# order layers alphabetically and transfer values for binary info retention when summing features
 likely_rfiles = list.files(scratch_path) %>% 
-  keep(.,str_detect(.,"^L_") & str_detect(.,".tif"))
+  keep(.,str_detect(.,"^L_") & str_detect(.,".tif") & !str_detect(.,"_uncertainty"))
 likely_rasters = rast(lapply(paste0(scratch_path,likely_rfiles),rast))
 likely_rasters = likely_rasters[[order(names(likely_rasters))]]
 tic("reclass input rasters")
 likely_rasters = likely_rasters*(lookup[lookup$Feature %in% names(likely_rasters),"Values"])
 toc()
 
-if(simple_analysis){
-  likely_rasters = aggregate(likely_rasters,fact=10,fun="modal") %>% 
-    resample(raster_WGS,method="near")
-} else{}
-
+# stack rasterised multipoints, polygons and existing rasters
 likely = c(rast(paste0(scratch_path,"likely_polys.tif")),
               rast(paste0(scratch_path,"likely_pts.tif")),
               likely_rasters)
 
+# features occassionally count as both likely and potential
+# these lines ensure they are handled correctly in both cateories
 likely_duplicates = duplicated(names(likely)) | duplicated(names(likely),fromLast=TRUE)
 
 if(any(likely_duplicates)){
@@ -144,6 +143,7 @@ if(any(likely_duplicates)){
   likely = c(likely_unique_stack,likely_duplicate_stack)
 } else{}
 
+# sum raster layers to output single raster with info retained on features
 cat("summing likely raster stack\n")
 tic("summing likely raster stack")
 app(likely,sum,filename=paste0(scratch_path,"likely_sum.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S"))
@@ -155,59 +155,70 @@ toc()
 
 cat("read in potential points and polygons\n")
 
+# list all polygon files in scratch folder
 potential_polys_files = list.files(scratch_path) %>% 
   keep(.,str_detect(.,"^P_") & str_detect(.,"_polys.shp"))
+
+# list all multipoint files in scratch folder
 potential_pts_files = list.files(scratch_path) %>% 
   keep(.,str_detect(.,"^P_") & str_detect(.,"_pts.shp"))
 
+# read in potential polygons
+# merge with values we need to transfer when rasterising
 tic("read in potential polygons")
-if(simple_analysis){
-  potential_polys = vect(paste0(scratch_path,"potential_simpl.shp")) %>%
-    terra::sort("Feature") %>%
-    terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
-} else {
-  potential_polys = vect(lapply(paste0(scratch_path,potential_polys_files),vect)) %>% 
-    terra::sort("Feature") %>% 
-    terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
-}
+potential_polys = vect(lapply(paste0(scratch_path,potential_polys_files),vect)) %>% 
+  terra::sort("Feature") %>% 
+  terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
 toc()
+
+# read in potential multipoints
+# merge with values we need to transfer when rasterising
 potential_pts = vect(lapply(paste0(scratch_path,potential_pts_files),vect)) %>% 
   terra::sort("Feature") %>% 
   terra::merge(select(lookup,Type,Feature,Values), all.x=TRUE, by.x=c('Type', 'Feature'), by.y=c('Type', 'Feature'))
 
+# terra::rasterize does not currently always correctly transfer names when rasterising
+# this is a safeguard against it
 correct_ppts_names = sapply(split(potential_pts,"Feature"), function(i) i[["Feature"]][1])
 
 cat("rasterising polygons and points\n")
 
+# rasterise potential multipoints
+# transfer values for binary info retention when summing features
 tic("rasterise potential points")
 rasterize(potential_pts, raster_WGS, field="Values", by="Feature", fun=function(x) min(x,na.rm=TRUE), background=0, filename=paste0(scratch_path,"potential_pts.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S", names=correct_ppts_names))
 toc()
 
+# terra::rasterize does not currently always correctly transfer names when rasterising
+# this is a safeguard against it
 correct_ppolys_names = sapply(split(potential_polys,"Feature"), function(i) i[["Feature"]][1])
 
+# rasterise potential polygons
+# transfer values for binary info retention when summing features
 tic("rasterise potential polygons")
 rasterize(potential_polys, raster_WGS, field="Values", by="Feature", fun="min", touches=TRUE, background=0, filename=paste0(scratch_path,"potential_polys.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S",names=correct_ppolys_names))
 toc()
 
 cat("importing already rasterised input data\n")
 
+# some input data are already rasterised
+# list files, import and stack
+# order layers alphabetically and transfer values for binary info retention when summing features
 potential_rfiles = list.files(scratch_path) %>% 
-  keep(.,str_detect(.,"^P_") & str_detect(.,".tif"))
+  keep(.,str_detect(.,"^P_") & str_detect(.,".tif") & !str_detect(.,"_uncertainty"))
 potential_rasters = rast(lapply(paste0(scratch_path,potential_rfiles),rast))
 potential_rasters = potential_rasters[[order(names(potential_rasters))]]
 tic("reclass input rasters")
 potential_rasters = potential_rasters*(lookup[lookup$Feature %in% names(potential_rasters),"Values"])
 toc()
 
-if(simple_analysis){
-  potential_rasters = aggregate(potential_rasters,fact=10,fun="modal") %>% 
-    resample(raster_WGS,method="near")
-} else{}
-
+# stack rasterised multipoints, polygons and existing rasters
 potential = c(rast(paste0(scratch_path,"potential_polys.tif")),
               rast(paste0(scratch_path,"potential_pts.tif")),
               potential_rasters)
 
+# features occassionally count as both likely and potential
+# these lines ensure they are handled correctly in both cateories
 potential_duplicates = duplicated(names(potential)) | duplicated(names(potential),fromLast=TRUE)
 
 if(any(potential_duplicates)){
@@ -226,16 +237,18 @@ if(any(potential_duplicates)){
   potential = c(potential_unique_stack,potential_duplicate_stack)
 } else{}
 
+# sum raster layers to output single raster with info retained on features
 cat("summing potential raster stack\n")
 tic("summing potential raster stack")
 app(potential,sum,filename=paste0(scratch_path,"potential_sum.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S"))
 toc()
 
-# Combine
+# stack likely and potential summed rasters
 cat("combining likely and potential rasters and saving\n")
 tic("combine likely and potential rasters")
 combined = c(rast(paste0(scratch_path,"potential_sum.tif")),rast(paste0(scratch_path,"likely_sum.tif")))
 
+# sum likely and potential rasters to output single raster with info retained on features
 app(combined, sum, filename=paste0(scratch_path,"likely_potential_sum.tif"), overwrite=TRUE, wopt=list(datatype="FLT8S"))
 toc()
 
