@@ -49,22 +49,6 @@ st_save(sf=P_C3_C4_Turtle_all, filename="P_C3_C4_Turtle_all_pts.shp", outpath=ou
 cat("done\n")
 
 ################################################################
-#### CLOUD FORESTS (POINT) #####################################
-################################################################
-
-cat("cloud forests...")
-
-P_C4_Cloud_Forest = query_unepwcmc(dataset="Global_Distribution_of_Tropical_Montane_Cloud_Forests") %>%
-  st_faster_union() %>%
-  mutate(Type = "Potential", Feature = "Tropical montane cloud forests")
-
-cat("saving...")
-
-st_save(sf=P_C4_Cloud_Forest, filename="P_C4_Cloud_Forest_pts.shp", outpath=output_path)
-
-cat("done\n")
-
-################################################################
 #### COLD SEEPS (POINT) ########################################
 ################################################################
 

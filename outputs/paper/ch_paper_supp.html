@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.3.450">
+<meta name="generator" content="quarto-1.2.475">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -17,15 +17,14 @@ div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
   width: 0.8em;
-  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  margin: 0 0.8em 0.2em -1.6em;
   vertical-align: middle;
 }
-/* CSS for citations */
 div.csl-bib-body { }
 div.csl-entry {
   clear: both;
 }
-.hanging-indent div.csl-entry {
+.hanging div.csl-entry {
   margin-left:2em;
   text-indent:-2em;
 }
@@ -39,7 +38,8 @@ div.csl-right-inline {
 }
 div.csl-indent {
   margin-left: 2em;
-}</style>
+}
+</style>
 
 
 <script src="ch_paper_supp_files/libs/clipboard/clipboard.min.js"></script>
@@ -64,81 +64,81 @@ div.csl-indent {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#sec-s2" id="toc-sec-s2" class="nav-link active" data-scroll-target="#sec-s2"><span class="header-section-number">1</span> Spherical geometries with the S2 library</a></li>
-  <li><a href="#sec-union" id="toc-sec-union" class="nav-link" data-scroll-target="#sec-union"><span class="header-section-number">2</span> Unioning geometries</a></li>
-  <li><a href="#sec-coldseeps" id="toc-sec-coldseeps" class="nav-link" data-scroll-target="#sec-coldseeps"><span class="header-section-number">3</span> Cold seeps</a></li>
-  <li><a href="#sec-cold-corals" id="toc-sec-cold-corals" class="nav-link" data-scroll-target="#sec-cold-corals"><span class="header-section-number">4</span> Cold water corals</a>
+  <li><a href="#sec-s2" id="toc-sec-s2" class="nav-link active" data-scroll-target="#sec-s2"><span class="toc-section-number">1</span>  Spherical geometries with the S2 library</a></li>
+  <li><a href="#sec-union" id="toc-sec-union" class="nav-link" data-scroll-target="#sec-union"><span class="toc-section-number">2</span>  Unioning geometries</a></li>
+  <li><a href="#sec-coldseeps" id="toc-sec-coldseeps" class="nav-link" data-scroll-target="#sec-coldseeps"><span class="toc-section-number">3</span>  Cold seeps</a></li>
+  <li><a href="#sec-cold-corals" id="toc-sec-cold-corals" class="nav-link" data-scroll-target="#sec-cold-corals"><span class="toc-section-number">4</span>  Cold water corals</a>
   <ul class="collapse">
-  <li><a href="#modelled-occurrence" id="toc-modelled-occurrence" class="nav-link" data-scroll-target="#modelled-occurrence"><span class="header-section-number">4.1</span> Modelled occurrence</a></li>
-  <li><a href="#observed-occurence" id="toc-observed-occurence" class="nav-link" data-scroll-target="#observed-occurence"><span class="header-section-number">4.2</span> Observed occurence</a></li>
+  <li><a href="#modelled-occurrence" id="toc-modelled-occurrence" class="nav-link" data-scroll-target="#modelled-occurrence"><span class="toc-section-number">4.1</span>  Modelled occurrence</a></li>
+  <li><a href="#observed-occurence" id="toc-observed-occurence" class="nav-link" data-scroll-target="#observed-occurence"><span class="toc-section-number">4.2</span>  Observed occurence</a></li>
   </ul></li>
-  <li><a href="#sec-everwet" id="toc-sec-everwet" class="nav-link" data-scroll-target="#sec-everwet"><span class="header-section-number">5</span> Ever-wet tropical forest</a></li>
-  <li><a href="#sec-hydro" id="toc-sec-hydro" class="nav-link" data-scroll-target="#sec-hydro"><span class="header-section-number">6</span> Hydrothermal vents</a></li>
-  <li><a href="#sec-kbas" id="toc-sec-kbas" class="nav-link" data-scroll-target="#sec-kbas"><span class="header-section-number">7</span> Key Biodiversity Areas (KBAs)</a>
+  <li><a href="#sec-everwet" id="toc-sec-everwet" class="nav-link" data-scroll-target="#sec-everwet"><span class="toc-section-number">5</span>  Ever-wet tropical forest</a></li>
+  <li><a href="#sec-hydro" id="toc-sec-hydro" class="nav-link" data-scroll-target="#sec-hydro"><span class="toc-section-number">6</span>  Hydrothermal vents</a></li>
+  <li><a href="#sec-kbas" id="toc-sec-kbas" class="nav-link" data-scroll-target="#sec-kbas"><span class="toc-section-number">7</span>  Key Biodiversity Areas (KBAs)</a>
   <ul class="collapse">
-  <li><a href="#alliance-for-zero-extinction-sites-azes" id="toc-alliance-for-zero-extinction-sites-azes" class="nav-link" data-scroll-target="#alliance-for-zero-extinction-sites-azes"><span class="header-section-number">7.1</span> Alliance for Zero Extinction Sites (AZEs)</a></li>
-  <li><a href="#kbas-under-criteria-a1a-and-a1e" id="toc-kbas-under-criteria-a1a-and-a1e" class="nav-link" data-scroll-target="#kbas-under-criteria-a1a-and-a1e"><span class="header-section-number">7.2</span> KBAs under criteria A1a and A1e</a></li>
-  <li><a href="#kbas-under-criterion-a1b" id="toc-kbas-under-criterion-a1b" class="nav-link" data-scroll-target="#kbas-under-criterion-a1b"><span class="header-section-number">7.3</span> KBAs under criterion A1b</a></li>
-  <li><a href="#kbas-under-criterion-a2a" id="toc-kbas-under-criterion-a2a" class="nav-link" data-scroll-target="#kbas-under-criterion-a2a"><span class="header-section-number">7.4</span> KBAs under criterion A2a</a></li>
-  <li><a href="#kbas-under-criterion-a2b" id="toc-kbas-under-criterion-a2b" class="nav-link" data-scroll-target="#kbas-under-criterion-a2b"><span class="header-section-number">7.5</span> KBAs under criterion A2b</a></li>
-  <li><a href="#kbas-under-criterion-b1" id="toc-kbas-under-criterion-b1" class="nav-link" data-scroll-target="#kbas-under-criterion-b1"><span class="header-section-number">7.6</span> KBAs under criterion B1</a></li>
-  <li><a href="#kbas-under-criterion-b4" id="toc-kbas-under-criterion-b4" class="nav-link" data-scroll-target="#kbas-under-criterion-b4"><span class="header-section-number">7.7</span> KBAs under criterion B4</a></li>
-  <li><a href="#kbas-under-criterion-c" id="toc-kbas-under-criterion-c" class="nav-link" data-scroll-target="#kbas-under-criterion-c"><span class="header-section-number">7.8</span> KBAs under criterion C</a></li>
-  <li><a href="#kbas-under-criterion-d1a" id="toc-kbas-under-criterion-d1a" class="nav-link" data-scroll-target="#kbas-under-criterion-d1a"><span class="header-section-number">7.9</span> KBAs under criterion D1a</a></li>
-  <li><a href="#kbas-under-criterion-d1b" id="toc-kbas-under-criterion-d1b" class="nav-link" data-scroll-target="#kbas-under-criterion-d1b"><span class="header-section-number">7.10</span> KBAs under criterion D1b</a></li>
-  <li><a href="#kbas-under-criterion-d2" id="toc-kbas-under-criterion-d2" class="nav-link" data-scroll-target="#kbas-under-criterion-d2"><span class="header-section-number">7.11</span> KBAs under criterion D2</a></li>
-  <li><a href="#kbas-under-criterion-d3" id="toc-kbas-under-criterion-d3" class="nav-link" data-scroll-target="#kbas-under-criterion-d3"><span class="header-section-number">7.12</span> KBAs under criterion D3</a></li>
-  <li><a href="#kbas-under-criterion-e" id="toc-kbas-under-criterion-e" class="nav-link" data-scroll-target="#kbas-under-criterion-e"><span class="header-section-number">7.13</span> KBAs under criterion E</a></li>
+  <li><a href="#alliance-for-zero-extinction-sites-azes" id="toc-alliance-for-zero-extinction-sites-azes" class="nav-link" data-scroll-target="#alliance-for-zero-extinction-sites-azes"><span class="toc-section-number">7.1</span>  Alliance for Zero Extinction Sites (AZEs)</a></li>
+  <li><a href="#kbas-under-criteria-a1a-and-a1e" id="toc-kbas-under-criteria-a1a-and-a1e" class="nav-link" data-scroll-target="#kbas-under-criteria-a1a-and-a1e"><span class="toc-section-number">7.2</span>  KBAs under criteria A1a and A1e</a></li>
+  <li><a href="#kbas-under-criterion-a1b" id="toc-kbas-under-criterion-a1b" class="nav-link" data-scroll-target="#kbas-under-criterion-a1b"><span class="toc-section-number">7.3</span>  KBAs under criterion A1b</a></li>
+  <li><a href="#kbas-under-criterion-a2a" id="toc-kbas-under-criterion-a2a" class="nav-link" data-scroll-target="#kbas-under-criterion-a2a"><span class="toc-section-number">7.4</span>  KBAs under criterion A2a</a></li>
+  <li><a href="#kbas-under-criterion-a2b" id="toc-kbas-under-criterion-a2b" class="nav-link" data-scroll-target="#kbas-under-criterion-a2b"><span class="toc-section-number">7.5</span>  KBAs under criterion A2b</a></li>
+  <li><a href="#kbas-under-criterion-b1" id="toc-kbas-under-criterion-b1" class="nav-link" data-scroll-target="#kbas-under-criterion-b1"><span class="toc-section-number">7.6</span>  KBAs under criterion B1</a></li>
+  <li><a href="#kbas-under-criterion-b4" id="toc-kbas-under-criterion-b4" class="nav-link" data-scroll-target="#kbas-under-criterion-b4"><span class="toc-section-number">7.7</span>  KBAs under criterion B4</a></li>
+  <li><a href="#kbas-under-criterion-c" id="toc-kbas-under-criterion-c" class="nav-link" data-scroll-target="#kbas-under-criterion-c"><span class="toc-section-number">7.8</span>  KBAs under criterion C</a></li>
+  <li><a href="#kbas-under-criterion-d1a" id="toc-kbas-under-criterion-d1a" class="nav-link" data-scroll-target="#kbas-under-criterion-d1a"><span class="toc-section-number">7.9</span>  KBAs under criterion D1a</a></li>
+  <li><a href="#kbas-under-criterion-d1b" id="toc-kbas-under-criterion-d1b" class="nav-link" data-scroll-target="#kbas-under-criterion-d1b"><span class="toc-section-number">7.10</span>  KBAs under criterion D1b</a></li>
+  <li><a href="#kbas-under-criterion-d2" id="toc-kbas-under-criterion-d2" class="nav-link" data-scroll-target="#kbas-under-criterion-d2"><span class="toc-section-number">7.11</span>  KBAs under criterion D2</a></li>
+  <li><a href="#kbas-under-criterion-d3" id="toc-kbas-under-criterion-d3" class="nav-link" data-scroll-target="#kbas-under-criterion-d3"><span class="toc-section-number">7.12</span>  KBAs under criterion D3</a></li>
+  <li><a href="#kbas-under-criterion-e" id="toc-kbas-under-criterion-e" class="nav-link" data-scroll-target="#kbas-under-criterion-e"><span class="toc-section-number">7.13</span>  KBAs under criterion E</a></li>
   </ul></li>
-  <li><a href="#sec-ibas" id="toc-sec-ibas" class="nav-link" data-scroll-target="#sec-ibas"><span class="header-section-number">8</span> Important Bird and Biodiversity Areas (IBAs)</a>
+  <li><a href="#sec-ibas" id="toc-sec-ibas" class="nav-link" data-scroll-target="#sec-ibas"><span class="toc-section-number">8</span>  Important Bird and Biodiversity Areas (IBAs)</a>
   <ul class="collapse">
-  <li><a href="#ibas-under-criterion-a1" id="toc-ibas-under-criterion-a1" class="nav-link" data-scroll-target="#ibas-under-criterion-a1"><span class="header-section-number">8.1</span> IBAs under criterion A1</a></li>
-  <li><a href="#ibas-under-criterion-a2" id="toc-ibas-under-criterion-a2" class="nav-link" data-scroll-target="#ibas-under-criterion-a2"><span class="header-section-number">8.2</span> IBAs under criterion A2</a></li>
-  <li><a href="#ibas-under-criterion-a3" id="toc-ibas-under-criterion-a3" class="nav-link" data-scroll-target="#ibas-under-criterion-a3"><span class="header-section-number">8.3</span> IBAs under criterion A3</a></li>
-  <li><a href="#ibas-under-criterion-a4" id="toc-ibas-under-criterion-a4" class="nav-link" data-scroll-target="#ibas-under-criterion-a4"><span class="header-section-number">8.4</span> IBAs under criterion A4</a></li>
-  <li><a href="#ibas-under-criterion-b1b" id="toc-ibas-under-criterion-b1b" class="nav-link" data-scroll-target="#ibas-under-criterion-b1b"><span class="header-section-number">8.5</span> IBAs under criterion B1b</a></li>
+  <li><a href="#ibas-under-criterion-a1" id="toc-ibas-under-criterion-a1" class="nav-link" data-scroll-target="#ibas-under-criterion-a1"><span class="toc-section-number">8.1</span>  IBAs under criterion A1</a></li>
+  <li><a href="#ibas-under-criterion-a2" id="toc-ibas-under-criterion-a2" class="nav-link" data-scroll-target="#ibas-under-criterion-a2"><span class="toc-section-number">8.2</span>  IBAs under criterion A2</a></li>
+  <li><a href="#ibas-under-criterion-a3" id="toc-ibas-under-criterion-a3" class="nav-link" data-scroll-target="#ibas-under-criterion-a3"><span class="toc-section-number">8.3</span>  IBAs under criterion A3</a></li>
+  <li><a href="#ibas-under-criterion-a4" id="toc-ibas-under-criterion-a4" class="nav-link" data-scroll-target="#ibas-under-criterion-a4"><span class="toc-section-number">8.4</span>  IBAs under criterion A4</a></li>
+  <li><a href="#ibas-under-criterion-b1b" id="toc-ibas-under-criterion-b1b" class="nav-link" data-scroll-target="#ibas-under-criterion-b1b"><span class="toc-section-number">8.5</span>  IBAs under criterion B1b</a></li>
   </ul></li>
-  <li><a href="#sec-immas" id="toc-sec-immas" class="nav-link" data-scroll-target="#sec-immas"><span class="header-section-number">9</span> Important Marine Mammal Sites (IMMAs)</a>
+  <li><a href="#sec-immas" id="toc-sec-immas" class="nav-link" data-scroll-target="#sec-immas"><span class="toc-section-number">9</span>  Important Marine Mammal Sites (IMMAs)</a>
   <ul class="collapse">
-  <li><a href="#immas-under-criterion-a" id="toc-immas-under-criterion-a" class="nav-link" data-scroll-target="#immas-under-criterion-a"><span class="header-section-number">9.1</span> IMMAs under criterion A</a></li>
-  <li><a href="#immas-under-criterion-b1" id="toc-immas-under-criterion-b1" class="nav-link" data-scroll-target="#immas-under-criterion-b1"><span class="header-section-number">9.2</span> IMMAs under criterion B1</a></li>
-  <li><a href="#immas-under-criterion-b2" id="toc-immas-under-criterion-b2" class="nav-link" data-scroll-target="#immas-under-criterion-b2"><span class="header-section-number">9.3</span> IMMAs under criterion B2</a></li>
-  <li><a href="#immas-under-criteria-c1-c2-and-c3" id="toc-immas-under-criteria-c1-c2-and-c3" class="nav-link" data-scroll-target="#immas-under-criteria-c1-c2-and-c3"><span class="header-section-number">9.4</span> IMMAs under criteria C1, C2, and C3</a></li>
-  <li><a href="#immas-under-criterion-d1" id="toc-immas-under-criterion-d1" class="nav-link" data-scroll-target="#immas-under-criterion-d1"><span class="header-section-number">9.5</span> IMMAs under criterion D1</a></li>
-  <li><a href="#immas-under-criterion-d2" id="toc-immas-under-criterion-d2" class="nav-link" data-scroll-target="#immas-under-criterion-d2"><span class="header-section-number">9.6</span> IMMAs under criterion D2</a></li>
+  <li><a href="#immas-under-criterion-a" id="toc-immas-under-criterion-a" class="nav-link" data-scroll-target="#immas-under-criterion-a"><span class="toc-section-number">9.1</span>  IMMAs under criterion A</a></li>
+  <li><a href="#immas-under-criterion-b1" id="toc-immas-under-criterion-b1" class="nav-link" data-scroll-target="#immas-under-criterion-b1"><span class="toc-section-number">9.2</span>  IMMAs under criterion B1</a></li>
+  <li><a href="#immas-under-criterion-b2" id="toc-immas-under-criterion-b2" class="nav-link" data-scroll-target="#immas-under-criterion-b2"><span class="toc-section-number">9.3</span>  IMMAs under criterion B2</a></li>
+  <li><a href="#immas-under-criteria-c1-c2-and-c3" id="toc-immas-under-criteria-c1-c2-and-c3" class="nav-link" data-scroll-target="#immas-under-criteria-c1-c2-and-c3"><span class="toc-section-number">9.4</span>  IMMAs under criteria C1, C2, and C3</a></li>
+  <li><a href="#immas-under-criterion-d1" id="toc-immas-under-criterion-d1" class="nav-link" data-scroll-target="#immas-under-criterion-d1"><span class="toc-section-number">9.5</span>  IMMAs under criterion D1</a></li>
+  <li><a href="#immas-under-criterion-d2" id="toc-immas-under-criterion-d2" class="nav-link" data-scroll-target="#immas-under-criterion-d2"><span class="toc-section-number">9.6</span>  IMMAs under criterion D2</a></li>
   </ul></li>
-  <li><a href="#sec-ifls" id="toc-sec-ifls" class="nav-link" data-scroll-target="#sec-ifls"><span class="header-section-number">10</span> Intact Forest Landscapes</a></li>
-  <li><a href="#sec-irrepl-pas" id="toc-sec-irrepl-pas" class="nav-link" data-scroll-target="#sec-irrepl-pas"><span class="header-section-number">11</span> Irreplaceable protected areas</a></li>
-  <li><a href="#sec-redlist" id="toc-sec-redlist" class="nav-link" data-scroll-target="#sec-redlist"><span class="header-section-number">12</span> IUCN Red List of Threatened Species</a>
+  <li><a href="#sec-ifls" id="toc-sec-ifls" class="nav-link" data-scroll-target="#sec-ifls"><span class="toc-section-number">10</span>  Intact Forest Landscapes</a></li>
+  <li><a href="#sec-irrepl-pas" id="toc-sec-irrepl-pas" class="nav-link" data-scroll-target="#sec-irrepl-pas"><span class="toc-section-number">11</span>  Irreplaceable protected areas</a></li>
+  <li><a href="#sec-redlist" id="toc-sec-redlist" class="nav-link" data-scroll-target="#sec-redlist"><span class="toc-section-number">12</span>  IUCN Red List of Threatened Species</a>
   <ul class="collapse">
-  <li><a href="#critically-endangered-species-under-criterion-d" id="toc-critically-endangered-species-under-criterion-d" class="nav-link" data-scroll-target="#critically-endangered-species-under-criterion-d"><span class="header-section-number">12.1</span> Critically Endangered species under criterion D</a></li>
-  <li><a href="#endangered-species-under-criterion-d" id="toc-endangered-species-under-criterion-d" class="nav-link" data-scroll-target="#endangered-species-under-criterion-d"><span class="header-section-number">12.2</span> Endangered species under criterion D</a></li>
-  <li><a href="#vulnerable-species-under-criterion-d2" id="toc-vulnerable-species-under-criterion-d2" class="nav-link" data-scroll-target="#vulnerable-species-under-criterion-d2"><span class="header-section-number">12.3</span> Vulnerable species under criterion D2</a></li>
-  <li><a href="#great-apes-species-ranges" id="toc-great-apes-species-ranges" class="nav-link" data-scroll-target="#great-apes-species-ranges"><span class="header-section-number">12.4</span> Great Apes species ranges</a></li>
+  <li><a href="#critically-endangered-species-under-criterion-d" id="toc-critically-endangered-species-under-criterion-d" class="nav-link" data-scroll-target="#critically-endangered-species-under-criterion-d"><span class="toc-section-number">12.1</span>  Critically Endangered species under criterion D</a></li>
+  <li><a href="#endangered-species-under-criterion-d" id="toc-endangered-species-under-criterion-d" class="nav-link" data-scroll-target="#endangered-species-under-criterion-d"><span class="toc-section-number">12.2</span>  Endangered species under criterion D</a></li>
+  <li><a href="#vulnerable-species-under-criterion-d2" id="toc-vulnerable-species-under-criterion-d2" class="nav-link" data-scroll-target="#vulnerable-species-under-criterion-d2"><span class="toc-section-number">12.3</span>  Vulnerable species under criterion D2</a></li>
+  <li><a href="#great-apes-species-ranges" id="toc-great-apes-species-ranges" class="nav-link" data-scroll-target="#great-apes-species-ranges"><span class="toc-section-number">12.4</span>  Great Apes species ranges</a></li>
   </ul></li>
-  <li><a href="#sec-mangroves" id="toc-sec-mangroves" class="nav-link" data-scroll-target="#sec-mangroves"><span class="header-section-number">13</span> Mangroves</a></li>
-  <li><a href="#sec-saltmarsh" id="toc-sec-saltmarsh" class="nav-link" data-scroll-target="#sec-saltmarsh"><span class="header-section-number">14</span> Saltmarsh</a></li>
-  <li><a href="#sec-turtles" id="toc-sec-turtles" class="nav-link" data-scroll-target="#sec-turtles"><span class="header-section-number">15</span> Sea turtle nesting sites</a>
+  <li><a href="#sec-mangroves" id="toc-sec-mangroves" class="nav-link" data-scroll-target="#sec-mangroves"><span class="toc-section-number">13</span>  Mangroves</a></li>
+  <li><a href="#sec-saltmarsh" id="toc-sec-saltmarsh" class="nav-link" data-scroll-target="#sec-saltmarsh"><span class="toc-section-number">14</span>  Saltmarsh</a></li>
+  <li><a href="#sec-turtles" id="toc-sec-turtles" class="nav-link" data-scroll-target="#sec-turtles"><span class="toc-section-number">15</span>  Sea turtle nesting sites</a>
   <ul class="collapse">
-  <li><a href="#all-sea-turtle-species" id="toc-all-sea-turtle-species" class="nav-link" data-scroll-target="#all-sea-turtle-species"><span class="header-section-number">15.1</span> All sea turtle species</a></li>
-  <li><a href="#critically-endangered-and-endangered-sea-turtle-species" id="toc-critically-endangered-and-endangered-sea-turtle-species" class="nav-link" data-scroll-target="#critically-endangered-and-endangered-sea-turtle-species"><span class="header-section-number">15.2</span> Critically Endangered and Endangered sea turtle species</a></li>
+  <li><a href="#all-sea-turtle-species" id="toc-all-sea-turtle-species" class="nav-link" data-scroll-target="#all-sea-turtle-species"><span class="toc-section-number">15.1</span>  All sea turtle species</a></li>
+  <li><a href="#critically-endangered-and-endangered-sea-turtle-species" id="toc-critically-endangered-and-endangered-sea-turtle-species" class="nav-link" data-scroll-target="#critically-endangered-and-endangered-sea-turtle-species"><span class="toc-section-number">15.2</span>  Critically Endangered and Endangered sea turtle species</a></li>
   </ul></li>
-  <li><a href="#sec-seagrass" id="toc-sec-seagrass" class="nav-link" data-scroll-target="#sec-seagrass"><span class="header-section-number">16</span> Seagrass beds</a></li>
-  <li><a href="#sec-seamounts" id="toc-sec-seamounts" class="nav-link" data-scroll-target="#sec-seamounts"><span class="header-section-number">17</span> Seamounts</a></li>
-  <li><a href="#sec-tigers" id="toc-sec-tigers" class="nav-link" data-scroll-target="#sec-tigers"><span class="header-section-number">18</span> Tiger Conservation Landscapes</a></li>
-  <li><a href="#sec-tropical-dry" id="toc-sec-tropical-dry" class="nav-link" data-scroll-target="#sec-tropical-dry"><span class="header-section-number">19</span> Tropical dry forest</a></li>
-  <li><a href="#sec-tropical-moist" id="toc-sec-tropical-moist" class="nav-link" data-scroll-target="#sec-tropical-moist"><span class="header-section-number">20</span> Tropical moist forest</a></li>
-  <li><a href="#sec-tropical-cloud" id="toc-sec-tropical-cloud" class="nav-link" data-scroll-target="#sec-tropical-cloud"><span class="header-section-number">21</span> Tropical montane cloud forests</a></li>
-  <li><a href="#sec-warm-coral" id="toc-sec-warm-coral" class="nav-link" data-scroll-target="#sec-warm-coral"><span class="header-section-number">22</span> Warm water coral reefs</a></li>
-  <li><a href="#sec-wdpa" id="toc-sec-wdpa" class="nav-link" data-scroll-target="#sec-wdpa"><span class="header-section-number">23</span> World Database on Protected Areas (WDPA)</a>
+  <li><a href="#sec-seagrass" id="toc-sec-seagrass" class="nav-link" data-scroll-target="#sec-seagrass"><span class="toc-section-number">16</span>  Seagrass beds</a></li>
+  <li><a href="#sec-seamounts" id="toc-sec-seamounts" class="nav-link" data-scroll-target="#sec-seamounts"><span class="toc-section-number">17</span>  Seamounts</a></li>
+  <li><a href="#sec-tigers" id="toc-sec-tigers" class="nav-link" data-scroll-target="#sec-tigers"><span class="toc-section-number">18</span>  Tiger Conservation Landscapes</a></li>
+  <li><a href="#sec-tropical-dry" id="toc-sec-tropical-dry" class="nav-link" data-scroll-target="#sec-tropical-dry"><span class="toc-section-number">19</span>  Tropical dry forest</a></li>
+  <li><a href="#sec-tropical-moist" id="toc-sec-tropical-moist" class="nav-link" data-scroll-target="#sec-tropical-moist"><span class="toc-section-number">20</span>  Tropical moist forest</a></li>
+  <li><a href="#sec-tropical-cloud" id="toc-sec-tropical-cloud" class="nav-link" data-scroll-target="#sec-tropical-cloud"><span class="toc-section-number">21</span>  Tropical montane cloud forests</a></li>
+  <li><a href="#sec-warm-coral" id="toc-sec-warm-coral" class="nav-link" data-scroll-target="#sec-warm-coral"><span class="toc-section-number">22</span>  Warm water coral reefs</a></li>
+  <li><a href="#sec-wdpa" id="toc-sec-wdpa" class="nav-link" data-scroll-target="#sec-wdpa"><span class="toc-section-number">23</span>  World Database on Protected Areas (WDPA)</a>
   <ul class="collapse">
-  <li><a href="#all-ramsar-sites" id="toc-all-ramsar-sites" class="nav-link" data-scroll-target="#all-ramsar-sites"><span class="header-section-number">23.1</span> All Ramsar sites</a></li>
-  <li><a href="#ramsar-sites-under-criterion-2" id="toc-ramsar-sites-under-criterion-2" class="nav-link" data-scroll-target="#ramsar-sites-under-criterion-2"><span class="header-section-number">23.2</span> Ramsar sites under criterion 2</a></li>
-  <li><a href="#ramsar-sites-under-criteria-5-and-6" id="toc-ramsar-sites-under-criteria-5-and-6" class="nav-link" data-scroll-target="#ramsar-sites-under-criteria-5-and-6"><span class="header-section-number">23.3</span> Ramsar sites under criteria 5 and 6</a></li>
-  <li><a href="#ramsar-sites-under-criteria-1-and-3" id="toc-ramsar-sites-under-criteria-1-and-3" class="nav-link" data-scroll-target="#ramsar-sites-under-criteria-1-and-3"><span class="header-section-number">23.4</span> Ramsar sites under criteria 1 and 3</a></li>
-  <li><a href="#ramsar-sites-under-criteria-4-7-8-and-9" id="toc-ramsar-sites-under-criteria-4-7-8-and-9" class="nav-link" data-scroll-target="#ramsar-sites-under-criteria-4-7-8-and-9"><span class="header-section-number">23.5</span> Ramsar sites under criteria 4, 7, 8 and 9</a></li>
-  <li><a href="#protected-areas-under-iucn-management-categories-i-and-ii" id="toc-protected-areas-under-iucn-management-categories-i-and-ii" class="nav-link" data-scroll-target="#protected-areas-under-iucn-management-categories-i-and-ii"><span class="header-section-number">23.6</span> Protected areas under IUCN management categories I and II</a></li>
-  <li><a href="#natural-and-mixed-world-heritage-sites" id="toc-natural-and-mixed-world-heritage-sites" class="nav-link" data-scroll-target="#natural-and-mixed-world-heritage-sites"><span class="header-section-number">23.7</span> Natural and mixed World Heritage Sites</a></li>
+  <li><a href="#all-ramsar-sites" id="toc-all-ramsar-sites" class="nav-link" data-scroll-target="#all-ramsar-sites"><span class="toc-section-number">23.1</span>  All Ramsar sites</a></li>
+  <li><a href="#ramsar-sites-under-criterion-2" id="toc-ramsar-sites-under-criterion-2" class="nav-link" data-scroll-target="#ramsar-sites-under-criterion-2"><span class="toc-section-number">23.2</span>  Ramsar sites under criterion 2</a></li>
+  <li><a href="#ramsar-sites-under-criteria-5-and-6" id="toc-ramsar-sites-under-criteria-5-and-6" class="nav-link" data-scroll-target="#ramsar-sites-under-criteria-5-and-6"><span class="toc-section-number">23.3</span>  Ramsar sites under criteria 5 and 6</a></li>
+  <li><a href="#ramsar-sites-under-criteria-1-and-3" id="toc-ramsar-sites-under-criteria-1-and-3" class="nav-link" data-scroll-target="#ramsar-sites-under-criteria-1-and-3"><span class="toc-section-number">23.4</span>  Ramsar sites under criteria 1 and 3</a></li>
+  <li><a href="#ramsar-sites-under-criteria-4-7-8-and-9" id="toc-ramsar-sites-under-criteria-4-7-8-and-9" class="nav-link" data-scroll-target="#ramsar-sites-under-criteria-4-7-8-and-9"><span class="toc-section-number">23.5</span>  Ramsar sites under criteria 4, 7, 8 and 9</a></li>
+  <li><a href="#protected-areas-under-iucn-management-categories-i-and-ii" id="toc-protected-areas-under-iucn-management-categories-i-and-ii" class="nav-link" data-scroll-target="#protected-areas-under-iucn-management-categories-i-and-ii"><span class="toc-section-number">23.6</span>  Protected areas under IUCN management categories I and II</a></li>
+  <li><a href="#natural-and-mixed-world-heritage-sites" id="toc-natural-and-mixed-world-heritage-sites" class="nav-link" data-scroll-target="#natural-and-mixed-world-heritage-sites"><span class="toc-section-number">23.7</span>  Natural and mixed World Heritage Sites</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -162,6 +162,12 @@ div.csl-indent {
 
 </header>
 
+<div class="cell">
+
+</div>
+<div class="cell">
+
+</div>
 <section id="sec-s2" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="sec-s2"><span class="header-section-number">1</span> Spherical geometries with the S2 library</h2>
 <p>To maintain the highest standards of accuracy, spatial processing is carried out with the <code>sf</code> package in <strong>R</strong>, using the S2 spherical geometry library. This allows spatial processing, e.g.&nbsp;intersections and buffers, using Great Circle distances.</p>
@@ -180,7 +186,7 @@ div.csl-indent {
 </div>
 <ul>
 <li><strong>Data type</strong>: Point</li>
-<li><strong>Number of records</strong>: 3,720</li>
+<li><strong>Number of records</strong>: 188</li>
 <li><strong>Original CRS</strong>: WGS 84</li>
 <li><strong>Source</strong>: <span class="citation" data-cites="coldseeps">Ramirez-Llodra and Blanco (<a href="#ref-coldseeps" role="doc-biblioref">2020</a>)</span></li>
 <li><strong>Critical Habitat type</strong>: Likely/Potential</li>
@@ -316,12 +322,15 @@ div.csl-indent {
 </section>
 <section id="sec-kbas" class="level2" data-number="7">
 <h2 data-number="7" class="anchored" data-anchor-id="sec-kbas"><span class="header-section-number">7</span> Key Biodiversity Areas (KBAs)</h2>
+<div class="cell">
+
+</div>
 <ul>
 <li><strong>Data type</strong>: Point and polygon</li>
-<li><strong>Number of records</strong>:319 (point) and 16,000 (polygon)</li>
+<li><strong>Number of records</strong>:317 (point) and 16,200 (polygon)</li>
 <li><strong>Original CRS</strong>: WGS 84</li>
-<li><strong>Area (polygons - reported)</strong>: 20,900,000 km<sup>2</sup></li>
-<li><strong>Area (point - reported)</strong>: 158,000 km<sup>2</sup></li>
+<li><strong>Area (polygons - reported)</strong>: 22,100,000 km<sup>2</sup></li>
+<li><strong>Area (point - reported)</strong>: 0 km<sup>2</sup></li>
 <li><strong>Source</strong>: <span class="citation" data-cites="KBA2023">BirdLife International (<a href="#ref-KBA2023" role="doc-biblioref">2023a</a>)</span></li>
 </ul>
 <section id="alliance-for-zero-extinction-sites-azes" class="level3" data-number="7.1">
@@ -332,8 +341,8 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 0 (point) and 860 (polygon)</li>
-<li><strong>Area (including buffered point data)</strong>: 1,520,000 km<sup>2</sup></li>
+<li><strong>Number of records</strong>: 3 (point) and 970 (polygon)</li>
+<li><strong>Area (including buffered point data)</strong>: 1,800,000 km<sup>2</sup></li>
 <li><strong>Critical Habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 Criteria triggered</strong>:
 <ul>
@@ -365,8 +374,8 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 6 (point) and 1,150 (polygon)</li>
-<li><strong>Area (including buffered point data)</strong>: 4,260,000 km<sup>2</sup></li>
+<li><strong>Number of records</strong>: 6 (point) and 2,200 (polygon)</li>
+<li><strong>Area (including buffered point data)</strong>: 5,610,000 km<sup>2</sup></li>
 <li><strong>Critical Habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C1 (Critically Endangered and Endangered Species)</li>
 </ul>
@@ -399,8 +408,8 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 15 (point) and <code>r</code>nrow(filter(kba_aze_iba_polys, KbaStatus == “confirmed” &amp; str_detect(Criteria,“A1b”)))` (polygon)</li>
-<li><strong>Area (including buffered point data)</strong>: 5,030,000 km<sup>2</sup></li>
+<li><strong>Number of records</strong>: 14 (point) and <code>r</code>nrow(filter(kba_aze_iba_polys, KbaStatus == “confirmed” &amp; str_detect(Criteria,“A1b”)))` (polygon)</li>
+<li><strong>Area (including buffered point data)</strong>: 6,130,000 km<sup>2</sup></li>
 <li><strong>Critical Habitat type</strong>: Potential</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C1 (Critically Endangered and Endangered Species)</li>
 </ul>
@@ -437,8 +446,8 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 2 (point) and 423 (polygon)</li>
-<li><strong>Area (including buffered point data)</strong>: 5,630,000 km<sup>2</sup></li>
+<li><strong>Number of records</strong>: 2 (point) and 1,620 (polygon)</li>
+<li><strong>Area (including buffered point data)</strong>: 6,940,000 km<sup>2</sup></li>
 <li><strong>Critical Habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C2 (Endemic and Restricted-range Species)</li>
 </ul>
@@ -461,7 +470,33 @@ div.csl-indent {
 </section>
 <section id="kbas-under-criterion-b4" class="level3" data-number="7.7">
 <h3 data-number="7.7" class="anchored" data-anchor-id="kbas-under-criterion-b4"><span class="header-section-number">7.7</span> KBAs under criterion B4</h3>
-<p>No data present.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="ch_paper_supp_files/figure-html/kbas-B4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<ul>
+<li><strong>Number of records</strong>: 0 (point) and 2 (polygon)</li>
+<li><strong>Area (including buffered point data)</strong>: 219 km<sup>2</sup></li>
+<li><strong>Critical Habitat type</strong>: Potential</li>
+<li><strong>IFC PS6 Criteria triggered</strong>: C4 (Highly Threatened or Unique Ecosystems)</li>
+</ul>
+<section id="how-the-data-are-filtered-7" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-7">How the data are filtered</h4>
+<ul>
+<li>Sites with <code>KbaStatus = confirmed</code>.</li>
+<li>Sites designated under KBA Criterion B4 (Site holds &gt;=20% of the global extent of an ecosystem type).</li>
+<li>All polygons, and point data with reported areas.</li>
+</ul>
+</section>
+<section id="how-the-data-are-processed-8" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-8">How the data are processed</h4>
+<ul>
+<li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
+<li>Point data buffered to reported area, <code>sitarea</code>.</li>
+<li>Data are unioned to remove overlap (see <a href="#sec-union">Section&nbsp;2</a>).</li>
+</ul>
+</section>
 </section>
 <section id="kbas-under-criterion-c" class="level3" data-number="7.8">
 <h3 data-number="7.8" class="anchored" data-anchor-id="kbas-under-criterion-c"><span class="header-section-number">7.8</span> KBAs under criterion C</h3>
@@ -475,21 +510,21 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 25 (point) and 403 (polygon)</li>
-<li><strong>Area (including buffered point data)</strong>: 8,730,000 km<sup>2</sup></li>
+<li><strong>Number of records</strong>: 24 (point) and 2,750 (polygon)</li>
+<li><strong>Area (including buffered point data)</strong>: 8,430,000 km<sup>2</sup></li>
 <li><strong>Critical Habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C3 (Migratory and Congregatory Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-7" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-7">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-8" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-8">How the data are filtered</h4>
 <ul>
 <li>Sites with <code>KbaStatus = confirmed</code>.</li>
 <li>Sites designated under KBA Criterion D1a (Site holds an aggregation representing &gt;=1% of the global population size of a species, over a season, and during one or more key stages of its life cycle).</li>
 <li>All polygons, and point data with reported areas.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-8" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-8">How the data are processed</h4>
+<section id="how-the-data-are-processed-9" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-9">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Point data buffered to reported area, <code>sitarea</code>.</li>
@@ -505,21 +540,21 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 0 (point) and 11 (polygon)</li>
-<li><strong>Area (including buffered point data)</strong>: 82,400 km<sup>2</sup></li>
+<li><strong>Number of records</strong>: 0 (point) and 14 (polygon)</li>
+<li><strong>Area (including buffered point data)</strong>: 235,000 km<sup>2</sup></li>
 <li><strong>Critical Habitat type</strong>: Potential</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C3 (Migratory and Congregatory Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-8" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-8">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-9" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-9">How the data are filtered</h4>
 <ul>
 <li>Sites with <code>KbaStatus = confirmed</code>.</li>
 <li>Sites designated under KBA Criterion D1b (Site holds a number of mature individuals that ranks the site among the largest 10 aggregations known for the species).</li>
 <li>All polygons, and point data with reported areas.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-9" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-9">How the data are processed</h4>
+<section id="how-the-data-are-processed-10" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-10">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Point data buffered to reported area, <code>sitarea</code>.</li>
@@ -540,16 +575,16 @@ div.csl-indent {
 <li><strong>Critical Habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C3 (Migratory and Congregatory Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-9" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-9">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-10" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-10">How the data are filtered</h4>
 <ul>
 <li>Sites with <code>KbaStatus = confirmed</code>.</li>
 <li>Sites designated under KBA Criterion D2 (Site supports &gt;=10% of the global population size of one or more species during periods of environmental stress, for which historical evidence shows that it has served as a refugium in the past and for which there is evidence to suggest it would continue to do so in the foreseeable future).</li>
 <li>All polygons, and point data with reported areas.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-10" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-10">How the data are processed</h4>
+<section id="how-the-data-are-processed-11" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-11">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Point data buffered to reported area, <code>sitarea</code>.</li>
@@ -565,21 +600,21 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 0 (point) and 1 (polygon)</li>
+<li><strong>Number of records</strong>: 0 (point) and 3 (polygon)</li>
 <li><strong>Area (including buffered point data)</strong>: 1.62 km<sup>2</sup></li>
 <li><strong>Critical Habitat type</strong>: Potential</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C3 (Migratory and Congregatory Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-10" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-10">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-11" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-11">How the data are filtered</h4>
 <ul>
 <li>Sites with <code>KbaStatus = confirmed</code>.</li>
 <li>Sites designated under KBA Criterion D3 (Site predictably produces propagules, larvae, or juveniles that maintain &gt;=10% of the global population size of a species).</li>
 <li>All polygons, and point data with reported areas.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-11" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-11">How the data are processed</h4>
+<section id="how-the-data-are-processed-12" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-12">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Point data buffered to reported area, <code>sitarea</code>.</li>
@@ -589,11 +624,40 @@ div.csl-indent {
 </section>
 <section id="kbas-under-criterion-e" class="level3" data-number="7.13">
 <h3 data-number="7.13" class="anchored" data-anchor-id="kbas-under-criterion-e"><span class="header-section-number">7.13</span> KBAs under criterion E</h3>
-<p>No data present.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="ch_paper_supp_files/figure-html/kbas-E-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<ul>
+<li><strong>Number of records</strong>: 0 (point) and 3 (polygon)</li>
+<li><strong>Area (including buffered point data)</strong>: 26.9 km<sup>2</sup></li>
+<li><strong>Critical Habitat type</strong>: Potential</li>
+<li><strong>IFC PS6 Criteria triggered</strong>: C1 (Critically Endangered and Endangered Species)</li>
+</ul>
+<section id="how-the-data-are-filtered-12" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-12">How the data are filtered</h4>
+<ul>
+<li>Sites with <code>KbaStatus = confirmed</code>.</li>
+<li>Sites designated under KBA Criterion E (Site has a level of irreplaceability of &gt;=0.90 (on a 0–1 scale), measured by quantitative spatial analysis, and is characterised by the regular presence of species with &gt;=10 reproductive units known to occur (or &gt;= 5 units for EN or CR species)).</li>
+<li>All polygons, and point data with reported areas.</li>
+</ul>
+</section>
+<section id="how-the-data-are-processed-13" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-13">How the data are processed</h4>
+<ul>
+<li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
+<li>Point data buffered to reported area, <code>sitarea</code>.</li>
+<li>Data are unioned to remove overlap (see <a href="#sec-union">Section&nbsp;2</a>).</li>
+</ul>
+</section>
 </section>
 </section>
 <section id="sec-ibas" class="level2" data-number="8">
 <h2 data-number="8" class="anchored" data-anchor-id="sec-ibas"><span class="header-section-number">8</span> Important Bird and Biodiversity Areas (IBAs)</h2>
+<div class="cell">
+
+</div>
 <ul>
 <li><strong>Data type</strong>: Point and polygon</li>
 <li><strong>Number of records</strong>: 149 (point) and 13,700 (polygon)</li>
@@ -615,15 +679,15 @@ div.csl-indent {
 <li><strong>Critical Habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C1 (Critically Endangered and Endangered Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-11" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-11">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-13" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-13">How the data are filtered</h4>
 <ul>
 <li>Sites designated under IBA Criterion A1 (The site is known or thought regularly to hold significant numbers of a globally threatened species).</li>
 <li>All polygons, and point data with reported areas.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-12" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-12">How the data are processed</h4>
+<section id="how-the-data-are-processed-14" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-14">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Point data buffered to reported area, <code>SitArea</code>.</li>
@@ -644,15 +708,15 @@ div.csl-indent {
 <li><strong>Critical Habitat type</strong>: Potential</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C2 (Endemic and Restricted-range Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-12" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-12">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-14" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-14">How the data are filtered</h4>
 <ul>
 <li>Sites designated under IBA Criterion A2 (The site is known or thought to hold a significant population of at least two range-restricted species).</li>
 <li>All polygons, and point data with reported areas.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-13" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-13">How the data are processed</h4>
+<section id="how-the-data-are-processed-15" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-15">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Point data buffered to reported area, <code>SitArea</code>.</li>
@@ -673,15 +737,15 @@ div.csl-indent {
 <li><strong>Critical Habitat type</strong>: Potential</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C4 (Highly Threatened or Unique Ecosystems)</li>
 </ul>
-<section id="how-the-data-are-filtered-13" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-13">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-15" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-15">How the data are filtered</h4>
 <ul>
 <li>Sites designated under IBA Criterion A3 (The site is known or thought to hold a significant component of the group of species whose distributions are largely or wholly confined to one biome-realm).</li>
 <li>All polygons, and point data with reported areas.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-14" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-14">How the data are processed</h4>
+<section id="how-the-data-are-processed-16" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-16">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Point data buffered to reported area, <code>SitArea</code>.</li>
@@ -702,15 +766,15 @@ div.csl-indent {
 <li><strong>Critical Habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C3 (Migratory and Congregatory Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-14" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-14">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-16" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-16">How the data are filtered</h4>
 <ul>
 <li>Sites designated under IBA Criterion A4 (The site is known or thought to hold congregations of &gt;=1% of the global population of one or more species on a regular or predictable basis).</li>
 <li>All polygons, and point data with reported areas.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-15" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-15">How the data are processed</h4>
+<section id="how-the-data-are-processed-17" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-17">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Point data buffered to reported area, <code>SitArea</code>.</li>
@@ -731,15 +795,15 @@ div.csl-indent {
 <li><strong>Critical Habitat type</strong>: Potential</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C1 (Critically Endangered and Endangered Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-15" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-15">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-17" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-17">How the data are filtered</h4>
 <ul>
 <li>Sites designated under IBA Criterion B1b (The site is one of the ‘n’ most important in a country for a species with an unfavourable conservation status in the region, and for which the site-protection approach is thought to be appropriate).</li>
 <li>All polygons, and point data with reported areas.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-16" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-16">How the data are processed</h4>
+<section id="how-the-data-are-processed-18" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-18">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Point data buffered to reported area, <code>SitArea</code>.</li>
@@ -750,11 +814,14 @@ div.csl-indent {
 </section>
 <section id="sec-immas" class="level2" data-number="9">
 <h2 data-number="9" class="anchored" data-anchor-id="sec-immas"><span class="header-section-number">9</span> Important Marine Mammal Sites (IMMAs)</h2>
+<div class="cell">
+
+</div>
 <ul>
 <li><strong>Data type</strong>: Polygon</li>
-<li><strong>Number of records</strong>: 159</li>
+<li><strong>Number of records</strong>: 242</li>
 <li><strong>Original CRS</strong>: WGS 84</li>
-<li><strong>Area - reported</strong>: 20,800,000 km<sup>2</sup></li>
+<li><strong>Area - reported</strong>: 33,300,000 km<sup>2</sup></li>
 <li><strong>Source</strong>: <span class="citation" data-cites="IMMA2020">IUCN-MMPATF (<a href="#ref-IMMA2020" role="doc-biblioref">2020</a>)</span></li>
 </ul>
 <section id="immas-under-criterion-a" class="level3" data-number="9.1">
@@ -765,19 +832,19 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 130</li>
+<li><strong>Number of records</strong>: 193</li>
 <li><strong>Area</strong>: 8,330,000 km<sup>2</sup></li>
 <li><strong>Critical Habitat type</strong>: Potential</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C1 (Critically Endangered and Endangered Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-16" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-16">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-18" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-18">How the data are filtered</h4>
 <ul>
 <li>Sites designated under IMMA Criterion A (Species or Population Vulnerability).</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-17" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-17">How the data are processed</h4>
+<section id="how-the-data-are-processed-19" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-19">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Data are unioned to remove overlap (see <a href="#sec-union">Section&nbsp;2</a>).</li>
@@ -792,19 +859,19 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 68</li>
+<li><strong>Number of records</strong>: 106</li>
 <li><strong>Area</strong>: 4,730,000 km<sup>2</sup></li>
 <li><strong>Critical Habitat type</strong>: Potential</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C2 (Endemic and Restricted-range Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-17" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-17">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-19" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-19">How the data are filtered</h4>
 <ul>
 <li>Sites designated under IMMA Criterion B1 (Small and Resident Populations).</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-18" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-18">How the data are processed</h4>
+<section id="how-the-data-are-processed-20" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-20">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Data are unioned to remove overlap (see <a href="#sec-union">Section&nbsp;2</a>).</li>
@@ -819,19 +886,19 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 66</li>
+<li><strong>Number of records</strong>: 106</li>
 <li><strong>Area</strong>: 5,380,000 km<sup>2</sup></li>
 <li><strong>Critical Habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C3 (Migratory and Congregatory Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-18" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-18">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-20" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-20">How the data are filtered</h4>
 <ul>
 <li>Sites designated under IMMA Criterion B2 (Aggregations).</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-19" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-19">How the data are processed</h4>
+<section id="how-the-data-are-processed-21" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-21">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Data are unioned to remove overlap (see <a href="#sec-union">Section&nbsp;2</a>).</li>
@@ -846,13 +913,13 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 133</li>
+<li><strong>Number of records</strong>: 202</li>
 <li><strong>Area</strong>: 12,700,000 km<sup>2</sup></li>
 <li><strong>Critical Habitat type</strong>: Potential</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C3 (Migratory and Congregatory Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-19" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-19">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-21" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-21">How the data are filtered</h4>
 <ul>
 <li>Sites designated under:
 <ul>
@@ -862,8 +929,8 @@ div.csl-indent {
 </ul></li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-20" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-20">How the data are processed</h4>
+<section id="how-the-data-are-processed-22" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-22">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Data are unioned to remove overlap (see <a href="#sec-union">Section&nbsp;2</a>).</li>
@@ -878,7 +945,7 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 36</li>
+<li><strong>Number of records</strong>: 56</li>
 <li><strong>Area</strong>: 2,740,000 km<sup>2</sup></li>
 <li><strong>Critical Habitat type</strong>: Potential</li>
 <li><strong>IFC PS6 Criteria triggered</strong>:
@@ -887,14 +954,14 @@ div.csl-indent {
 <li>C4 (Highly Threatened or Unique Ecosystems)</li>
 </ul></li>
 </ul>
-<section id="how-the-data-are-filtered-20" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-20">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-22" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-22">How the data are filtered</h4>
 <ul>
 <li>Sites designated under IMMA Criterion D1 (Distinctiveness).</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-21" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-21">How the data are processed</h4>
+<section id="how-the-data-are-processed-23" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-23">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Data are unioned to remove overlap (see <a href="#sec-union">Section&nbsp;2</a>).</li>
@@ -909,19 +976,19 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 48</li>
+<li><strong>Number of records</strong>: 77</li>
 <li><strong>Area</strong>: 5,090,000 km<sup>2</sup></li>
 <li><strong>Critical Habitat type</strong>: Potential</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C4 (Highly Threatened or Unique Ecosystems)</li>
 </ul>
-<section id="how-the-data-are-filtered-21" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-21">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-23" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-23">How the data are filtered</h4>
 <ul>
 <li>Sites designated under IMMA Criterion D2 (Diversity).</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-22" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-22">How the data are processed</h4>
+<section id="how-the-data-are-processed-24" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-24">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Data are unioned to remove overlap (see <a href="#sec-union">Section&nbsp;2</a>).</li>
@@ -937,22 +1004,22 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 2,100</li>
-<li><strong>Area</strong>: 11,600,000 km<sup>2</sup></li>
+<li><strong>Number of records</strong>: 2,050</li>
+<li><strong>Area</strong>: 11,300,000 km<sup>2</sup></li>
 <li><strong>Original CRS</strong>: WGS 84</li>
 <li><strong>Data type</strong>: Polygon</li>
 <li><strong>Critical habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 criteria triggered</strong>: C4 (Highly Threatened or Unique Ecosystems)</li>
 <li><strong>Source</strong>: <span class="citation" data-cites="potapovLastFrontiersWilderness2017">Potapov et al. (<a href="#ref-potapovLastFrontiersWilderness2017" role="doc-biblioref">2017</a>)</span></li>
 </ul>
-<section id="how-the-data-are-filtered-22" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-22">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-24" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-24">How the data are filtered</h4>
 <ul>
 <li>No filtering of data from source.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-23" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-23">How the data are processed</h4>
+<section id="how-the-data-are-processed-25" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-25">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Data are unioned to remove overlap (see <a href="#sec-union">Section&nbsp;2</a>).</li>
@@ -975,14 +1042,14 @@ div.csl-indent {
 <li><strong>Critical Habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C4 (Highly Threatened or Unique Ecosystems)</li>
 </ul>
-<section id="how-the-data-are-filtered-23" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-23">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-25" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-25">How the data are filtered</h4>
 <ul>
 <li>No filtering of data from source.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-24" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-24">How the data are processed</h4>
+<section id="how-the-data-are-processed-26" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-26">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Data are unioned to remove overlap (see <a href="#sec-union">Section&nbsp;2</a>).</li>
@@ -991,15 +1058,18 @@ div.csl-indent {
 </section>
 <section id="sec-redlist" class="level2" data-number="12">
 <h2 data-number="12" class="anchored" data-anchor-id="sec-redlist"><span class="header-section-number">12</span> IUCN Red List of Threatened Species</h2>
+<div class="cell">
+
+</div>
 <ul>
 <li><strong>Data type</strong>: Polygon (we exclude point data)</li>
-<li><strong>Number of records</strong>: 6,420,000</li>
+<li><strong>Number of records</strong>: 138,000</li>
 <li><strong>Original CRS</strong>: WGS 84</li>
 <li><strong>Source</strong>: <span class="citation" data-cites="iucnIUCNRedList2022">IUCN (<a href="#ref-iucnIUCNRedList2022" role="doc-biblioref">2022</a>)</span></li>
-<li><strong>Version</strong>: 2022_2</li>
+<li><strong>Version</strong>: 2024_1</li>
 </ul>
-<section id="how-the-data-are-filtered-24" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-24">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-26" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-26">How the data are filtered</h4>
 <ul>
 <li>Critically Endangered, Endangered or Vulnerable species classified under Criterion D for CR or EN and D2 for VU.</li>
 <li>Exclude marine ranges (<code>biome_marine==false</code>).</li>
@@ -1008,8 +1078,8 @@ div.csl-indent {
 <li>Ranges with areas &gt;= three times the standard deviation of the data (see <a href="#fig-rl-sensitivity">Figure&nbsp;1</a> below). This exercise removes areas disproportionately large. Furthermore, some of the records removed include the northern white rhino, of which there is only one individual left, and the ivory-billed woodpecker, which is argued to be extinct.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-25" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-25">How the data are processed</h4>
+<section id="how-the-data-are-processed-27" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-27">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 </ul>
@@ -1018,7 +1088,7 @@ div.csl-indent {
 <div id="fig-rl-sensitivity" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="ch_paper_supp_files/figure-html/fig-rl-sensitivity-1.png" class="img-fluid figure-img" width="672"></p>
-<figcaption class="figure-caption">Figure&nbsp;1: Sensitivity analysis of IUCN Red List ranges. Plots show result of removing areas with 3x,10x,20x,50x the standard deviation (SD) of the data. Each plot reports the SD, the number of records removed, and the percentage of the total area the data now represent.</figcaption>
+<p></p><figcaption class="figure-caption">Figure&nbsp;1: Sensitivity analysis of IUCN Red List ranges. Plots show result of removing areas with 3x,10x,20x,50x the standard deviation (SD) of the data. Each plot reports the SD, the number of records removed, and the percentage of the total area the data now represent.</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -1032,63 +1102,9 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 842</li>
-<li><strong>Area</strong>: 2,460,000 km<sup>2</sup></li>
+<li><strong>Number of records</strong>: 973</li>
+<li><strong>Area</strong>: 2,760,000 km<sup>2</sup></li>
 <li><strong>Critical Habitat type</strong>: Likely</li>
-<li><strong>IFC PS6 Criteria triggered</strong>: C1 (Critically Endangered or Endangered Species)</li>
-</ul>
-<section id="how-the-data-are-filtered-25" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-25">How the data are filtered</h4>
-<ul>
-<li>No further filtering of data.</li>
-</ul>
-</section>
-<section id="how-the-data-are-processed-26" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-26">How the data are processed</h4>
-<ul>
-<li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
-<li>Data are unioned to remove overlap (see <a href="#sec-union">Section&nbsp;2</a>).</li>
-</ul>
-</section>
-</section>
-<section id="endangered-species-under-criterion-d" class="level3" data-number="12.2">
-<h3 data-number="12.2" class="anchored" data-anchor-id="endangered-species-under-criterion-d"><span class="header-section-number">12.2</span> Endangered species under criterion D</h3>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="ch_paper_supp_files/figure-html/iucn-en-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<ul>
-<li><strong>Number of records</strong>: 297</li>
-<li><strong>Area</strong>: 1,440,000 km<sup>2</sup></li>
-<li><strong>Critical Habitat type</strong>: Likely</li>
-<li><strong>IFC PS6 Criteria triggered</strong>: C1 (Critically Endangered or Endangered Species)</li>
-</ul>
-<section id="how-the-data-are-filtered-26" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-26">How the data are filtered</h4>
-<ul>
-<li>No further filtering of data from source.</li>
-</ul>
-</section>
-<section id="how-the-data-are-processed-27" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-27">How the data are processed</h4>
-<ul>
-<li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
-<li>Data are unioned to remove overlap (see <a href="#sec-union">Section&nbsp;2</a>).</li>
-</ul>
-</section>
-</section>
-<section id="vulnerable-species-under-criterion-d2" class="level3" data-number="12.3">
-<h3 data-number="12.3" class="anchored" data-anchor-id="vulnerable-species-under-criterion-d2"><span class="header-section-number">12.3</span> Vulnerable species under criterion D2</h3>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="ch_paper_supp_files/figure-html/iucn-vu-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<ul>
-<li><strong>Number of records</strong>: 2,170</li>
-<li><strong>Area</strong>: 6,060,000 km<sup>2</sup></li>
-<li><strong>Critical Habitat type</strong>: Potential</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C1 (Critically Endangered or Endangered Species)</li>
 </ul>
 <section id="how-the-data-are-filtered-27" class="level4">
@@ -1105,6 +1121,60 @@ div.csl-indent {
 </ul>
 </section>
 </section>
+<section id="endangered-species-under-criterion-d" class="level3" data-number="12.2">
+<h3 data-number="12.2" class="anchored" data-anchor-id="endangered-species-under-criterion-d"><span class="header-section-number">12.2</span> Endangered species under criterion D</h3>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="ch_paper_supp_files/figure-html/iucn-en-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<ul>
+<li><strong>Number of records</strong>: 346</li>
+<li><strong>Area</strong>: 1,420,000 km<sup>2</sup></li>
+<li><strong>Critical Habitat type</strong>: Likely</li>
+<li><strong>IFC PS6 Criteria triggered</strong>: C1 (Critically Endangered or Endangered Species)</li>
+</ul>
+<section id="how-the-data-are-filtered-28" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-28">How the data are filtered</h4>
+<ul>
+<li>No further filtering of data from source.</li>
+</ul>
+</section>
+<section id="how-the-data-are-processed-29" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-29">How the data are processed</h4>
+<ul>
+<li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
+<li>Data are unioned to remove overlap (see <a href="#sec-union">Section&nbsp;2</a>).</li>
+</ul>
+</section>
+</section>
+<section id="vulnerable-species-under-criterion-d2" class="level3" data-number="12.3">
+<h3 data-number="12.3" class="anchored" data-anchor-id="vulnerable-species-under-criterion-d2"><span class="header-section-number">12.3</span> Vulnerable species under criterion D2</h3>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="ch_paper_supp_files/figure-html/iucn-vu-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<ul>
+<li><strong>Number of records</strong>: 2,220</li>
+<li><strong>Area</strong>: 6,100,000 km<sup>2</sup></li>
+<li><strong>Critical Habitat type</strong>: Potential</li>
+<li><strong>IFC PS6 Criteria triggered</strong>: C1 (Critically Endangered or Endangered Species)</li>
+</ul>
+<section id="how-the-data-are-filtered-29" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-29">How the data are filtered</h4>
+<ul>
+<li>No further filtering of data.</li>
+</ul>
+</section>
+<section id="how-the-data-are-processed-30" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-30">How the data are processed</h4>
+<ul>
+<li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
+<li>Data are unioned to remove overlap (see <a href="#sec-union">Section&nbsp;2</a>).</li>
+</ul>
+</section>
+</section>
 <section id="great-apes-species-ranges" class="level3" data-number="12.4">
 <h3 data-number="12.4" class="anchored" data-anchor-id="great-apes-species-ranges"><span class="header-section-number">12.4</span> Great Apes species ranges</h3>
 <div class="cell">
@@ -1113,19 +1183,19 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 20</li>
-<li><strong>Area</strong>: 4,900,000 km<sup>2</sup></li>
+<li><strong>Number of records</strong>: 27</li>
+<li><strong>Area</strong>: 4,940,000 km<sup>2</sup></li>
 <li><strong>Critical Habitat type</strong>: Potential</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C1 (Critically Endangered or Endangered Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-28" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-28">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-30" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-30">How the data are filtered</h4>
 <ul>
 <li>No further filtering of data.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-29" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-29">How the data are processed</h4>
+<section id="how-the-data-are-processed-31" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-31">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Data are unioned to remove overlap (see <a href="#sec-union">Section&nbsp;2</a>).</li>
@@ -1150,8 +1220,8 @@ div.csl-indent {
 <li><strong>Critical Habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C4 (Highly Threatened or Unique Ecosystems)</li>
 </ul>
-<section id="how-the-data-are-processed-30" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-30">How the data are processed</h4>
+<section id="how-the-data-are-processed-32" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-32">How the data are processed</h4>
 <ul>
 <li>Raster tiles are mosaicked to a global extent.</li>
 <li>Raster mosaic is then aggregated to a 0.00833 resolution using the following function: <code>function(x,...){sum(x,na.rm=T)/length(x)}</code> that returns the percentage of cells identified as mangrove.</li>
@@ -1163,7 +1233,7 @@ div.csl-indent {
 <div id="fig-mangrove-sensitivity" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="ch_paper_supp_files/figure-html/fig-mangrove-sensitivity-1.png" class="img-fluid figure-img" width="672"></p>
-<figcaption class="figure-caption">Figure&nbsp;2: Sensitivity analysis of % presence cutoff values. Plots show effect of setting the % presence to &gt;25,&gt;50,&gt;75,&gt;90% on the output binary distribution. We select 50% for use in this analysis.</figcaption>
+<p></p><figcaption class="figure-caption">Figure&nbsp;2: Sensitivity analysis of % presence cutoff values. Plots show effect of setting the % presence to &gt;25,&gt;50,&gt;75,&gt;90% on the output binary distribution. We select 50% for use in this analysis.</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -1186,14 +1256,14 @@ div.csl-indent {
 <li><strong>Critical Habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 Criteria triggered</strong>: C4 (Highly Threatened or Unique Ecosystems)</li>
 </ul>
-<section id="how-the-data-are-filtered-29" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-29">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-31" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-31">How the data are filtered</h4>
 <ul>
 <li>No filtering of data from source.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-31" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-31">How the data are processed</h4>
+<section id="how-the-data-are-processed-33" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-33">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Data are unioned to remove overlap (polygons) and duplicates (points) (see <a href="#sec-union">Section&nbsp;2</a>).</li>
@@ -1202,6 +1272,9 @@ div.csl-indent {
 </section>
 <section id="sec-turtles" class="level2" data-number="15">
 <h2 data-number="15" class="anchored" data-anchor-id="sec-turtles"><span class="header-section-number">15</span> Sea turtle nesting sites</h2>
+<div class="cell">
+
+</div>
 <ul>
 <li><strong>Number of records</strong>: 5,580</li>
 <li><strong>Original CRS</strong>: WGS 84</li>
@@ -1226,14 +1299,14 @@ div.csl-indent {
 </ul></li>
 <li><strong>Source</strong>:</li>
 </ul>
-<section id="how-the-data-are-filtered-30" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-30">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-32" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-32">How the data are filtered</h4>
 <ul>
 <li>No filtering of data from source.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-32" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-32">How the data are processed</h4>
+<section id="how-the-data-are-processed-34" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-34">How the data are processed</h4>
 <ul>
 <li>Data are unioned to remove duplicates (see <a href="#sec-union">Section&nbsp;2</a>).</li>
 </ul>
@@ -1249,17 +1322,17 @@ div.csl-indent {
 <ul>
 <li><strong>Number of records</strong>: 3,250</li>
 <li><strong>Data type</strong>: Point</li>
-<li><strong>Critical habitat type</strong>: Potential</li>
+<li><strong>Critical habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 criteria triggered</strong>: C1 (Critically Endangered and Endangered Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-31" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-31">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-33" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-33">How the data are filtered</h4>
 <ul>
 <li>Records identified as belonging to Critically Endangered or Endangered sea turtles: Green Sea Turtle, Hawksbill Sea Turtle, and Kemp’s Ridley.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-33" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-33">How the data are processed</h4>
+<section id="how-the-data-are-processed-35" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-35">How the data are processed</h4>
 <ul>
 <li>Data are unioned to remove duplicates (see <a href="#sec-union">Section&nbsp;2</a>).</li>
 </ul>
@@ -1276,20 +1349,20 @@ div.csl-indent {
 <ul>
 <li><strong>Number of records</strong>: 311,000</li>
 <li><strong>Area (polygons)</strong>: 315,000 km<sup>2</sup></li>
-<li><strong>Original CRS</strong>: WGS 84</li>
+<li><strong>Original CRS</strong>: WGS84</li>
 <li><strong>Data type</strong>: Point and polygon</li>
 <li><strong>Critical habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 criteria triggered</strong>: C4 (Highly Threatened or Unique Ecosystems)</li>
 <li><strong>Source</strong>:</li>
 </ul>
-<section id="how-the-data-are-filtered-32" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-32">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-34" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-34">How the data are filtered</h4>
 <ul>
 <li>No filtering of data from source.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-34" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-34">How the data are processed</h4>
+<section id="how-the-data-are-processed-36" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-36">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Data are unioned to remove overlap (polygons) and duplicates (points) (see <a href="#sec-union">Section&nbsp;2</a>).</li>
@@ -1311,14 +1384,14 @@ div.csl-indent {
 <li><strong>IFC PS6 criteria triggered</strong>: C4 (Highly Threatened or Unique Ecosystems)</li>
 <li><strong>Source</strong>:</li>
 </ul>
-<section id="how-the-data-are-filtered-33" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-33">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-35" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-35">How the data are filtered</h4>
 <ul>
 <li>No filtering of data from source.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-35" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-35">How the data are processed</h4>
+<section id="how-the-data-are-processed-37" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-37">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Data are unioned to remove duplicates (see <a href="#sec-union">Section&nbsp;2</a>).</li>
@@ -1340,14 +1413,14 @@ div.csl-indent {
 <li><strong>IFC PS6 criteria triggered</strong>: C1 (Critically Endangered and Endangered Species)</li>
 <li><strong>Source</strong>:</li>
 </ul>
-<section id="how-the-data-are-filtered-34" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-34">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-36" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-36">How the data are filtered</h4>
 <ul>
 <li>Current tiger habitat only: <code>tx2_tcl==0</code>.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-36" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-36">How the data are processed</h4>
+<section id="how-the-data-are-processed-38" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-38">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Data are unioned to remove overlap (see <a href="#sec-union">Section&nbsp;2</a>).</li>
@@ -1368,8 +1441,8 @@ div.csl-indent {
 <li><strong>Extent</strong>: -180-56.518080</li>
 <li><strong>Gridded area of feature at 1-km resolution</strong>: 841,000</li>
 </ul>
-<section id="how-the-data-are-processed-37" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-37">How the data are processed</h4>
+<section id="how-the-data-are-processed-39" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-39">How the data are processed</h4>
 <ul>
 <li>Missing data are reclassified to 0.</li>
 <li>Raster aggregated from native resolution to 30 arc seconds using the mode of neighbouring cells before resampling to template raster using nearest neighbour.</li>
@@ -1388,11 +1461,11 @@ div.csl-indent {
 <li><strong>Original CRS</strong>: WGS 84</li>
 <li><strong>Original resolution</strong>: 0.000269</li>
 <li><strong>Extent</strong>: -110-40.118030.1</li>
-<li><strong>Gridded area of feature at 1-km resolution</strong>: 9,260,000</li>
+<li><strong>Gridded area of feature at 1-km resolution</strong>: 9,040,000</li>
 <li><strong>Source</strong>:</li>
 </ul>
-<section id="how-the-data-are-processed-38" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-38">How the data are processed</h4>
+<section id="how-the-data-are-processed-40" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-40">How the data are processed</h4>
 <ul>
 <li>Raster tiles are mosaicked to a global extent.</li>
 <li>Raster mosaic is then aggregated to a 0.00833 resolution using the following function: <code>function(x,...){sum((x == 10),na.rm = T)/length(x)}</code> that returns the percentage of cells equaling 10, “Undisturbed tropical moist forest”.</li>
@@ -1404,7 +1477,7 @@ div.csl-indent {
 <div id="fig-tmf-sensitivity" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="ch_paper_supp_files/figure-html/fig-tmf-sensitivity-1.png" class="img-fluid figure-img" width="672"></p>
-<figcaption class="figure-caption">Figure&nbsp;3: Sensitivity analysis of % presence cutoff values.</figcaption>
+<p></p><figcaption class="figure-caption">Figure&nbsp;3: Sensitivity analysis of % presence cutoff values.</figcaption><p></p>
 </figure>
 </div>
 </div>
@@ -1426,12 +1499,12 @@ div.csl-indent {
 <li><strong>Critical habitat type</strong>: Potential</li>
 <li><strong>IFC PS6 criteria triggered</strong>: C4 (Highly Threatened or Unique Ecosystems)</li>
 </ul>
-<section id="how-the-data-are-filtered-35" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-35">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-37" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-37">How the data are filtered</h4>
 <p>No filtering of data from source.</p>
 </section>
-<section id="how-the-data-are-processed-39" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-39">How the data are processed</h4>
+<section id="how-the-data-are-processed-41" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-41">How the data are processed</h4>
 <p>Data are unioned to remove duplicates (see <a href="#sec-union">Section&nbsp;2</a>).</p>
 </section>
 </section>
@@ -1455,12 +1528,12 @@ div.csl-indent {
 </ul></li>
 <li><strong>Source</strong>:</li>
 </ul>
-<section id="how-the-data-are-filtered-36" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-36">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-38" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-38">How the data are filtered</h4>
 <p>No filtering of data from source.</p>
 </section>
-<section id="how-the-data-are-processed-40" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-40">How the data are processed</h4>
+<section id="how-the-data-are-processed-42" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-42">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Data are unioned to remove overlap (polygons) and duplicates (point) (see <a href="#sec-union">Section&nbsp;2</a>).</li>
@@ -1469,11 +1542,14 @@ div.csl-indent {
 </section>
 <section id="sec-wdpa" class="level2" data-number="23">
 <h2 data-number="23" class="anchored" data-anchor-id="sec-wdpa"><span class="header-section-number">23</span> World Database on Protected Areas (WDPA)</h2>
+<div class="cell">
+
+</div>
 <ul>
-<li><strong>Version</strong>: Dec2022</li>
-<li><strong>Number of records</strong>: 285,000</li>
-<li><strong>Area (polygons - reported)</strong>: 62,000,000 km<sup>2</sup></li>
-<li><strong>Area (point - reported)</strong>: 3,740,000 km<sup>2</sup></li>
+<li><strong>Version</strong>: October 2024</li>
+<li><strong>Number of records</strong>: 305,000</li>
+<li><strong>Area (polygons - reported)</strong>: 60,600,000 km<sup>2</sup></li>
+<li><strong>Area (point - reported)</strong>: 3,690,000 km<sup>2</sup></li>
 <li><strong>Original CRS</strong>: WGS 84</li>
 <li><strong>Data type</strong>: Point and polygon</li>
 <li><strong>Source</strong>: <span class="citation" data-cites="WDPA2023">UNEP-WCMC and IUCN (<a href="#ref-WDPA2023" role="doc-biblioref">2023</a>)</span></li>
@@ -1487,21 +1563,21 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 2,340</li>
-<li><strong>Area</strong>: 2,390,000 km<sup>2</sup></li>
+<li><strong>Number of records</strong>: 2,350</li>
+<li><strong>Area</strong>: 2,070,000 km<sup>2</sup></li>
 <li><strong>Critical habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 criteria triggered</strong>: C4 (Highly Threatened or Unique Ecosystems)</li>
 </ul>
-<section id="how-the-data-are-filtered-37" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-37">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-39" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-39">How the data are filtered</h4>
 <ul>
 <li>Sites where Status is not “Proposed” or “Not Reported”.</li>
 <li>Sites labelled as “Ramsar Site, Wetland of International Importance”, with Designation Type “International”.</li>
 <li>Point data with present, non-zero reported area (<code>REP_AREA &gt; 0</code>).</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-41" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-41">How the data are processed</h4>
+<section id="how-the-data-are-processed-43" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-43">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Point data buffered to reported area, <code>REP_AREA</code>.</li>
@@ -1517,22 +1593,22 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 1,960</li>
-<li><strong>Area</strong>: 2,280,000 km<sup>2</sup></li>
+<li><strong>Number of records</strong>: 1,970</li>
+<li><strong>Area</strong>: 2,070,000 km<sup>2</sup></li>
 <li><strong>Critical habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 criteria triggered</strong>: C1 (Critically Endangered and Endangered Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-38" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-38">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-40" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-40">How the data are filtered</h4>
 <ul>
-<li>Sites where Status is not “Proposed” or “Not Reported”.</li>
+<li>Sites where status is not “Proposed” or “Not Reported”.</li>
 <li>Sites labelled as “Ramsar Site, Wetland of International Importance”, with Designation Type “International”</li>
 <li>Sites designated under Ramsar Sites Criterion 2 (Sites supporting vulnerable, endangered, or critically endangered species or threatened ecological communities).</li>
 <li>All polygon data and point data with present, non-zero reported area (<code>REP_AREA &gt; 0</code>).</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-42" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-42">How the data are processed</h4>
+<section id="how-the-data-are-processed-44" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-44">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Point data buffered to reported area, <code>REP_AREA</code>.</li>
@@ -1548,15 +1624,15 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 1,780</li>
-<li><strong>Area</strong>: 2,200,000 km<sup>2</sup></li>
+<li><strong>Number of records</strong>: 1,800</li>
+<li><strong>Area</strong>: 1,980,000 km<sup>2</sup></li>
 <li><strong>Critical habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 criteria triggered</strong>: C3 (Migratory and Congregatory Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-39" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-39">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-41" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-41">How the data are filtered</h4>
 <ul>
-<li>Sites where Status is not “Proposed” or “Not Reported”.</li>
+<li>Sites where status is not “Proposed” or “Not Reported”.</li>
 <li>Sites labelled as “Ramsar Site, Wetland of International Importance”, with Designation Type “International”</li>
 <li>Sites designated under:
 <ul>
@@ -1566,8 +1642,8 @@ div.csl-indent {
 <li>All polygon data and point data with present, non-zero reported area (<code>REP_AREA &gt; 0</code>).</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-43" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-43">How the data are processed</h4>
+<section id="how-the-data-are-processed-45" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-45">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Point data buffered to reported area, <code>REP_AREA</code>.</li>
@@ -1583,15 +1659,15 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 2,150</li>
-<li><strong>Area</strong>: 2,330,000 km<sup>2</sup></li>
+<li><strong>Number of records</strong>: 2,170</li>
+<li><strong>Area</strong>: 2,070,000 km<sup>2</sup></li>
 <li><strong>Critical habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 criteria triggered</strong>: C4 (Highly Threatened or Unique Ecosystems)</li>
 </ul>
-<section id="how-the-data-are-filtered-40" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-40">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-42" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-42">How the data are filtered</h4>
 <ul>
-<li>Sites where Status is not “Proposed” or “Not Reported”.</li>
+<li>Sites where status is not “Proposed” or “Not Reported”.</li>
 <li>Sites labelled as “Ramsar Site, Wetland of International Importance”, with Designation Type “International”</li>
 <li>Sites designated under:
 <ul>
@@ -1601,8 +1677,8 @@ div.csl-indent {
 <li>All polygon data and point data with present, non-zero reported area (<code>REP_AREA &gt; 0</code>).</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-44" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-44">How the data are processed</h4>
+<section id="how-the-data-are-processed-46" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-46">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Point data buffered to reported area, <code>REP_AREA</code>.</li>
@@ -1618,15 +1694,15 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 1,480</li>
-<li><strong>Area</strong>: 2,050,000 km<sup>2</sup></li>
+<li><strong>Number of records</strong>: 1,500</li>
+<li><strong>Area</strong>: 1,890,000 km<sup>2</sup></li>
 <li><strong>Critical habitat type</strong>: Potential</li>
 <li><strong>IFC PS6 criteria triggered</strong>: C3 (Migratory and Congregatory Species)</li>
 </ul>
-<section id="how-the-data-are-filtered-41" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-41">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-43" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-43">How the data are filtered</h4>
 <ul>
-<li>Sites where Status is not “Proposed” or “Not Reported”.</li>
+<li>Sites where status is not “Proposed” or “Not Reported”.</li>
 <li>Sites labelled as “Ramsar Site, Wetland of International Importance”, with Designation Type “International”.</li>
 <li>Sites designated under:
 <ul>
@@ -1638,8 +1714,8 @@ div.csl-indent {
 <li>All polygon data and point data with present, non-zero reported area (<code>REP_AREA &gt; 0</code>).</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-45" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-45">How the data are processed</h4>
+<section id="how-the-data-are-processed-47" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-47">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Point data buffered to reported area, <code>REP_AREA</code>.</li>
@@ -1655,13 +1731,13 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 24,900</li>
-<li><strong>Area</strong>: 10,600,000 km<sup>2</sup></li>
+<li><strong>Number of records</strong>: 15,300</li>
+<li><strong>Area</strong>: 10,900,000 km<sup>2</sup></li>
 <li><strong>Critical habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 criteria triggered</strong>: C4 (Highly Threatened or Unique Ecosystems)</li>
 </ul>
-<section id="how-the-data-are-filtered-42" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-42">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-44" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-44">How the data are filtered</h4>
 <ul>
 <li>Sites where Status is not “Proposed” or “Not Reported”.</li>
 <li>Sites where the reported IUCN Management Category is:
@@ -1672,8 +1748,8 @@ div.csl-indent {
 </ul></li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-46" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-46">How the data are processed</h4>
+<section id="how-the-data-are-processed-48" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-48">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Point data buffered to reported area, <code>REP_AREA</code>.</li>
@@ -1689,20 +1765,20 @@ div.csl-indent {
 </div>
 </div>
 <ul>
-<li><strong>Number of records</strong>: 250</li>
-<li><strong>Area</strong>: 3,680,000 km<sup>2</sup></li>
+<li><strong>Number of records</strong>: 266</li>
+<li><strong>Area</strong>: 3,770,000 km<sup>2</sup></li>
 <li><strong>Critical habitat type</strong>: Likely</li>
 <li><strong>IFC PS6 criteria triggered</strong>: C4 (Highly Threatened or Unique Ecosystems)</li>
 </ul>
-<section id="how-the-data-are-filtered-43" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-43">How the data are filtered</h4>
+<section id="how-the-data-are-filtered-45" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-filtered-45">How the data are filtered</h4>
 <ul>
 <li>Sites where Status is not “Proposed”, “Established”, or “Not Reported”.</li>
 <li>Sites labelled as “World Heritage Site (natural or mixed)”, with Designation Type “International”.</li>
 </ul>
 </section>
-<section id="how-the-data-are-processed-47" class="level4">
-<h4 class="anchored" data-anchor-id="how-the-data-are-processed-47">How the data are processed</h4>
+<section id="how-the-data-are-processed-49" class="level4">
+<h4 class="anchored" data-anchor-id="how-the-data-are-processed-49">How the data are processed</h4>
 <ul>
 <li>Invalid S2 geometries (see <a href="#sec-s2">Section&nbsp;1</a>) are made valid.</li>
 <li>Point data buffered to reported area, <code>REP_AREA</code>.</li>
@@ -1713,50 +1789,50 @@ div.csl-indent {
 </section>
 </section>
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
-<div id="ref-beaulieuInterRidgeGlobalDatabase2020" class="csl-entry" role="listitem">
-Beaulieu, Stace E, and Kamil M Szafrański. 2020. <span>“<span>InterRidge Global Database</span> of <span>Active Submarine Hydrothermal Vent Fields Version</span> 3.4.”</span> <span>PANGAEA</span>. <a href="https://doi.org/10.1594/PANGAEA.917894">https://doi.org/10.1594/PANGAEA.917894</a>.
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
+<div id="ref-beaulieuInterRidgeGlobalDatabase2020" class="csl-entry" role="doc-biblioentry">
+Beaulieu, Stace E, and Kamil M Szafrański. 2020. <span>“<span>InterRidge Global Database</span> of <span>Active Submarine Hydrothermal Vent Fields Version</span> 3.4.”</span> PANGAEA. <a href="https://doi.org/10.1594/PANGAEA.917894">https://doi.org/10.1594/PANGAEA.917894</a>.
 </div>
-<div id="ref-KBA2023" class="csl-entry" role="listitem">
+<div id="ref-KBA2023" class="csl-entry" role="doc-biblioentry">
 BirdLife International. 2023a. <span>“The <span>World Database</span> of <span>Key Biodiversity Areas</span>. <span>Developed</span> by the <span>KBA Partnership</span>: <span>BirdLife International</span>, <span>International Union</span> for the <span>Conservation</span> of <span>Nature</span>, <span>Amphibian Survival Alliance</span>, <span>Conservation International</span>, <span>Critical Ecosystem Partnership Fund</span>, <span>Global Environment Facility</span>, <span>Re</span>:wild, <span>NatureServe</span>, <span>Rainforest Trust</span>, <span>Royal Society</span> for the <span>Protection</span> of <span>Birds</span>, <span>Wildlife Conservation Society</span> and <span>World Wildlife Fund</span>.”</span>
 </div>
-<div id="ref-birdlifeinternationalDigitalBoundariesImportant2023" class="csl-entry" role="listitem">
+<div id="ref-birdlifeinternationalDigitalBoundariesImportant2023" class="csl-entry" role="doc-biblioentry">
 ———. 2023b. <span>“Digital Boundaries of <span>Important Bird</span> and <span>Biodiversity Areas</span> from the <span>World Database</span> of <span>Key Biodiversity Areas</span>.”</span>
 </div>
-<div id="ref-buntingGlobalMangroveWatch2022" class="csl-entry" role="listitem">
-Bunting, Pete, Ake Rosenqvist, Lammert Hilarides, Richard Lucas, Nathan Thomas, Takeo Tadono, Thomas Worthington, Mark Spalding, Nicholas Murray, and Lisa-Maria Rebelo. 2022. <span>“Global <span>Mangrove Watch</span> (1996 - 2020) <span>Version</span> 3.0 <span>Dataset</span>.”</span> <span>Zenodo</span>. <a href="https://doi.org/10.5281/ZENODO.6894273">https://doi.org/10.5281/ZENODO.6894273</a>.
+<div id="ref-buntingGlobalMangroveWatch2022" class="csl-entry" role="doc-biblioentry">
+Bunting, Pete, Ake Rosenqvist, Lammert Hilarides, Richard Lucas, Nathan Thomas, Takeo Tadono, Thomas Worthington, Mark Spalding, Nicholas Murray, and Lisa-Maria Rebelo. 2022. <span>“Global <span>Mangrove Watch</span> (1996 - 2020) <span>Version</span> 3.0 <span>Dataset</span>.”</span> Zenodo. <a href="https://doi.org/10.5281/ZENODO.6894273">https://doi.org/10.5281/ZENODO.6894273</a>.
 </div>
-<div id="ref-freiwaldGlobalDistributionColdwater2021" class="csl-entry" role="listitem">
-Freiwald, A, A Rogers, J Hall-Spencer, John Guinotte, Andrew J. Davies, Chris Yesson, CS Martin, and Lauren V Weatherdon. 2021. <span>“Global Distribution of Cold-Water Corals (Version 5.1). <span>Fifth</span> Update to the Dataset in <span>Freiwald</span> Et Al. (2004) by <span>UNEP-WCMC</span>, in Collaboration with <span>Andre Freiwald</span> and <span>John Guinotte</span>.”</span> <span>Cambridge (UK)</span>: <span>UN Environment Programme World Conservation Monitoring Centre</span>. <a href="https://doi.org/10.34892/72x9-rt61">https://doi.org/10.34892/72x9-rt61</a>.
+<div id="ref-freiwaldGlobalDistributionColdwater2021" class="csl-entry" role="doc-biblioentry">
+Freiwald, A, A Rogers, J Hall-Spencer, John Guinotte, Andrew J. Davies, Chris Yesson, CS Martin, and Lauren V Weatherdon. 2021. <span>“Global Distribution of Cold-Water Corals (Version 5.1). <span>Fifth</span> Update to the Dataset in <span>Freiwald</span> Et Al. (2004) by <span>UNEP-WCMC</span>, in Collaboration with <span>Andre Freiwald</span> and <span>John Guinotte</span>.”</span> Cambridge (UK): UN Environment Programme World Conservation Monitoring Centre. <a href="https://doi.org/10.34892/72x9-rt61">https://doi.org/10.34892/72x9-rt61</a>.
 </div>
-<div id="ref-iucnIUCNRedList2022" class="csl-entry" role="listitem">
+<div id="ref-iucnIUCNRedList2022" class="csl-entry" role="doc-biblioentry">
 IUCN. 2022. <span>“The <span>IUCN Red List</span> of <span>Threatened Species</span>. <span>Version</span> 2022-2.”</span>
 </div>
-<div id="ref-IMMA2020" class="csl-entry" role="listitem">
+<div id="ref-IMMA2020" class="csl-entry" role="doc-biblioentry">
 IUCN-MMPATF. 2020. <span>“Global <span>Dataset</span> of <span>Important Marine Mammal Areas</span> (<span>IUCN-IMMA</span>). <span>Made</span> Available Under Agreement on Terms and Conditions of Use by the <span>IUCN Joint SSC</span>/<span>WCPA Marine Mammal Protected Areas Task Force</span>.”</span>
 </div>
-<div id="ref-lesaoutProtectedAreasEffective2013" class="csl-entry" role="listitem">
+<div id="ref-lesaoutProtectedAreasEffective2013" class="csl-entry" role="doc-biblioentry">
 Le Saout, Soizic, Michael Hoffmann, Yichuan Shi, Adrian Hughes, Cyril Bernard, Thomas M. Brooks, Bastian Bertzky, et al. 2013. <span>“Protected <span>Areas</span> and <span>Effective Biodiversity Conservation</span>.”</span> <em>Science</em> 342 (6160): 803–5. <a href="https://doi.org/10.1126/science.1239268">https://doi.org/10.1126/science.1239268</a>.
 </div>
-<div id="ref-martinGlobalMapAid2015" class="csl-entry" role="listitem">
+<div id="ref-martinGlobalMapAid2015" class="csl-entry" role="doc-biblioentry">
 Martin, C. S., M. J. Tolley, E. Farmer, C. J. Mcowen, J. L. Geffert, J. P. W. Scharlemann, H. L. Thomas, et al. 2015. <span>“A Global Map to Aid the Identification and Screening of Critical Habitat for Marine Industries.”</span> <em>Marine Policy</em> 53 (March): 45–53. <a href="https://doi.org/10.1016/j.marpol.2014.11.007">https://doi.org/10.1016/j.marpol.2014.11.007</a>.
 </div>
-<div id="ref-mcowenGlobalMapSaltmarshes2017" class="csl-entry" role="listitem">
+<div id="ref-mcowenGlobalMapSaltmarshes2017" class="csl-entry" role="doc-biblioentry">
 Mcowen, Chris, Lauren Weatherdon, Jan-Willem Bochove, Emma Sullivan, Simon Blyth, Christoph Zockler, Damon Stanwell-Smith, et al. 2017. <span>“A Global Map of Saltmarshes.”</span> <em>Biodiversity Data Journal</em> 5 (March): e11764. <a href="https://doi.org/10.3897/BDJ.5.e11764">https://doi.org/10.3897/BDJ.5.e11764</a>.
 </div>
-<div id="ref-potapovLastFrontiersWilderness2017" class="csl-entry" role="listitem">
+<div id="ref-potapovLastFrontiersWilderness2017" class="csl-entry" role="doc-biblioentry">
 Potapov, Peter, Matthew C. Hansen, Lars Laestadius, Svetlana Turubanova, Alexey Yaroshenko, Christoph Thies, Wynet Smith, et al. 2017. <span>“The Last Frontiers of Wilderness: <span>Tracking</span> Loss of Intact Forest Landscapes from 2000 to 2013.”</span> <em>Science Advances</em> 3 (1): e1600821. <a href="https://doi.org/10.1126/sciadv.1600821">https://doi.org/10.1126/sciadv.1600821</a>.
 </div>
-<div id="ref-coldseeps" class="csl-entry" role="listitem">
+<div id="ref-coldseeps" class="csl-entry" role="doc-biblioentry">
 Ramirez-Llodra, Eva, and Blanco. 2020. <span>“<span>ChEssBase</span>: An Online Information System on Biodiversity and Biogeography of Deep-Sea Fauna from Chemosynthetic Ecosystems. <span>World Wide Web</span> Electronic Publications.”</span>
 </div>
-<div id="ref-underwoodEverwetTropicalForests2014" class="csl-entry" role="listitem">
+<div id="ref-underwoodEverwetTropicalForests2014" class="csl-entry" role="doc-biblioentry">
 Underwood, Emma C., David Olson, Allan D. Hollander, and James F. Quinn. 2014. <span>“Ever-Wet Tropical Forests as Biodiversity Refuges.”</span> <em>Nature Climate Change</em> 4 (9): 740–41. <a href="https://doi.org/10.1038/nclimate2351">https://doi.org/10.1038/nclimate2351</a>.
 </div>
-<div id="ref-WDPA2023" class="csl-entry" role="listitem">
+<div id="ref-WDPA2023" class="csl-entry" role="doc-biblioentry">
 UNEP-WCMC and IUCN. 2023. <span>“Protected <span>Planet</span>: <span>The World Database</span> on <span>Protected Areas</span> (<span>WDPA</span>) [<span>Online</span>], <span>Cambridge</span>, <span>UK</span>: <span>UNEP-WCMC</span> and <span>IUCN</span>.”</span>
 </div>
-<div id="ref-yessonGlobalHabitatSuitability2012" class="csl-entry" role="listitem">
+<div id="ref-yessonGlobalHabitatSuitability2012" class="csl-entry" role="doc-biblioentry">
 Yesson, Chris, Michelle L. Taylor, Derek P. Tittensor, Andrew J. Davies, John Guinotte, Amy Baco, Julie Black, Jason M. Hall-Spencer, and Alex D. Rogers. 2012. <span>“Global Habitat Suitability of Cold-Water Octocorals.”</span> <em>Journal of Biogeography</em> 39 (7): 1278–92. <a href="https://doi.org/10.1111/j.1365-2699.2011.02681.x">https://doi.org/10.1111/j.1365-2699.2011.02681.x</a>.
 </div>
 </div></section></div></main>
@@ -1788,23 +1864,9 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     icon: icon
   };
   anchorJS.add('.anchored');
-  const isCodeAnnotation = (el) => {
-    for (const clz of el.classList) {
-      if (clz.startsWith('code-annotation-')) {                     
-        return true;
-      }
-    }
-    return false;
-  }
   const clipboard = new window.ClipboardJS('.code-copy-button', {
-    text: function(trigger) {
-      const codeEl = trigger.previousElementSibling.cloneNode(true);
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
+    target: function(trigger) {
+      return trigger.previousElementSibling;
     }
   });
   clipboard.on('success', function(e) {
@@ -1869,92 +1931,6 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       return note.innerHTML;
     });
   }
-      let selectedAnnoteEl;
-      const selectorForAnnotation = ( cell, annotation) => {
-        let cellAttr = 'data-code-cell="' + cell + '"';
-        let lineAttr = 'data-code-annotation="' +  annotation + '"';
-        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
-        return selector;
-      }
-      const selectCodeLines = (annoteEl) => {
-        const doc = window.document;
-        const targetCell = annoteEl.getAttribute("data-target-cell");
-        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
-        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
-        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
-        const lineIds = lines.map((line) => {
-          return targetCell + "-" + line;
-        })
-        let top = null;
-        let height = null;
-        let parent = null;
-        if (lineIds.length > 0) {
-            //compute the position of the single el (top and bottom and make a div)
-            const el = window.document.getElementById(lineIds[0]);
-            top = el.offsetTop;
-            height = el.offsetHeight;
-            parent = el.parentElement.parentElement;
-          if (lineIds.length > 1) {
-            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
-            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
-            height = bottom - top;
-          }
-          if (top !== null && height !== null && parent !== null) {
-            // cook up a div (if necessary) and position it 
-            let div = window.document.getElementById("code-annotation-line-highlight");
-            if (div === null) {
-              div = window.document.createElement("div");
-              div.setAttribute("id", "code-annotation-line-highlight");
-              div.style.position = 'absolute';
-              parent.appendChild(div);
-            }
-            div.style.top = top - 2 + "px";
-            div.style.height = height + 4 + "px";
-            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
-            if (gutterDiv === null) {
-              gutterDiv = window.document.createElement("div");
-              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
-              gutterDiv.style.position = 'absolute';
-              const codeCell = window.document.getElementById(targetCell);
-              const gutter = codeCell.querySelector('.code-annotation-gutter');
-              gutter.appendChild(gutterDiv);
-            }
-            gutterDiv.style.top = top - 2 + "px";
-            gutterDiv.style.height = height + 4 + "px";
-          }
-          selectedAnnoteEl = annoteEl;
-        }
-      };
-      const unselectCodeLines = () => {
-        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
-        elementsIds.forEach((elId) => {
-          const div = window.document.getElementById(elId);
-          if (div) {
-            div.remove();
-          }
-        });
-        selectedAnnoteEl = undefined;
-      };
-      // Attach click handler to the DT
-      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
-      for (const annoteDlNode of annoteDls) {
-        annoteDlNode.addEventListener('click', (event) => {
-          const clickedEl = event.target;
-          if (clickedEl !== selectedAnnoteEl) {
-            unselectCodeLines();
-            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
-            if (activeEl) {
-              activeEl.classList.remove('code-annotation-active');
-            }
-            selectCodeLines(clickedEl);
-            clickedEl.classList.add('code-annotation-active');
-          } else {
-            // Unselect the line
-            unselectCodeLines();
-            clickedEl.classList.remove('code-annotation-active');
-          }
-        });
-      }
   const findCites = (el) => {
     const parentEl = el.parentElement;
     if (parentEl) {

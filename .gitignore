@@ -25,4 +25,7 @@ project_inventory.xlsx
 raw_data/
 scratch/
 work_in_progress/
+outputs/paper/*.tif
+outputs/paper/*.dbf
+outputs/paper/*.gpkg
 .Rproj.user

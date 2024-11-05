@@ -44,7 +44,7 @@ P_RAMS4789,Potential,"Ramsar sites under criteria 4, 7, 8 and 9",0,0,1,0,0
 P_TRTLALL,Potential,Sea turtle nesting sites - All species,0,0,1,1,0
 P_SEAMOUNT,Potential,Seamounts,0,0,0,1,0
 P_DRYFOR,Potential,Tropical dry forest,0,0,0,1,0
-P_CLOUDFR,Potential,Tropical montane cloud forests,0,0,0,1,0
+L_CLOUDFR,Likely,Tropical montane cloud forests,0,0,0,1,0
 P_VUCRD,Potential,VU species under criterion D2,1,0,0,0,0
 L_IBAA1,Likely,IBAs under criterion A1,1,0,0,0,0
 P_IBAB1B,Potential,IBAs under criterion B1b,1,0,0,0,0

@@ -1,0 +1,2382 @@
+---
+title: "Supplementary Information: An update to the global Critical Habitat screening layer"
+author:
+  - name: Sebastian Dunnett
+    orcid: 0000-0002-4238-2508
+    email: sebastian.dunnett@unep-wcmc.org
+    affiliations:
+      - name: United Nations Environment Programme World Conservation Monitoring Centre
+        address: 219 Huntingdon Road
+        city: Cambridge
+        postal-code: CB3 0DL
+        id: unep-wcmc
+  - name: Alfred Muge
+    affiliations:
+      - ref: unep-wcmc
+  - name: Alex Ross
+    affiliations:
+      - ref: unep-wcmc
+  - name: Joe Turner
+    affiliations:
+      - name: The Biodiversity Consultancy
+        address: 3E King's Parade
+        city: Cambridge
+        postal-code: CB2 1SJ
+        id: tbc
+  - name: Neil Burgess
+    orcid: 0000-0003-2291-4535
+    affiliations:
+      - ref: unep-wcmc
+  - name: Matt Jones
+    orcid: 0000-0002-5690-4274
+    affiliations:
+      - ref: unep-wcmc
+  - name: Sharon Brooks
+    orcid: 0000-0001-8744-3557
+    affiliations:
+      - ref: unep-wcmc
+bibliography: references.bib
+format: scidata-pdf
+number-sections: true
+execute:
+  echo: false
+  message: false
+  warning: false
+---
+
+```{r setup}
+
+if (!require("pacman")) install.packages("pacman")
+p_load(sf,scico,tidyverse,cowplot,terra,units,vapour)
+terraOptions(progress=0)
+
+source("plot_functions.R")
+source("../../scripts_tools/0 spatial_processing_functions.R")
+
+# good palettes: turku; oslo; oleron; nuuk; navia; lipari; lapaz; lajolla; fes; devon; davos; bukavu; batlow; bamako; acton
+pal=sample(c("turku","oslo","oleron","nuuk","navia","lipari","lapaz","lajolla","fes","devon","davos","bukavu","batlow","bamako","acton"),1)
+revCol=runif(1)>0.5
+
+#pal="acton"
+#revCol=TRUE
+
+options(scipen=999)
+
+knitr::knit_hooks$set(inline = function(x) {
+  if(!is.numeric(x)){x}
+  else{
+    prettyNum(signif(x,3), big.mark=",")
+    }
+  })
+
+```
+
+```{r wrld-import}
+
+sphere <- st_graticule(ndiscr = 10000, margin = 10e-6) %>%
+  st_transform(crs = st_crs("ESRI:54009")) %>%
+  st_convex_hull() %>%
+  summarise(geometry = st_union(geometry)) |>
+  st_buffer(1000) |> st_union() |> st_buffer(-1000) |>
+  st_transform("EPSG:8857")
+
+wrld = st_read("../../raw_data/UN map borders/Countries_Combined_with_associated_territories.json",quiet=TRUE) |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+area_lookup = read.csv("../../outputs/area_comparisons.csv")
+
+raster_eq <- project(rast(res=1/12),"EPSG:8857",res=10000)
+
+```
+
+
+## Spherical geometries with the S2 library {#sec-s2 .unnumbered}
+
+To maintain the highest standards of accuracy, spatial processing is carried out with the `sf` package in **R**, using the S2 spherical geometry library. This allows spatial processing, e.g. intersections and buffers, using Great Circle distances.
+
+However, many conservation datasets are set up for planar geometry and are not valid on the sphere. To account for this, data are forced to be valid on the sphere through two methods. The first is light touch, calling the function `st_make_valid` from the `sf` package to remove duplicate vertices etc. The second, more brute force approach, is to transform the data to projected coordinates, e.g. Mollweide equal-area, and call `st_simplify` with rising imprecision until the geometry is valid on the sphere. Generally, where the latter approach was required, geometries were made valid before the precision rose above 1-km resolution (`dTolerance = 1000`).
+
+## Unioning geometries {#sec-union}
+
+In order to compute accurate area measurements for polygon input features and remove duplicate records from point data, all data are unioned using `st_union` from the `sf` package. However, using `st_union` for spherical spatial processing becomes extremely inefficient (e.g. days to compute) with large, high precision datasets. For this reason, an arbitrary complexity limit was used, above which planar intersection with `unary_union` from the `geos` package was performed. This limit was set at 10,000,000 vertices: only a handful of datasets are more detailed than this, and it speeds up processing markedly with limited impact on accuracy.
+
+## Cold seeps {#sec-coldseeps}
+
+
+```{r cold-seeps}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of cold seeps.
+
+coldseeps = st_read("../../scratch/L_C4_C5_Cold_seeps_pts.shp",quiet=TRUE) |>
+  st_transform("EPSG:8857")
+
+plot_data_sf(data=coldseeps,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Data type**: Point
+- **Number of records**: `r nrow(query_unepwcmc_nogeo(dataset="Hosted/ChEssBase_ColdSeeps"))`
+- **Original CRS**: WGS 84
+- **Source**: Ramirez-Llodra 2020[@coldseeps]
+- **Critical Habitat type**: Likely/Potential
+- **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems) and C5 (Key Evolutionary Processes)/C2 (Endemic and Restricted-range Species)
+
+#### How the data are filtered
+
+- No filtering of data from source.
+
+#### How the data are processed
+
+- Data are unioned to remove duplicates (see @sec-union).
+
+## Cold water corals {#sec-cold-corals}
+### Modelled occurrence
+
+
+```{r cold-coral-model}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global modelled distribution of cold water corals.
+
+plot_rst(data=rast("../../scratch/P_C4_C5_Coldwater_coral.tif"),
+         wrld=wrld,
+         bkg=sphere,
+         palette=pal,
+         revCol=revCol)
+
+cold_coral_model_crs = st_crs(rast("../../raw_data/Yesson_2012_ColdWaterCorals_Modelled/Yesson_2012_ColdWaterCorals_Modelled.tif"))$input
+
+```
+
+
+- **Data type**: Raster
+- **Original CRS**: `r st_crs(rast("../../raw_data/Yesson_2012_ColdWaterCorals_Modelled/Yesson_2012_ColdWaterCorals_Modelled.tif"))$input`
+- **Original resolution**: `r res(rast("../../raw_data/Yesson_2012_ColdWaterCorals_Modelled/Yesson_2012_ColdWaterCorals_Modelled.tif"))[1]`
+- **Extent**: Global
+- **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/P_C4_C5_Coldwater_coral.tif"), unit="km", byValue=T) |> filter(value==1) |> pull(area)`
+- **Source**: Yesson *et al.* 2012[@yessonGlobalHabitatSuitability2012]
+- **Critical Habitat type**: Potential
+- **IFC PS6 Criteria triggered**:
+    - C4 (Highly Threatened or Unique Ecosystems)
+    - C5 (Key Evolutionary Processes)
+
+#### How the data are processed
+
+- As per Martin *et al.* 2015[@martinGlobalMapAid2015], raster reclassified so that `>90 = 1` and `<=90 = 0`.
+- Raster projected to WGS 84 using nearest neighbour resampling.
+
+### Observed occurence
+
+
+```{r cold-coral-obs-polys}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: "Global observed distribution of cold water corals - polygons (inset: North Atlantic and North Sea)."
+
+cold_coral_obs_polys = st_read("../../scratch/L_C4_C5_Cold_water_coral_observed_polys.shp",quiet=TRUE)
+
+cold_coral_obs_polys_area = filter(area_lookup,Feature==cold_coral_obs_polys$Feature)$Area_polys_sqkm
+
+cold_coral_obs_polys = cold_coral_obs_polys |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_inset_sf(data=cold_coral_obs_polys,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol,
+             inset_x=0,inset_y=0.65,
+             inset_width=0.3,inset_height=0.3)
+
+```
+
+```{r cold-coral-obs-pts}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global observed distribution of cold water corals - points.
+
+cold_coral_obs_pts = st_read("../../scratch/L_C4_C5_Cold_water_coral_observed_pts.shp",quiet=TRUE) |>
+  st_transform("EPSG:8857")
+
+plot_data_sf(data=cold_coral_obs_pts,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Data type**: Point and polygon
+- **Number of records**: `r nrow(query_unepwcmc_nogeo(dataset="HabitatsAndBiotopes/Global_Distribution_of_Cold_water_Corals", feature_layer=0))` (point) and `r nrow(query_unepwcmc_nogeo(dataset="HabitatsAndBiotopes/Global_Distribution_of_Cold_water_Corals", feature_layer=1))` (polygon)
+- **Original CRS**: WGS 84
+- **Area (polygons)**: `r cold_coral_obs_polys_area` km^2^
+- **Source**: Freiwald *et al.* 2021[@freiwaldGlobalDistributionColdwater2021]
+- **Critical Habitat type**: Likely
+- **IFC PS6 Criteria triggered**:
+    - C4 (Highly Threatened or Unique Ecosystems)
+    - C5 (Key Evolutionary Processes)
+
+#### How the data are filtered
+
+- No filtering of data from source.
+
+#### How the data are processed
+
+- Invalid S2 polygon geometries (see @sec-s2) are made valid.
+- Data are unioned to remove overlap (polygons) and duplicates (points) (see @sec-union).
+
+## Ever-wet tropical forest {#sec-everwet}
+
+
+```{r everwet}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of ever-wet tropical forests.
+#| cache: false
+
+plot_rst(data=rast("../../scratch/P_C4_Everwet_Zones.tif"),
+         wrld=wrld,
+         bkg=sphere,
+         palette=pal,
+         revCol=revCol)
+
+```
+
+
+-   **Data type**: Raster
+-   **Original CRS**: `r st_crs(rast("../../raw_data/Everwet_Zones/Everwet_Zones/everwet_zones"))$input`
+-   **Original resolution**: `r res(rast("../../raw_data/Everwet_Zones/Everwet_Zones/everwet_zones"))[1]`
+-   **Extent**: `r st_bbox(rast("../../raw_data/Everwet_Zones/Everwet_Zones/everwet_zones"))`
+-   **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/P_C4_Everwet_Zones.tif"), unit="km", byValue=T) |> filter(value==1) |> pull(area)`
+-   **Source**: @underwoodEverwetTropicalForests2014
+-   **Critical Habitat type**: Potential
+-   **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+
+## Hydrothermal vents {#sec-hydro}
+
+
+```{r hydrothermal-vents}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of active hydrothermal vents.
+
+hydrothermal_vents = st_read("../../scratch/P_C4_Hydrothermal_Vents_pts.shp",quiet=TRUE)
+
+plot_data_sf(data=hydrothermal_vents,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Data type**: Point
+- **Number of records**: `r nrow(st_read("../../raw_data/PANGEA_2020_InterRidge_Database_Hydrothermal_Vent_v3_4/vent_fields_all_20200325.shp", quiet=TRUE))`; of which `r nrow(st_read("../../raw_data/PANGEA_2020_InterRidge_Database_Hydrothermal_Vent_v3_4/vent_fields_all_20200325.shp", quiet=TRUE) |> filter(Activity %in% c("active, inferred","active, confirmed")))` are active
+- **Original CRS**: `r st_crs(st_read("../../raw_data/PANGEA_2020_InterRidge_Database_Hydrothermal_Vent_v3_4/vent_fields_all_20200325.shp", quiet=TRUE))$input`
+- **Source**: @beaulieuInterRidgeGlobalDatabase2020
+- **Critical Habitat type**: Likely (if active) / Potential
+- **IFC PS6 Criteria triggered**: C2 (Endemic and Restricted-range Species) and C5 (Key Evolutionary Processes) (if active) / C4 (Highly Threatened or Unique Ecosystems)
+
+#### How the data are filtered
+
+- Records whose `Activity` is classified as `active,inferred` or `active, confirmed`.
+
+#### How the data are processed
+
+- Data are unioned to remove duplicates (see @sec-union).
+
+## Key Biodiversity Areas (KBAs) {#sec-kbas}
+
+
+```{r kbas}
+
+kba_aze_iba_polys = data.frame(vapour_read_attributes("O:/f00_data/Birdlife-001-KBA-IBA-AZE/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_POL.shp"))
+kba_aze_iba_pts = data.frame(vapour_read_attributes("O:/f00_data/Birdlife-001-KBA-IBA-AZE/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_PNT.shp"))
+
+kba_layer = st_layers("O:/f00_data/Birdlife-001-KBA-IBA-AZE/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_POL.shp")[[1]]
+kba_sql = paste0("select * from \"",kba_layer,"\" limit 1")
+
+```
+
+
+- **Data type**: Point and polygon
+- **Number of records**:`r nrow(kba_aze_iba_pts)` (point) and `r nrow(kba_aze_iba_polys)` (polygon)
+- **Original CRS**: `r st_crs(st_read("O:/f00_data/Birdlife-001-KBA-IBA-AZE/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_POL.shp",quiet=TRUE,query=kba_sql))$input`
+- **Area (polygons - reported)**: `r sum(kba_aze_iba_polys$GISArea,na.rm=TRUE) %>% units::set_units(ha) %>% units::set_units(km2) %>% as.numeric()` km^2^
+- **Area (point - reported)**: `r sum(as.numeric(kba_aze_iba_pts$sitarea),na.rm=TRUE) %>% units::set_units(ha) %>% units::set_units(km2) %>% as.numeric()` km^2^
+- **Source**: @KBA2023
+
+### Alliance for Zero Extinction Sites (AZEs)
+
+
+```{r azes}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Alliance for Zero Extinction sites.
+
+azes = st_read("../../scratch/L_C1_C2_C3_AZEs_polys.shp",quiet=TRUE)
+
+azes_area = filter(area_lookup,Feature==azes$Feature)$Area_polys_sqkm
+
+azes = azes |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=azes,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(kba_aze_iba_pts, AzeStatus == "confirmed"))` (point) and `r nrow(filter(kba_aze_iba_polys, AzeStatus == "confirmed"))` (polygon)
+- **Area (including buffered point data)**: `r azes_area` km^2^
+- **Critical Habitat type**: Likely
+- **IFC PS6 Criteria triggered**:
+  - C1 (Critically Endangered and Endangered Species)
+  - C2 (Endemic and Restricted-range Species)
+  - C3 (Migratory and Congregatory Species)
+
+#### How the data are filtered
+
+- Sites with `AzeStatus = confirmed`.
+- All polygons, and point data with reported areas.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Data are unioned to remove overlap (see @sec-union).
+
+### KBAs under criteria A1a and A1e
+
+
+```{r kbas-A1ae}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Key Biodiversity Areas under criteria A1a and A1e.
+
+kbasA1ae = st_read("../../scratch/L_C1_KBAs_A1ae_polys.shp",quiet=TRUE)
+
+kbasA1ae_area = filter(area_lookup,Feature==kbasA1ae$Feature)$Area_polys_sqkm
+
+kbasA1ae = kbasA1ae |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=kbasA1ae,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(kba_aze_iba_pts, KbaStatus == "confirmed" & str_detect(Criteria,"A1a|A1e")))` (point) and `r nrow(filter(kba_aze_iba_polys, KbaStatus == "confirmed" & str_detect(Criteria,"A1a|A1e")))` (polygon)
+- **Area (including buffered point data)**: `r kbasA1ae_area` km^2^
+- **Critical Habitat type**: Likely
+- **IFC PS6 Criteria triggered**: C1 (Critically Endangered and Endangered Species)
+
+#### How the data are filtered
+
+- Sites with `KbaStatus = confirmed`.
+- Sites designated under:
+    - KBA Criteria A1a (\>=0.5% of global population size and \>=5 reproductive units (RU) of a CR/EN species); and
+    - KBA Criteria A1e (Effectively the entire population size of a CR/EN species).
+- All polygons, and point data with reported areas.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Point data buffered to reported area, `sitarea`.
+- Data are unioned to remove overlap (see @sec-union).
+
+### KBAs under criterion A1b
+
+
+```{r kbas-A1b}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Key Biodiversity Areas under criterion A1b.
+
+kbasA1b = st_read("../../scratch/P_C1_KBAs_A1b_polys.shp",quiet=TRUE)
+
+kbasA1b_area = filter(area_lookup,Feature==kbasA1b$Feature)$Area_polys_sqkm
+
+kbasA1b = kbasA1b |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=kbasA1b,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(kba_aze_iba_pts, KbaStatus == "confirmed" & str_detect(Criteria,"A1b")))` (point) and `r `nrow(filter(kba_aze_iba_polys, KbaStatus == "confirmed" & str_detect(Criteria,"A1b")))` (polygon)
+- **Area (including buffered point data)**: `r kbasA1b_area` km^2^
+- **Critical Habitat type**: Potential
+- **IFC PS6 Criteria triggered**: C1 (Critically Endangered and Endangered Species)
+
+#### How the data are filtered
+
+- Sites with `KbaStatus = confirmed`.
+- Sites designated under KBA Criterion A1b (\>=1.0% of global population size and \>=10 RU of a VU species).
+- All polygons, and point data with reported areas.
+
+#### How the data are processed
+
+-   Invalid S2 geometries (see @sec-s2) are made valid.
+-   Point data buffered to reported area, `sitarea`.
+-   Data are unioned to remove overlap (see @sec-union).
+
+### KBAs under criterion A2a
+
+No data present.
+
+### KBAs under criterion A2b
+
+No data present.
+
+### KBAs under criterion B1
+
+
+```{r kbas-B1}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Key Biodiversity Areas under criterion B1.
+
+kbasB1 = st_read("../../scratch/L_C2_KBAs_B1_polys.shp",quiet=TRUE)
+
+kbasB1_area = filter(area_lookup,Feature==kbasB1$Feature)$Area_polys_sqkm
+
+kbasB1 = kbasB1 |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=kbasB1,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(kba_aze_iba_pts, KbaStatus == "confirmed" & str_detect(Criteria,"B1")))` (point) and `r nrow(filter(kba_aze_iba_polys, KbaStatus == "confirmed" & str_detect(Criteria,"B1")))` (polygon)
+- **Area (including buffered point data)**: `r kbasB1_area` km^2^
+- **Critical Habitat type**: Likely
+- **IFC PS6 Criteria triggered**: C2 (Endemic and Restricted-range Species)
+
+#### How the data are filtered
+
+- Sites with `KbaStatus = confirmed`.
+- Sites designated under KBA Criterion B1 (Site regularly holds \>=10% of the global population size AND \>=10 reproductive units of a species).
+- All polygons, and point data with reported areas.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Point data buffered to reported area, `sitarea`.
+- Data are unioned to remove overlap (see @sec-union).
+
+### KBAs under criterion B4
+
+
+```{r kbas-B4}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Key Biodiversity Areas under criterion B4.
+
+kbasB4 = st_read("../../scratch/P_C4_KBAs_B4_polys.shp",quiet=TRUE)
+
+kbasB4_area = filter(area_lookup,Feature==kbasB4$Feature)$Area_polys_sqkm
+
+kbasB4 = kbasB4 |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=kbasB4,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(kba_aze_iba_pts, KbaStatus == "confirmed" & str_detect(Criteria,"B4")))` (point) and `r nrow(filter(kba_aze_iba_polys, KbaStatus == "confirmed" & str_detect(Criteria,"B4")))` (polygon)
+- **Area (including buffered point data)**: `r kbasB4_area` km^2^
+- **Critical Habitat type**: Potential
+- **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+
+#### How the data are filtered
+
+- Sites with `KbaStatus = confirmed`.
+- Sites designated under KBA Criterion B4 (Site holds \>=20% of the global extent of an ecosystem type).
+- All polygons, and point data with reported areas.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Point data buffered to reported area, `sitarea`.
+- Data are unioned to remove overlap (see @sec-union).
+
+### KBAs under criterion C
+
+No data present.
+
+### KBAs under criterion D1a
+
+
+```{r kbas-D1a}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Key Biodiversity Areas under criterion D1a.
+
+kbasD1a = st_read("../../scratch/L_C3_KBAs_D1a_polys.shp",quiet=TRUE)
+
+kbasD1a_area = filter(area_lookup,Feature==kbasD1a$Feature)$Area_polys_sqkm
+
+kbasD1a = kbasD1a |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=kbasD1a,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(kba_aze_iba_pts, KbaStatus == "confirmed" & str_detect(Criteria,"D1a")))` (point) and `r nrow(filter(kba_aze_iba_polys, KbaStatus == "confirmed" & str_detect(Criteria,"D1a"))) + nrow(filter(kba_aze_iba_pts, KbaStatus == "confirmed" & str_detect(Criteria,"D1a")))` (polygon)
+- **Area (including buffered point data)**: `r kbasD1a_area` km^2^
+- **Critical Habitat type**: Likely
+- **IFC PS6 Criteria triggered**: C3 (Migratory and Congregatory Species)
+
+#### How the data are filtered
+
+- Sites with `KbaStatus = confirmed`.
+- Sites designated under KBA Criterion D1a (Site holds an aggregation representing \>=1% of the global population size of a species, over a season, and during one or more key stages of its life cycle).
+- All polygons, and point data with reported areas.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Point data buffered to reported area, `sitarea`.
+- Data are unioned to remove overlap (see @sec-union).
+
+### KBAs under criterion D1b
+
+
+```{r kbas-D1b}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Key Biodiversity Areas under criterion D1b.
+
+kbasD1b = st_read("../../scratch/P_C3_KBAs_D1b_polys.shp",quiet=TRUE)
+
+kbasD1b_area = filter(area_lookup,Feature==kbasD1b$Feature)$Area_polys_sqkm
+
+kbasD1b = kbasD1b |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=kbasD1b,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(kba_aze_iba_pts, KbaStatus == "confirmed" & str_detect(Criteria,"D1b")))` (point) and `r nrow(filter(kba_aze_iba_polys, KbaStatus == "confirmed" & str_detect(Criteria,"D1b")))` (polygon)
+- **Area (including buffered point data)**: `r kbasD1b_area` km^2^
+- **Critical Habitat type**: Potential
+- **IFC PS6 Criteria triggered**: C3 (Migratory and Congregatory Species)
+
+#### How the data are filtered
+
+- Sites with `KbaStatus = confirmed`.
+- Sites designated under KBA Criterion D1b (Site holds a number of mature individuals that ranks the site among the largest 10 aggregations known for the species).
+- All polygons, and point data with reported areas.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Point data buffered to reported area, `sitarea`.
+- Data are unioned to remove overlap (see @sec-union).
+
+### KBAs under criterion D2
+
+
+```{r kbas-D2}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Key Biodiversity Areas under criterion D2.
+
+kbasD2 = st_read("../../scratch/L_C3_KBAs_D2_polys.shp",quiet=TRUE)
+
+kbasD2_area = filter(area_lookup,Feature==kbasD2$Feature)$Area_polys_sqkm
+
+kbasD2 = kbasD2 |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=kbasD2,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(kba_aze_iba_pts, KbaStatus == "confirmed" & str_detect(Criteria,"D2")))` (point) and `r nrow(filter(kba_aze_iba_polys, KbaStatus == "confirmed" & str_detect(Criteria,"D2")))` (polygon)
+- **Area (including buffered point data)**: `r kbasD2_area` km^2^
+- **Critical Habitat type**: Likely
+- **IFC PS6 Criteria triggered**: C3 (Migratory and Congregatory Species)
+
+#### How the data are filtered
+
+- Sites with `KbaStatus = confirmed`.
+- Sites designated under KBA Criterion D2 (Site supports \>=10% of the global population size of one or more species during periods of environmental stress, for which historical evidence shows that it has served as a refugium in the past and for which there is evidence to suggest it would continue to do so in the foreseeable future).
+- All polygons, and point data with reported areas.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Point data buffered to reported area, `sitarea`.
+- Data are unioned to remove overlap (see @sec-union).
+
+### KBAs under criterion D3
+
+
+```{r kbas-D3}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Key Biodiversity Areas under criterion D3.
+
+kbasD3 = st_read("../../scratch/P_C3_KBAs_D3_polys.shp",quiet=TRUE)
+
+kbasD3_area = filter(area_lookup,Feature==kbasD3$Feature)$Area_polys_sqkm
+
+kbasD3 = kbasD3 |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=kbasD3,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(kba_aze_iba_pts, KbaStatus == "confirmed" & str_detect(Criteria,"D3")))` (point) and `r nrow(filter(kba_aze_iba_polys, KbaStatus == "confirmed" & str_detect(Criteria,"D3")))` (polygon)
+- **Area (including buffered point data)**: `r kbasD2_area` km^2^
+- **Critical Habitat type**: Potential
+- **IFC PS6 Criteria triggered**: C3 (Migratory and Congregatory Species)
+
+#### How the data are filtered
+
+- Sites with `KbaStatus = confirmed`.
+- Sites designated under KBA Criterion D3 (Site predictably produces propagules, larvae, or juveniles that maintain \>=10% of the global population size of a species).
+- All polygons, and point data with reported areas.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Point data buffered to reported area, `sitarea`.
+- Data are unioned to remove overlap (see @sec-union).
+
+### KBAs under criterion E
+
+
+```{r kbas-E}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Key Biodiversity Areas under criterion E.
+
+kbasE = st_read("../../scratch/P_C1_KBAs_E_polys.shp",quiet=TRUE)
+
+kbasE_area = filter(area_lookup,Feature==kbasE$Feature)$Area_polys_sqkm
+
+kbasE = kbasE |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=kbasE,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(kba_aze_iba_pts, KbaStatus == "confirmed" & str_detect(Criteria,"E")))` (point) and `r nrow(filter(kba_aze_iba_polys, KbaStatus == "confirmed" & str_detect(Criteria,"E")))` (polygon)
+- **Area (including buffered point data)**: `r kbasE_area` km^2^
+- **Critical Habitat type**: Potential
+- **IFC PS6 Criteria triggered**: C1 (Critically Endangered and Endangered Species)
+
+#### How the data are filtered
+
+- Sites with `KbaStatus = confirmed`.
+- Sites designated under KBA Criterion E (Site has a level of irreplaceability of \>=0.90 (on a 0–1 scale), measured by quantitative spatial analysis, and is characterised by the regular presence of species with \>=10 reproductive units known to occur (or \>= 5 units for EN or CR species)).
+- All polygons, and point data with reported areas.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Point data buffered to reported area, `sitarea`.
+- Data are unioned to remove overlap (see @sec-union).
+
+## Important Bird and Biodiversity Areas (IBAs) {#sec-ibas}
+
+
+```{r ibas}
+
+iba_polys = vapour_read_attributes("../../raw_data/IBAsGlobal_2023_September_02/IBAsGlobal_2023_September_POL_02.shp") |>
+  data.frame() |>
+  left_join(read.csv("../../raw_data/IBAsGlobal_2023_September_02/TriggerSpecies.csv"),by="SitRecID")
+iba_pts = vapour_read_attributes("../../raw_data/IBAsGlobal_2023_September_02/IBAsGlobal_2023_September_PNT_02.shp") |>
+  data.frame() |>
+  left_join(read.csv("../../raw_data/IBAsGlobal_2023_September_02/TriggerSpecies.csv"),by="SitRecID")
+
+iba_layer = st_layers("../../raw_data/IBAsGlobal_2023_September_02/IBAsGlobal_2023_September_POL_02.shp")[[1]]
+iba_sql = paste0("select * from \"",iba_layer,"\" limit 1")
+
+```
+
+
+- **Data type**: Point and polygon
+- **Number of records**: `r nrow(iba_pts)` (point) and `r nrow(iba_polys)` (polygon)
+- **Area (polygons - reported)**: `r sum(iba_polys$GISArea,na.rm=TRUE) %>% units::set_units(ha) %>% units::set_units(km2) %>% as.numeric()` km^2^
+- **Area (point - reported)**: `r sum(as.numeric(iba_pts$sitarea),na.rm=TRUE) %>% units::set_units(ha) %>% units::set_units(km2) %>% as.numeric()` km^2^
+- **Original CRS**: `r st_crs(st_read("../../raw_data/IBAsGlobal_2023_September_02/IBAsGlobal_2023_September_POL_02.shp",quiet=TRUE,query=iba_sql))$input`
+- **Source**: @birdlifeinternationalDigitalBoundariesImportant2023
+
+### IBAs under criterion A1
+
+
+```{r ibas-A1}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Important Bird and Biodiversity Areas under criterion A1.
+
+ibasA1 = st_read("../../scratch/L_C1_IBAs_A1_polys.shp",quiet=TRUE) |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=ibasA1,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+ibasA1_area = filter(area_lookup,Feature==ibasA1$Feature)$Area_polys_sqkm
+
+```
+
+
+- **Number of records**: `r nrow(filter(iba_pts,str_detect(SitCriSumConfirmed,"A1")))` (point) and `r nrow(filter(iba_polys, str_detect(SitCriSumConfirmed,"A1")))` (polygon)
+- **Area (including buffered point data)**: `r ibasA1_area` km^2^
+- **Critical Habitat type**: Likely
+- **IFC PS6 Criteria triggered**: C1 (Critically Endangered and Endangered Species)
+
+#### How the data are filtered
+
+- Sites designated under IBA Criterion A1 (The site is known or thought regularly to hold significant numbers of a globally threatened species).
+- All polygons, and point data with reported areas.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Point data buffered to reported area, `SitArea`.
+- Data are unioned to remove overlap (see @sec-union).
+
+### IBAs under criterion A2
+
+
+```{r ibas-A2}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Important Bird and Biodiversity Areas under criterion A2.
+
+ibasA2 = st_read("../../scratch/P_C2_IBAs_A2_polys.shp",quiet=TRUE)
+
+ibasA2_area = filter(area_lookup,Feature==ibasA2$Feature)$Area_polys_sqkm
+
+ibasA2 = ibasA2 |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=ibasA2,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(iba_pts,str_detect(SitCriSumConfirmed,"A2")))` (point) and `r nrow(filter(iba_polys, str_detect(SitCriSumConfirmed,"A2")))` (polygon)
+- **Area (including buffered point data)**: `r ibasA2_area` km^2^
+- **Critical Habitat type**: Potential
+- **IFC PS6 Criteria triggered**: C2 (Endemic and Restricted-range Species)
+
+#### How the data are filtered
+
+- Sites designated under IBA Criterion A2 (The site is known or thought to hold a significant population of at least two range-restricted species).
+- All polygons, and point data with reported areas.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Point data buffered to reported area, `SitArea`.
+- Data are unioned to remove overlap (see @sec-union).
+
+### IBAs under criterion A3
+
+
+```{r ibas-A3}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Important Bird and Biodiversity Areas under criterion A3.
+
+ibasA3 = st_read("../../scratch/P_C4_IBAs_A3_polys.shp",quiet=TRUE)
+
+ibasA3_area = filter(area_lookup,Feature==ibasA3$Feature)$Area_polys_sqkm
+
+ibasA3 = ibasA3 |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=ibasA3,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(iba_pts,str_detect(SitCriSumConfirmed,"A3")))` (point) and `r nrow(filter(iba_polys, str_detect(SitCriSumConfirmed,"A3")))` (polygon)
+- **Area (including buffered point data)**: `r ibasA3_area` km^2^
+- **Critical Habitat type**: Potential
+- **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+
+#### How the data are filtered
+
+- Sites designated under IBA Criterion A3 (The site is known or thought to hold a significant component of the group of species whose distributions are largely or wholly confined to one biome-realm).
+- All polygons, and point data with reported areas.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Point data buffered to reported area, `SitArea`.
+- Data are unioned to remove overlap (see @sec-union).
+
+### IBAs under criterion A4
+
+
+```{r ibas-A4}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Important Bird and Biodiversity Areas under criterion A4.
+
+ibasA4 = st_read("../../scratch/L_C3_IBAs_A4_polys.shp",quiet=TRUE)
+
+ibasA4_area = filter(area_lookup,Feature==ibasA4$Feature)$Area_polys_sqkm
+
+ibasA4 = ibasA4 |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=ibasA4,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(iba_pts,str_detect(SitCriSumConfirmed,"A4")))` (point) and `r nrow(filter(iba_polys, str_detect(SitCriSumConfirmed,"A4")))` (polygon)
+- **Area (including buffered point data)**: `r ibasA4_area` km^2^
+- **Critical Habitat type**: Likely
+- **IFC PS6 Criteria triggered**: C3 (Migratory and Congregatory Species)
+
+#### How the data are filtered
+
+- Sites designated under IBA Criterion A4 (The site is known or thought to hold congregations of >=1% of the global population of one or more species on a regular or predictable basis).
+- All polygons, and point data with reported areas.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Point data buffered to reported area, `SitArea`.
+- Data are unioned to remove overlap (see @sec-union).
+
+### IBAs under criterion B1b
+
+
+```{r ibas-B1b}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Important Bird and Biodiversity Areas under criterion B1b.
+
+ibasB1b = st_read("../../scratch/P_C1_IBAs_B1b_polys.shp",quiet=TRUE)
+
+ibasB1b_area = filter(area_lookup,Feature==ibasB1b$Feature)$Area_polys_sqkm
+
+ibasB1b = ibasB1b |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=ibasB1b,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(iba_pts,str_detect(SitCriSumConfirmed,"B1b")))` (point) and `r nrow(filter(iba_polys, str_detect(SitCriSumConfirmed,"B1b")))` (polygon)
+- **Area (including buffered point data)**: `r ibasB1b_area` km^2^
+- **Critical Habitat type**: Potential
+- **IFC PS6 Criteria triggered**: C1 (Critically Endangered and Endangered Species)
+
+#### How the data are filtered
+
+- Sites designated under IBA Criterion B1b (The site is one of the ‘n’ most important in a country for a species with an unfavourable conservation status in the region, and for which the site-protection approach is thought to be appropriate).
+- All polygons, and point data with reported areas.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Point data buffered to reported area, `SitArea`.
+- Data are unioned to remove overlap (see @sec-union).
+
+## Important Marine Mammal Sites (IMMAs) {#sec-immas}
+
+
+```{r imma}
+
+imma_kml = st_read("O:/f00_data/_Portal_uploaded/IUCN_003_ImportantMarineMammalAreasIMMAs/ProteusDataPack-IUCN-IMMAs-September2023/iucn-imma.kml", quiet=TRUE) |> st_zm()
+imma = st_read("O:/f00_data/_Portal_uploaded/IUCN_003_ImportantMarineMammalAreasIMMAs/ProteusDataPack-IUCN-IMMAs-September2023/iucn-imma.shp", quiet=TRUE)
+imma$geometry = imma_kml$geometry
+rm(imma_kml)
+
+```
+
+
+- **Data type**: Polygon
+- **Number of records**: `r nrow(imma)`
+- **Original CRS**: `r st_crs(imma)$input`
+- **Area - reported**: `r sum(imma$Area.Squar)` km^2^
+- **Source**: @IMMA2020
+
+### IMMAs under criterion A
+
+
+```{r imma-A}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Important Marine Mammal Areas under criterion A.
+
+immaA = st_read("../../scratch/P_C1_IMMAs_A_polys.shp",quiet=TRUE)
+
+immaA_area = filter(area_lookup,Feature==immaA$Feature)$Area_polys_sqkm
+
+immaA = immaA |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=immaA,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(imma, str_detect(Criteria,"A")))`
+- **Area**: `r immaA_area` km^2^
+- **Critical Habitat type**: Potential
+- **IFC PS6 Criteria triggered**: C1 (Critically Endangered and Endangered Species)
+
+#### How the data are filtered
+
+- Sites designated under IMMA Criterion A (Species or Population Vulnerability).
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Data are unioned to remove overlap (see @sec-union).
+
+### IMMAs under criterion B1
+
+
+```{r imma-B1}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Important Marine Mammal Areas under criterion B1.
+
+immaB1 = st_read("../../scratch/P_C2_IMMAs_B1_polys.shp",quiet=TRUE)
+
+immaB1_area = filter(area_lookup,Feature==immaB1$Feature)$Area_polys_sqkm
+
+immaB1 = immaB1 |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=immaB1,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(imma, str_detect(Criteria,"B1")))`
+- **Area**: `r immaB1_area` km^2^
+- **Critical Habitat type**: Potential
+- **IFC PS6 Criteria triggered**: C2 (Endemic and Restricted-range Species)
+
+#### How the data are filtered
+
+- Sites designated under IMMA Criterion B1 (Small and Resident Populations).
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Data are unioned to remove overlap (see @sec-union).
+
+### IMMAs under criterion B2
+
+
+```{r imma-B2}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Important Marine Mammal Areas under criterion B2.
+
+immaB2 = st_read("../../scratch/L_C3_IMMAs_B2_polys.shp",quiet=TRUE)
+
+immaB2_area = filter(area_lookup,Feature==immaB2$Feature)$Area_polys_sqkm
+
+immaB2 = immaB2 |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=immaB2,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(imma, str_detect(Criteria,"B2")))`
+- **Area**: `r immaB2_area` km^2^
+- **Critical Habitat type**: Likely
+- **IFC PS6 Criteria triggered**: C3 (Migratory and Congregatory Species)
+
+#### How the data are filtered
+
+- Sites designated under IMMA Criterion B2 (Aggregations).
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Data are unioned to remove overlap (see @sec-union).
+
+### IMMAs under criteria C1, C2, and C3
+
+
+```{r imma-C}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Important Marine Mammal Areas under criterion C.
+
+immaC = st_read("../../scratch/P_C3_IMMAs_C1_C2_C3_polys.shp",quiet=TRUE)
+
+immaC_area = filter(area_lookup,Feature==immaC$Feature)$Area_polys_sqkm
+
+immaC = immaC |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=immaC,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(imma, str_detect(Criteria,"C1|C2|C3")))`
+- **Area**: `r immaC_area` km^2^
+- **Critical Habitat type**: Potential
+- **IFC PS6 Criteria triggered**: C3 (Migratory and Congregatory Species)
+
+#### How the data are filtered
+
+- Sites designated under:
+  -   IMMA Criteria C1 (Reproductive Areas);
+  -   IMMA C2 (Feeding Areas); and
+  -   IMMA C3 (Migration Routes).
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Data are unioned to remove overlap (see @sec-union).
+
+### IMMAs under criterion D1
+
+
+```{r imma-D1}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Important Marine Mammal Areas under criterion D1.
+
+immaD1 = st_read("../../scratch/P_C2_C4_IMMAs_D1_polys.shp",quiet=TRUE)
+
+immaD1_area = filter(area_lookup,Feature==immaD1$Feature)$Area_polys_sqkm
+
+immaD1 = immaD1 |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=immaD1,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(imma, str_detect(Criteria,"D1")))`
+- **Area**: `r immaD1_area` km^2^
+- **Critical Habitat type**: Potential
+- **IFC PS6 Criteria triggered**:
+  - C2 (Endemic and Restricted-range Species)
+  - C4 (Highly Threatened or Unique Ecosystems)
+
+#### How the data are filtered
+
+- Sites designated under IMMA Criterion D1 (Distinctiveness).
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Data are unioned to remove overlap (see @sec-union).
+
+### IMMAs under criterion D2
+
+
+```{r imma-D2}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Important Marine Mammal Areas under criterion D2.
+
+immaD2 = st_read("../../scratch/P_C4_IMMAs_D2_polys.shp",quiet=TRUE)
+
+immaD2_area = filter(area_lookup,Feature==immaD2$Feature)$Area_polys_sqkm
+
+immaD2 = immaD2 |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=immaD2,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+- **Number of records**: `r nrow(filter(imma, str_detect(Criteria,"D2")))`
+- **Area**: `r immaD2_area` km^2^
+- **Critical Habitat type**: Potential
+- **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+
+#### How the data are filtered
+
+- Sites designated under IMMA Criterion D2 (Diversity).
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Data are unioned to remove overlap (see @sec-union).
+
+## Intact Forest Landscapes {#sec-ifls}
+
+
+```{r ifl}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Intact Forest Landscapes.
+
+ifl = st_read("../../scratch/L_C4_Intact_Forest_Landscapes_polys.shp",quiet=TRUE) |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=ifl,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+ifl_area = filter(area_lookup,Feature==ifl$Feature)$Area_polys_sqkm
+
+ifl_n = nrow(data.frame(vapour_read_attributes("../../raw_data/IFL_2020/ifl_2020.shp")))
+
+ifl_layer = st_layers("../../raw_data/IFL_2020/ifl_2020.shp")[[1]]
+ifl_sql = paste0("select * from \"",ifl_layer,"\" limit 1")
+
+```
+
+
+-   **Number of records**: `r ifl_n`
+-   **Area**: `r ifl_area` km^2^
+-   **Original CRS**: `r st_crs(st_read("../../raw_data/IFL_2020/ifl_2020.shp",quiet=TRUE,query=ifl_sql))$input`
+-   **Data type**: Polygon
+-   **Critical habitat type**: Likely
+-   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+-   **Source**: @potapovLastFrontiersWilderness2017
+
+#### How the data are filtered
+
+- No filtering of data from source.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Data are unioned to remove overlap (see @sec-union).
+
+## Irreplaceable protected areas {#sec-irrepl-pas}
+
+
+```{r irrep-pas}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of irreplaceable protected areas.
+
+irrep_pas = st_read("../../scratch/L_C4_Irrep_PAs_polys.shp",quiet=TRUE)
+
+irrep_pas_area = filter(area_lookup,Feature==irrep_pas$Feature)$Area_polys_sqkm
+
+irrep_pas = irrep_pas |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=irrep_pas,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+```
+
+
+- **Data type**: Polygon
+- **Number of records**: `r nrow(st_read("../../raw_data/Irreplaceable/irrep_pa_WDPA_poly_Nov2022.shp", quiet=TRUE))`
+- **Original CRS**: `r st_crs(st_read("../../raw_data/Irreplaceable/irrep_pa_WDPA_poly_Nov2022.shp", quiet=TRUE))$input`
+- **Area**: `r irrep_pas_area` km^2^
+- **Source**: @lesaoutProtectedAreasEffective2013
+- **Critical Habitat type**: Likely
+- **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+
+#### How the data are filtered
+
+- No filtering of data from source.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Data are unioned to remove overlap (see @sec-union).
+
+## IUCN Red List of Threatened Species {#sec-redlist}
+
+
+```{r rl-import}
+
+rl_gdb = "O:/f00_data/IUCN_001_RedListSpecies/IUCN_RL_2024_1_Species_Data/IUCN_RL_2024_1_Species_Data.gdb"
+
+rl_gdb_layers = st_layers(rl_gdb)$name
+
+# specify names for each layer
+rl_list = keep(rl_gdb_layers,str_detect(rl_gdb_layers,"List|list"))
+rl_ranges = keep(rl_gdb_layers,str_detect(rl_gdb_layers,"Ranges"))
+rl_points = keep(rl_gdb_layers,str_detect(rl_gdb_layers,"Points"))
+
+rl_full = st_read("rl_full.gpkg",quiet=TRUE)
+
+```
+
+
+- **Data type**: Polygon (we exclude point data)
+- **Number of records**: `r nrow(st_read(rl_gdb,layer=rl_list,quiet=TRUE))`
+- **Original CRS**: `r st_crs(rl_full)$input`
+- **Source**: @iucnIUCNRedList2022
+- **Version**: `r str_match(rl_gdb, "RL_(.*?)_Species")[, 2]`
+
+#### How the data are filtered
+
+- Critically Endangered, Endangered or Vulnerable species classified under Criterion D for CR or EN and D2 for VU.
+- Exclude marine ranges (`biome_marine==false`).
+- Species in Family *Hominidae*.
+- Exclude *Extinct (post 1500)* or *Probably Extant* (deprecated category) ranges.
+- Ranges with areas >= three times the standard deviation of the data (see @fig-rl-sensitivity below). This exercise removes areas disproportionately large. Furthermore, some of the records removed include the northern white rhino, of which there is only one individual left, and the ivory-billed woodpecker, which is argued to be extinct.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+
+
+```{r rl-sensitivity}
+#| fig-width: 8
+#| fig-height: 8
+#| fig-cap: Sensitivity analysis of IUCN Red List ranges. Plots show result of removing areas with 3x, 10x, 20x, 50x the standard deviation (SD) of the data. Each plot reports the SD, the number of records removed, and the percentage of the total area the data now represent.
+#| label: fig-rl-sensitivity
+
+rl_full = st_read("rl_full.gpkg",quiet=TRUE) |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=10000)
+
+plts = lapply(c(3,10,20,50), function(x){
+  plot_df = rl_full %>%
+    filter(units::drop_units(st_area(.)) < (x*sd(units::drop_units(st_area(.)))) + mean(units::drop_units(st_area(.))))
+  
+  area_diff_pct = (sum(units::drop_units(st_area(plot_df)))/sum(units::drop_units(st_area(rl_full))))*100
+  
+  area_diff_pct = signif(area_diff_pct,3)
+  
+  row_diff = nrow(rl_full)-nrow(plot_df)
+  
+  if(revCol){
+    rl_pal = rev(scico(palette=pal,n=5))
+  } else{
+    rl_pal = scico(palette=pal,n=5)
+  }
+  
+  ggplot() +
+    geom_sf(data=sphere, col=NA, fill=rl_pal[1]) +
+    geom_sf(data=wrld, col=NA, fill=rl_pal[2]) +
+    geom_sf(data=plot_df,aes(fill=category),alpha=0.85,col=NA) +
+    scale_fill_manual(values=rl_pal[3:5], name=NULL) +
+    cowplot::theme_map() +
+    labs(title=paste0("SD: ",x),
+         subtitle = paste0(area_diff_pct,"% of total area; ",row_diff," ranges missing of ",nrow(rl_full))) +
+    theme(legend.position="bottom",
+          legend.justification = "centre",
+          plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5))
+})
+
+cowplot::plot_grid(plotlist=plts,nrow=2,ncol=2)
+
+```
+
+
+### Critically Endangered species under criterion D
+
+
+```{r iucn-cr}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Critically Endangered species under criterion D.
+
+iucn_cr = st_read("../../scratch/L_C1_IUCN_CR_D_polys.shp",quiet=TRUE)
+
+iucn_cr_area = filter(area_lookup,Feature==iucn_cr$Feature)$Area_polys_sqkm
+
+iucn_cr = iucn_cr |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=iucn_cr,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+```
+
+
+- **Number of records**: `r nrow(filter(rl_full, category=="CR" & str_detect(criteria,"D")))`
+- **Area**: `r iucn_cr_area` km^2^
+- **Critical Habitat type**: Likely
+- **IFC PS6 Criteria triggered**: C1 (Critically Endangered or Endangered Species)
+
+#### How the data are filtered
+
+- No further filtering of data.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Data are unioned to remove overlap (see @sec-union).
+
+### Endangered species under criterion D
+
+
+```{r iucn-en}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Endangered species under criterion D.
+
+iucn_en = st_read("../../scratch/L_C1_IUCN_EN_D_polys.shp",quiet=TRUE)
+
+iucn_en_area = filter(area_lookup,Feature==iucn_en$Feature)$Area_polys_sqkm
+
+iucn_en = iucn_en |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=iucn_en,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+```
+
+
+- **Number of records**: `r nrow(filter(rl_full, category=="EN" & str_detect(criteria,"D")))`
+- **Area**: `r iucn_en_area` km^2^
+- **Critical Habitat type**: Likely
+- **IFC PS6 Criteria triggered**: C1 (Critically Endangered or Endangered Species)
+
+#### How the data are filtered
+
+- No further filtering of data from source.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Data are unioned to remove overlap (see @sec-union).
+
+### Vulnerable species under criterion D2
+
+
+```{r iucn-vu}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Vulnerable species under criterion D2.
+
+iucn_vu = st_read("../../scratch/P_C1_IUCN_VU_D2_polys.shp",quiet=TRUE)
+
+iucn_vu_area = filter(area_lookup,Feature==iucn_vu$Feature)$Area_polys_sqkm
+
+iucn_vu = iucn_vu |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=iucn_vu,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+```
+
+
+- **Number of records**: `r nrow(filter(rl_full, category=="VU" & str_detect(criteria,"D2|D1+2")))`
+- **Area**: `r iucn_vu_area` km^2^
+- **Critical Habitat type**: Potential
+- **IFC PS6 Criteria triggered**: C1 (Critically Endangered or Endangered Species)
+
+#### How the data are filtered
+
+- No further filtering of data.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Data are unioned to remove overlap (see @sec-union).
+
+### Great Apes species ranges
+
+
+```{r iucn-apes}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: "Global distribution of Great Apes (inset: ranges in Central Africa and Southeast Asia)."
+
+iucn_apes = st_read("../../scratch/P_C1_IUCN_Great_Apes_polys.shp",quiet=TRUE)
+
+iucn_apes_area = filter(area_lookup,Feature==iucn_apes$Feature)$Area_polys_sqkm
+
+iucn_apes = iucn_apes |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_inset_sf(data=iucn_apes,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol,
+             inset_x=0.05,inset_y=0.05,
+             inset_width=0.3,inset_height=0.3)
+```
+
+
+- **Number of records**: `r nrow(filter(rl_full, family_name == "HOMINIDAE"))`
+- **Area**: `r iucn_apes_area` km^2^
+- **Critical Habitat type**: Potential
+- **IFC PS6 Criteria triggered**: C1 (Critically Endangered or Endangered Species)
+
+#### How the data are filtered
+
+- No further filtering of data.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Data are unioned to remove overlap (see @sec-union).
+
+## Mangroves {#sec-mangroves}
+
+
+```{r mangroves}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of mangroves.
+#| cache: false
+
+plot_rst(data=rast("../../scratch/L_C4_Mangrove.tif"),
+         wrld=wrld,
+         bkg=sphere,
+         palette=pal,
+         revCol=revCol)
+
+```
+
+
+- **Data type**: Raster
+- **Original CRS**: `r st_crs(rast(paste0("../../raw_data/GMW_v3/gmw_v3_2020/",sample(list.files("../../raw_data/GMW_v3/gmw_v3_2020",pattern="^GMW"),size=1))))$input`
+- **Original resolution**: `r res(rast(paste0("../../raw_data/GMW_v3/gmw_v3_2020/",sample(list.files("../../raw_data/GMW_v3/gmw_v3_2020",pattern="^GMW"),size=1))))[1]`
+- **Extent**: `r st_bbox(rast(paste0("../../raw_data/GMW_v3/gmw_v3_2020/",list.files("../../raw_data/GMW_v3/gmw_v3_2020",pattern="agg.tif$"))))`
+- **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/L_C4_Mangrove.tif"), unit="km", byValue=T) |> filter(value==1) |> pull(area)`
+- **Source**: @buntingGlobalMangroveWatch2022
+- **Critical Habitat type**: Likely
+- **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+
+#### How the data are processed
+
+- Raster tiles are mosaicked to a global extent.
+- Raster mosaic is then aggregated to a `r 1/120` resolution using the following function: `function(x,...){sum(x,na.rm=T)/length(x)}` that returns the percentage of cells identified as mangrove.
+- Resulting raster is then resampled to a template global raster.
+- Cells are then classified as a presence when the percentage is above a certain threshold (\>=50% in this case - see @fig-mangrove-sensitivity for a sensitivity analysis of this).
+
+
+```{r mangrove-sensitivity}
+#| fig-width: 5
+#| fig-height: 5
+#| fig-cap: Sensitivity analysis of % presence cutoff values. Plots show effect of setting the % presence to >25, >50, >75, >90% on the output binary distribution. We select 50% for use in this analysis.
+#| label: fig-mangrove-sensitivity
+#| cache: false
+
+plot_rst_sensitivity(data_WGS=rast("../../raw_data/GMW_v3/gmw_v3_2020/mangrove_mosaic_agg.tif"),
+             wrld=st_transform(wrld,4326),
+             bkg=sphere,
+             focus_ext=ext(c(-16.717, -13.634, 10.917, 12.683)),
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+## Saltmarsh {#sec-saltmarsh}
+
+
+```{r saltmarsh}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of saltmarshes.
+
+saltmarsh = st_read("../../scratch/L_C4_Saltmarsh_polys.shp",quiet=TRUE) |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=saltmarsh,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+saltmarsh_area = filter(area_lookup,Feature==saltmarsh$Feature)$Area_polys_sqkm
+
+saltmarsh_pts_n = nrow(query_unepwcmc_nogeo(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Saltmarshes", feature_layer = 1))
+saltmarsh_pols_n = nrow(query_unepwcmc_nogeo(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Saltmarshes", feature_layer = 0))
+
+```
+
+
+- **Data type**: Point and polygon
+- **Number of records**: `r saltmarsh_pts_n + saltmarsh_pols_n`
+- **Original CRS**: WGS 84
+- **Area (polygons)**: `r saltmarsh_area` km^2^
+- **Source**: @mcowenGlobalMapSaltmarshes2017
+- **Critical Habitat type**: Likely
+- **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+
+#### How the data are filtered
+
+- No filtering of data from source.
+
+#### How the data are processed
+
+- Invalid S2 geometries (see @sec-s2) are made valid.
+- Data are unioned to remove overlap (polygons) and duplicates (points) (see @sec-union).
+
+## Sea turtle nesting sites {#sec-turtles}
+
+
+```{r sea-turtles}
+
+turtles = st_read("../../raw_data/obis_seamap_swot/obis_seamap_swot_5f7dd60721f10_20201007_105234_site_locations_shapefile.shp", quiet=TRUE)
+
+```
+
+
+-   **Number of records**: `r nrow(turtles)`
+-   **Original CRS**: `r st_crs(turtles)$input`
+-   **Data type**: Point
+-   **Source**:
+
+### All sea turtle species
+
+
+```{r all-sea-turtles}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of all sea turtle species nesting sites.
+
+all_sea_turtles = st_read("../../scratch/P_C3_C4_Turtle_all_pts.shp",quiet=TRUE) |>
+  st_transform("EPSG:8857")
+
+plot_data_sf(data=all_sea_turtles,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+```
+
+
+-   **Number of records**: `r nrow(turtles)`
+-   **Data type**: Point
+-   **Critical habitat type**: Potential
+-   **IFC PS6 criteria triggered**:
+    - C3 (Migratory and Congregatory Species)
+    - C4 (Highly Threatened or Unique Ecosystems)
+-   **Source**:
+
+#### How the data are filtered
+
+-   No filtering of data from source.
+
+#### How the data are processed
+
+-   Data are unioned to remove duplicates (see @sec-union).
+
+### Critically Endangered and Endangered sea turtle species
+
+
+```{r cren-sea-turtles}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of Critically Endangered or Endangered sea turtle species nesting sites.
+
+CREN_sea_turtles = st_read("../../scratch/L_C1_Turtle_CREN_pts.shp",quiet=TRUE) |>
+  st_transform("EPSG:8857")
+
+plot_data_sf(data=CREN_sea_turtles,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+```
+
+
+-   **Number of records**: `r nrow(turtles |> filter(commonname %in% c("Green Sea Turtle","Hawksbill Sea Turtle","Kemp's Ridley")))`
+-   **Data type**: Point
+-   **Critical habitat type**: Likely
+-   **IFC PS6 criteria triggered**: C1 (Critically Endangered and Endangered Species)
+
+#### How the data are filtered
+
+-   Records identified as belonging to Critically Endangered or Endangered sea turtles: Green Sea Turtle, Hawksbill Sea Turtle, and Kemp's Ridley.
+
+#### How the data are processed
+
+-   Data are unioned to remove duplicates (see @sec-union).
+
+## Seagrass beds {#sec-seagrass}
+
+
+```{r seagrass}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of seagrasses.
+
+seagrass = st_read("../../scratch/L_C4_Seagrass_polys.shp",quiet=TRUE) |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=seagrass,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+seagrass_area = filter(area_lookup,Feature==seagrass$Feature)$Area_polys_sqkm
+
+seagrass_pts_n = nrow(query_unepwcmc_nogeo(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Seagrasses", feature_layer = 0))
+seagrass_pols_n = nrow(query_unepwcmc_nogeo(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Seagrasses", feature_layer = 1))
+
+```
+
+
+-   **Number of records**: `r seagrass_pts_n + seagrass_pols_n`
+-   **Area (polygons)**: `r seagrass_area` km^2^
+-   **Original CRS**: WGS84
+-   **Data type**: Point and polygon
+-   **Critical habitat type**: Likely
+-   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+-   **Source**:
+
+#### How the data are filtered
+
+-   No filtering of data from source.
+
+#### How the data are processed
+
+-   Invalid S2 geometries (see @sec-s2) are made valid.
+-   Data are unioned to remove overlap (polygons) and duplicates (points) (see @sec-union).
+
+## Seamounts {#sec-seamounts}
+
+
+```{r seamounts}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of seamounts.
+
+seamounts = st_read("../../scratch/P_C4_Seamounts_pts.shp",quiet=TRUE) |>
+  st_transform("EPSG:8857")
+
+plot_data_sf(data=seamounts,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+```
+
+
+-   **Number of records**: `r nrow(query_unepwcmc_nogeo(dataset = "Hosted/ZSL_ModelledSeamountsKnolls2011", feature_layer = 2))`
+-   **Original CRS**: WGS 84
+-   **Data type**: Point
+-   **Critical habitat type**: Potential
+-   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+-   **Source**:
+
+#### How the data are filtered
+
+-   No filtering of data from source.
+
+#### How the data are processed
+
+-   Invalid S2 geometries (see @sec-s2) are made valid.
+-   Data are unioned to remove duplicates (see @sec-union).
+
+## Tiger Conservation Landscapes {#sec-tigers}
+
+
+```{r tigers}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: "Global distribution of Tiger Conservation Landscapes (inset: South Asia)."
+
+tigers = st_read("../../scratch/L_C1_Tiger_polys.shp",quiet=TRUE)
+
+tigers_area = filter(area_lookup,Feature==tigers$Feature)$Area_polys_sqkm
+
+tigers = tigers |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_inset_sf(data=tigers,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol,
+             inset_x=0.25,inset_y=0.05,
+             inset_width=0.3,inset_height=0.3)
+```
+
+
+-   **Number of records**: `r nrow(st_read("../../raw_data/Tiger_Conservation_Landscapes/Tiger_Conservation_Landscapes.shp", quiet=TRUE) %>% filter(tx2_tcl==0))`
+-   **Original CRS**: `r st_crs(st_read("../../raw_data/Tiger_Conservation_Landscapes/Tiger_Conservation_Landscapes.shp",quiet=TRUE))$input`
+-   **Data type**: Polygon
+-   **Critical habitat type**: Likely
+-   **IFC PS6 criteria triggered**: C1 (Critically Endangered and Endangered Species)
+-   **Source**:
+
+#### How the data are filtered
+
+-   Current tiger habitat only: `tx2_tcl==0`.
+
+#### How the data are processed
+
+-   Invalid S2 geometries (see @sec-s2) are made valid.
+-   Data are unioned to remove overlap (see @sec-union).
+
+## Tropical dry forest {#sec-tropical-dry}
+
+
+```{r tropical-dry-forest}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of tropical dry forests.
+#| cache: false
+
+plot_rst(data=rast("../../scratch/P_C4_Tropical_Dry_Forest.tif"),
+         wrld=wrld,
+         bkg=sphere,
+         palette=pal,
+         revCol=revCol)
+
+```
+
+
+- **Data type**: Raster
+- **Original CRS**: `r st_crs(rast("../../raw_data/WCMC_065_TropicalDryForests2006/Tropical_Dry_Forests/trop_dryf/tropdryf"))$input`
+- **Original resolution**: `r res(rast("../../raw_data/WCMC_065_TropicalDryForests2006/Tropical_Dry_Forests/trop_dryf/tropdryf"))[1]`
+- **Extent**: `r st_bbox(rast("../../raw_data/WCMC_065_TropicalDryForests2006/Tropical_Dry_Forests/trop_dryf/tropdryf"))`
+- **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/P_C4_Tropical_Dry_Forest.tif"), unit="km", byValue=T) |> filter(value==1) |> pull(area)`
+
+#### How the data are processed
+
+- Missing data are reclassified to 0.
+- Raster aggregated from native resolution to 30 arc seconds using the mode of neighbouring cells before resampling to template raster using nearest neighbour.
+
+## Tropical moist forest {#sec-tropical-moist}
+
+
+```{r tropical-moist-forest}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of moist tropical forests.
+#| cache: false
+
+plot_rst(data=rast("../../scratch/L_C4_Tropical_Moist_Forest.tif"),
+         wrld=wrld,
+         bkg=sphere,
+         palette=pal,
+         revCol=revCol)
+
+```
+
+
+- **Data type**: Raster
+- **Original CRS**: `r st_crs(rast(paste0("../../raw_data/Tropical Moist Forest/",sample(list.files("../../raw_data/Tropical Moist Forest",pattern="^JRC_TMF"),size=1))))$input`
+- **Original resolution**: `r res(rast(paste0("../../raw_data/Tropical Moist Forest/",sample(list.files("../../raw_data/Tropical Moist Forest",pattern="^JRC_TMF"),size=1))))[1]`
+- **Extent**: `r st_bbox(rast(paste0("../../raw_data/Tropical Moist Forest/",list.files("../../raw_data/Tropical Moist Forest",pattern="agg.tif$"))))`
+- **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/L_C4_Tropical_Moist_Forest.tif"), unit="km", byValue=T) |> filter(value==1) |> pull(area)`
+- **Source**: 
+
+
+#### How the data are processed
+
+- Raster tiles are mosaicked to a global extent.
+- Raster mosaic is then aggregated to a `r 1/120` resolution using the following function: `function(x,...){sum((x == 10),na.rm = T)/length(x)}` that returns the percentage of cells equaling 10, "Undisturbed tropical moist forest".
+- Resulting raster is then resampled to a template global raster.
+- Cells are then classified as a presence when the percentage is above a certain threshold (\>=50% in this case - see @fig-tmf-sensitivity for a sensitivity analysis of this).
+
+
+```{r}
+#| fig-width: 5
+#| fig-height: 5
+#| fig-cap: Sensitivity analysis of % presence cutoff values.
+#| label: fig-tmf-sensitivity
+#| cache: false
+
+plot_rst_sensitivity(data_WGS=rast("../../raw_data/Tropical Moist Forest/tmf_mosaic_agg.tif"),
+             wrld=st_transform(wrld,4326),
+             bkg=sphere,
+             focus_ext=ext(c(-63.0, -60.0, -5.0, -2.0)),
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+## Tropical montane cloud forests {#sec-tropical-cloud}
+
+
+```{r cloud-forests}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of tropical montane cloud forests.
+
+cloud_forests = st_read("../../scratch/P_C4_Cloud_Forest_pts.shp",quiet=TRUE) |>
+  st_transform("EPSG:8857")
+
+plot_data_sf(data=cloud_forests,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+-   **Number of records**: `r nrow(query_unepwcmc_nogeo(dataset="Global_Distribution_of_Tropical_Montane_Cloud_Forests"))`
+-   **Original CRS**: WGS 84
+-   **Data type**: Point
+-   **Source**: 
+-   **Critical habitat type**: Potential
+-   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+
+#### How the data are filtered
+
+No filtering of data from source.
+
+#### How the data are processed
+
+Data are unioned to remove duplicates (see @sec-union).
+
+## Warm water coral reefs {#sec-warm-coral}
+
+
+```{r warm-coral}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of warm water coral reefs.
+
+warm_coral = st_read("../../scratch/L_C4_C5_Warm_water_coral_polys.shp",quiet=TRUE) |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=warm_coral,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+warm_coral_area = filter(area_lookup,Feature==warm_coral$Feature)$Area_polys_sqkm
+
+warm_coral_pts_n = nrow(query_unepwcmc_nogeo(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Coral_Reefs", feature_layer = 0))
+warm_coral_pols_n = nrow(query_unepwcmc_nogeo(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Coral_Reefs", feature_layer = 1))
+
+```
+
+
+- **Number of records**: `r warm_coral_pts_n + warm_coral_pols_n`
+- **Area (polygons)**: `r warm_coral_area`
+- **Original CRS**: WGS 84
+- **Data type**: Point and polygon
+- **Critical habitat type**: Likely
+- **IFC PS6 criteria triggered**:
+    - C4 (Highly Threatened or Unique Ecosystems)
+    - C5 (Key Evolutionary Processes)
+- **Source**:
+
+#### How the data are filtered
+
+No filtering of data from source.
+
+#### How the data are processed
+
+-   Invalid S2 geometries (see @sec-s2) are made valid.
+-   Data are unioned to remove overlap (polygons) and duplicates (point) (see @sec-union).
+
+## World Database on Protected Areas (WDPA) {#sec-wdpa}
+
+
+```{r wdpa}
+
+wdpa_polys = query_unepwcmc_nogeo(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas", feature_layer = 1)
+wdpa_pts = query_unepwcmc_nogeo(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas", feature_layer = 0)
+
+```
+
+
+-   **Version**: October 2024
+-   **Number of records**: `r nrow(wdpa_polys) + nrow(wdpa_pts)`
+-   **Area (polygons - reported)**: `r sum(wdpa_polys$rep_area,na.rm=TRUE)` km^2^
+-   **Area (point - reported)**: `r sum(wdpa_pts$rep_area,na.rm=TRUE)` km^2^
+-   **Original CRS**: WGS 84
+-   **Data type**: Point and polygon
+-   **Source**: @WDPA2023
+
+For all data sourced from the WDPA, point data were buffered to reported area, as recommended by the WDPA Manual v1.6.
+
+### All Ramsar sites
+
+
+```{r ramsar-all}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of all Ramsar sites.
+
+ramsar = st_read("../../scratch/L_C4_All_Ramsar_polys.shp",quiet=TRUE)
+
+ramsar_all_area = filter(area_lookup,Feature==ramsar$Feature)$Area_polys_sqkm
+
+ramsar = ramsar |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=ramsar,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+-   **Number of records**: `r nrow(filter(wdpa_polys, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International")) + nrow(filter(wdpa_pts, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International"))`
+-   **Area**: `r ramsar_all_area` km^2^
+-   **Critical habitat type**: Likely
+-   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+
+#### How the data are filtered
+
+-   Sites where Status is not "Proposed" or "Not Reported".
+-   Sites labelled as "Ramsar Site, Wetland of International Importance", with Designation Type "International".
+-   Point data with present, non-zero reported area (`REP_AREA > 0`).
+
+#### How the data are processed
+
+-   Invalid S2 geometries (see @sec-s2) are made valid.
+-   Point data buffered to reported area, `REP_AREA`.
+-   Data are unioned to remove overlap (see @sec-union).
+
+### Ramsar sites under criterion 2
+
+
+```{r ramsar-ii}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of all Ramsar sites under criterion 2.
+
+ramsar_ii = st_read("../../scratch/L_C1_Ramsar_ii_polys.shp",quiet=TRUE)
+
+ramsar_ii_area = filter(area_lookup,Feature==ramsar_ii$Feature)$Area_polys_sqkm
+
+ramsar_ii = ramsar_ii |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=ramsar_ii,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+```
+
+
+-   **Number of records**: `r nrow(filter(wdpa_polys, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International" & str_detect(int_crit,"(ii)"))) + nrow(filter(wdpa_pts, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International" & str_detect(int_crit,"(ii)")))`
+-   **Area**: `r ramsar_ii_area` km^2^
+-   **Critical habitat type**: Likely
+-   **IFC PS6 criteria triggered**: C1 (Critically Endangered and Endangered Species)
+
+#### How the data are filtered
+
+-   Sites where status is not "Proposed" or "Not Reported".
+-   Sites labelled as "Ramsar Site, Wetland of International Importance", with Designation Type "International"
+-   Sites designated under Ramsar Sites Criterion 2 (Sites supporting vulnerable, endangered, or critically endangered species or threatened ecological communities).
+-   All polygon data and point data with present, non-zero reported area (`REP_AREA > 0`).
+
+#### How the data are processed
+
+-   Invalid S2 geometries (see @sec-s2) are made valid.
+-   Point data buffered to reported area, `REP_AREA`.
+-   Data are unioned to remove overlap (see @sec-union).
+
+### Ramsar sites under criteria 5 and 6
+
+
+```{r ramsar-v-vi}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of all Ramsar sites under criteria 5 and 6.
+
+ramsar_v_vi = st_read("../../scratch/L_C3_Ramsar_v_vi_polys.shp",quiet=TRUE)
+
+ramsar_v_vi_area = filter(area_lookup,Feature==ramsar_v_vi$Feature)$Area_polys_sqkm
+
+ramsar_v_vi = ramsar_v_vi |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=ramsar_v_vi,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+```
+
+
+-   **Number of records**: `r nrow(filter(wdpa_polys, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International" & str_detect(int_crit,"(v)|(vi)"))) + nrow(filter(wdpa_pts, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International" & str_detect(int_crit,"(v)|(vi)")))`
+-   **Area**: `r ramsar_v_vi_area` km^2^
+-   **Critical habitat type**: Likely
+-   **IFC PS6 criteria triggered**: C3 (Migratory and Congregatory Species)
+
+#### How the data are filtered
+
+-   Sites where status is not "Proposed" or "Not Reported".
+-   Sites labelled as "Ramsar Site, Wetland of International Importance", with Designation Type "International"
+-   Sites designated under:
+    -   Ramsar Sites Criteria 5 (Sites that regularly support 20,000 or more waterbirds); and
+    -   Ramsar Sites Criteria 6 (Sites that regularly support 1% of the individuals in a population of one species or subspecies of waterbird).
+-   All polygon data and point data with present, non-zero reported area (`REP_AREA > 0`).
+
+#### How the data are processed
+
+-   Invalid S2 geometries (see @sec-s2) are made valid.
+-   Point data buffered to reported area, `REP_AREA`.
+-   Data are unioned to remove overlap (see @sec-union).
+
+### Ramsar sites under criteria 1 and 3
+
+
+```{r ramsar-i-iii}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of all Ramsar sites under criteria 1 and 3.
+
+ramsar_i_iii = st_read("../../scratch/L_C4_Ramsar_i_iii_polys.shp",quiet=TRUE)
+
+ramsar_i_iii_area = filter(area_lookup,Feature==ramsar_i_iii$Feature)$Area_polys_sqkm
+
+ramsar_i_iii = ramsar_i_iii |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=ramsar_i_iii,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+```
+
+
+-   **Number of records**: `r nrow(filter(wdpa_polys, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International" & str_detect(int_crit,"(i)|(iii)"))) + nrow(filter(wdpa_pts, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International" & str_detect(int_crit,"(i)|(iii)")))`
+-   **Area**: `r ramsar_i_iii_area` km^2^
+-   **Critical habitat type**: Likely
+-   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+
+#### How the data are filtered
+
+-   Sites where status is not "Proposed" or "Not Reported".
+-   Sites labelled as "Ramsar Site, Wetland of International Importance", with Designation Type "International"
+-   Sites designated under:
+    -   Ramsar Sites Criteria 1 (Sites that contain a representative, rare, or unique example of a natural or near-natural wetland type found within the appropriate biogeographic region); and
+    -   Ramsar Sites Criteria 3 (Sites that support populations of plant and/or animal species important for maintaining the biological diversity of a particular biogeographic region).
+-   All polygon data and point data with present, non-zero reported area (`REP_AREA > 0`).
+
+#### How the data are processed
+
+-   Invalid S2 geometries (see @sec-s2) are made valid.
+-   Point data buffered to reported area, `REP_AREA`.
+-   Data are unioned to remove overlap (see @sec-union).
+
+### Ramsar sites under criteria 4, 7, 8 and 9
+
+
+```{r ramsar-iv-vii-viii-ix}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of all Ramsar sites under criteria 4, 7, 8 and 9.
+
+ramsar_iv_vii_viii_ix = st_read("../../scratch/P_C3_Ramsar_iv_vii_viii_ix_polys.shp",quiet=TRUE)
+
+ramsar_iv_vii_viii_ix_area = filter(area_lookup,Feature==ramsar_iv_vii_viii_ix$Feature)$Area_polys_sqkm
+
+ramsar_iv_vii_viii_ix = ramsar_iv_vii_viii_ix |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=ramsar_iv_vii_viii_ix,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+```
+
+
+-   **Number of records**: `r nrow(filter(wdpa_polys, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International" & str_detect(int_crit,"(iv)|(vii)|(viii)|(ix)"))) + nrow(filter(wdpa_pts, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International" & str_detect(int_crit,"(iv)|(vii)|(viii)|(ix)")))`
+-   **Area**: `r ramsar_iv_vii_viii_ix_area` km^2^
+-   **Critical habitat type**: Potential
+-   **IFC PS6 criteria triggered**: C3 (Migratory and Congregatory Species)
+
+#### How the data are filtered
+
+-   Sites where status is not "Proposed" or "Not Reported".
+-   Sites labelled as "Ramsar Site, Wetland of International Importance", with Designation Type "International".
+-   Sites designated under:
+    -   Ramsar Sites Criteria 4 (Sites that support plant and/or animal species at a critical stage in their life cycles, or provides refuge during adverse conditions);
+    -   Ramsar Sites Criteria 7 (Sites that support a significant proportion of indigenous fish subspecies, species or families, life-history stages, species interactions and/or populations that are representative of wetland benefits and/or values and thereby contributes to global biological diversity);
+    -   Ramsar Sites Criteria 8 (Sites that are an important source of food for fishes, spawning ground, nursery and/or migration path on which fish stocks, either within the wetland or elsewhere, depend); and
+    -   Ramsar Sites Criteria 9 (Sites that regularly support 1% of the individuals in a population of one species or subspecies of wetland-dependent nonavian animal species).
+-   All polygon data and point data with present, non-zero reported area (`REP_AREA > 0`).
+
+#### How the data are processed
+
+-   Invalid S2 geometries (see @sec-s2) are made valid.
+-   Point data buffered to reported area, `REP_AREA`.
+-   Data are unioned to remove overlap (see @sec-union).
+
+### Protected areas under IUCN management categories I and II
+
+
+```{r iucn-i-ii}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of all protected areas under IUCN management categories I and II.
+
+iucn_i_ii = st_read("../../scratch/L_C4_IUCN_Ia_Ib_II_polys.shp",quiet=TRUE) |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=iucn_i_ii,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+
+iucn_i_ii_area = filter(area_lookup,Feature==iucn_i_ii$Feature)$Area_polys_sqkm
+
+```
+
+
+-   **Number of records**: `r nrow(filter(wdpa_polys, !status %in% c("Proposed","Not Reported") & iucn_cat %in% c("Ia","Ib","II"))) + nrow(filter(wdpa_pts, !status %in% c("Proposed","Not Reported") & iucn_cat %in% c("Ia","Ib","II")))`
+-   **Area**: `r iucn_i_ii_area` km^2^
+-   **Critical habitat type**: Likely
+-   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+
+#### How the data are filtered
+
+-   Sites where Status is not "Proposed" or "Not Reported".
+-   Sites where the reported IUCN Management Category is:
+    -   Ia (strict nature reserve);
+    -   Ib (wilderness area); or
+    -   II (national park).
+
+#### How the data are processed
+
+-   Invalid S2 geometries (see @sec-s2) are made valid.
+-   Point data buffered to reported area, `REP_AREA`.
+-   Data are unioned to remove overlap (see @sec-union).
+
+### Natural and mixed World Heritage Sites
+
+
+```{r whs}
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: Global distribution of natural and mixed World Heritage Sites.
+
+whs = st_read("../../scratch/L_C4_WHS_polys.shp",quiet=TRUE)
+
+whs_area = filter(area_lookup,Feature==whs$Feature)$Area_polys_sqkm
+
+whs = whs |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+plot_data_sf(data=whs,
+             wrld=wrld,
+             bkg=sphere,
+             palette=pal,
+             revCol=revCol)
+```
+
+
+-   **Number of records**: `r nrow(filter(wdpa_polys, !status %in% c("Proposed","Established","Not Reported") & desig_eng == "World Heritage Site (natural or mixed)" & desig_type == "International")) + nrow(filter(wdpa_pts, !status %in% c("Proposed","Established","Not Reported") & desig_eng == "World Heritage Site (natural or mixed)" & desig_type == "International"))`
+-   **Area**: `r whs_area` km^2^
+-   **Critical habitat type**: Likely
+-   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+
+#### How the data are filtered
+
+-   Sites where Status is not "Proposed", "Established", or "Not Reported".
+-   Sites labelled as "World Heritage Site (natural or mixed)", with Designation Type "International".
+
+#### How the data are processed
+
+-   Invalid S2 geometries (see @sec-s2) are made valid.
+-   Point data buffered to reported area, `REP_AREA`.
+-   Data are unioned to remove overlap (see @sec-union).
+
+

@@ -1,54 +1,54 @@
 Biodiversity features,Designation criterion / Trigger,1,2,3,4,5,Classification
-Cold seeps,,,P,,L,L,Likely/Potential
-Cold water corals,Modelled occurrence,,,,P,P,Potential
-Cold water corals,Observed occurrence,,,,L,L,Likely
-Ever-wet tropical forest,,,,,P,,Potential
-Hydrothermal vents,Active,,L,,,L,Likely
-Hydrothermal vents,Inactive,,,,P,,Potential
-Key Biodiversity Areas,Alliance for Zero Extinction Sites,L,L,L,,,Likely
-Key Biodiversity Areas,A1a and A1e,L,,,,,Likely
-Key Biodiversity Areas,A1b,P,,,,,Potential
-Key Biodiversity Areas,A2a,,,,L,,Likely
-Key Biodiversity Areas,A2b,,,,P,,Potential
-Key Biodiversity Areas,B1,,L,,,,Likely
-Key Biodiversity Areas,B4,,,,P,,Potential
-Key Biodiversity Areas,C,,,,P,,Potential
-Key Biodiversity Areas,D1a,,,L,,,Likely
-Key Biodiversity Areas,D1b,,,P,,,Potential
-Key Biodiversity Areas,D2,,,L,,,Likely
-Key Biodiversity Areas,D3,,,P,,,Potential
-Key Biodiversity Areas,E,P,,,,,Potential
-Important Bird and Biodiversity Areas,A1,L,,,,,Likely
-Important Bird and Biodiversity Areas,A2,,P,,,,Potential
-Important Bird and Biodiversity Areas,A3,,,,P,,Potential
-Important Bird and Biodiversity Areas,A4,,,L,,,Likely
-Important Bird and Biodiversity Areas,B1b,P,,,,,Potential
-Important Marine Mammal Areas,A,P,,,,,Potential
-Important Marine Mammal Areas,B1,,P,,,,Potential
-Important Marine Mammal Areas,B2,,,L,,,Likely
-Important Marine Mammal Areas,"C1, C2, and C3",,,P,,,Potential
-Important Marine Mammal Areas,D1,,P,,P,,Potential
-Important Marine Mammal Areas,D2,,,,P,,Potential
-Intact Forest Landscapes,,,,,L,,Likely
-Irreplaceable protected areas,,,,,L,,Likely
-IUCN Red List of Threatened Species,CR under criterion D,L,,,,,Likely
-IUCN Red List of Threatened Species,EN under criterion D2,P,,,,,Potential
-IUCN Red List of Threatened Species,Great Apes species ranges,P,,,,,Potential
-Mangroves,,,,,L,,Likely
-Saltmarsh,,,,,L,,Likely
-Sea turtle nesting sites,All sea turtle species,,,P,P,,Potential
-Sea turtle nesting sites,CR and EN sea turtle species,P,,,,,Potential
-Seagrass beds,,,,,L,,Likely
-Seamounts,,,,,P,,Potential
-Tiger Conservation Landscapes,,L,,,,,Likely
-Tropical dry forest,,,,,P,,Potential
-Tropical moist forest,,,,,L,,Likely
-Tropical montane cloud forests,,,,,P,,Potential
-Warm water coral reefs,,,,,L,L,Likely
-World Database on Protected Areas,All Ramsar sites,,,,L,,Likely
-World Database on Protected Areas,Ramsar sites under criterion 2,L,,,,,Likely
-World Database on Protected Areas,Ramsar sites under criteria 5 and 6,,,L,,,Likely
-World Database on Protected Areas,Ramsar sites under criteria 1 and 3,,,,L,,Likely
-World Database on Protected Areas,"Ramsar sites under criteria 4, 7, 8 and 9",,,P,,,Potential
-World Database on Protected Areas,Protected areas under IUCN management categories I and II,,,,L,,Likely
-World Database on Protected Areas,Natural and mixed World Heritage Sites,,,,L,,Likely
+Cold seeps\cite{coldseeps},,,P,,L,L,Likely/Potential
+Cold water corals,"Modelled occurrence\cite{daviesGlobalHabitatSuitability2011,yessonGlobalHabitatSuitability2012}",,,,P,P,Potential
+Cold water corals,Observed occurrence\cite{freiwaldGlobalDistributionColdwater2021},,,,L,L,Likely
+Ever-wet tropical forest\cite{underwoodEverwetTropicalForests2014},,,,,P,,Potential
+Hydrothermal vents\cite{beaulieuInterRidgeGlobalDatabase2020},Active,,L,,,L,Likely
+Hydrothermal vents\cite{beaulieuInterRidgeGlobalDatabase2020},Inactive,,,,P,,Potential
+Key Biodiversity Areas\cite{KBA2024},Alliance for Zero Extinction Sites,L,L,L,,,Likely
+Key Biodiversity Areas\cite{KBA2024},A1a and A1e,L,,,,,Likely
+Key Biodiversity Areas\cite{KBA2024},A1b,P,,,,,Potential
+Key Biodiversity Areas\cite{KBA2024},A2a,,,,L,,Likely
+Key Biodiversity Areas\cite{KBA2024},A2b,,,,P,,Potential
+Key Biodiversity Areas\cite{KBA2024},B1,,L,,,,Likely
+Key Biodiversity Areas\cite{KBA2024},B4,,,,P,,Potential
+Key Biodiversity Areas\cite{KBA2024},C,,,,P,,Potential
+Key Biodiversity Areas\cite{KBA2024},D1a,,,L,,,Likely
+Key Biodiversity Areas\cite{KBA2024},D1b,,,P,,,Potential
+Key Biodiversity Areas\cite{KBA2024},D2,,,L,,,Likely
+Key Biodiversity Areas\cite{KBA2024},D3,,,P,,,Potential
+Key Biodiversity Areas\cite{KBA2024},E,P,,,,,Potential
+Important Bird and Biodiversity Areas\cite{KBA2024},A1,L,,,,,Likely
+Important Bird and Biodiversity Areas\cite{KBA2024},A2,,P,,,,Potential
+Important Bird and Biodiversity Areas\cite{KBA2024},A3,,,,P,,Potential
+Important Bird and Biodiversity Areas\cite{KBA2024},A4,,,L,,,Likely
+Important Bird and Biodiversity Areas\cite{KBA2024},B1b,P,,,,,Potential
+Important Marine Mammal Areas\cite{IMMA2023},A,P,,,,,Potential
+Important Marine Mammal Areas\cite{IMMA2023},B1,,P,,,,Potential
+Important Marine Mammal Areas\cite{IMMA2023},B2,,,L,,,Likely
+Important Marine Mammal Areas\cite{IMMA2023},"C1, C2, and C3",,,P,,,Potential
+Important Marine Mammal Areas\cite{IMMA2023},D1,,P,,P,,Potential
+Important Marine Mammal Areas\cite{IMMA2023},D2,,,,P,,Potential
+Intact Forest Landscapes\cite{potapovLastFrontiersWilderness2017},,,,,L,,Likely
+Irreplaceable protected areas\cite{lesaoutProtectedAreasEffective2013},,,,,L,,Likely
+IUCN Red List of Threatened Species\cite{iucnIUCNRedList2024},CR under criterion D,L,,,,,Likely
+IUCN Red List of Threatened Species\cite{iucnIUCNRedList2024},EN under criterion D2,P,,,,,Potential
+IUCN Red List of Threatened Species\cite{iucnIUCNRedList2024},Great Apes species ranges,P,,,,,Potential
+Mangroves\cite{buntingGlobalMangroveWatch2022},,,,,L,,Likely
+Saltmarsh\cite{mcowenGlobalMapSaltmarshes2017},,,,,L,,Likely
+"Sea turtle nesting sites\cite{kotStateWorldsSea2020,halpinOBISSEAMAPWorldData2009}",All sea turtle species,,,P,P,,Potential
+"Sea turtle nesting sites\cite{kotStateWorldsSea2020,halpinOBISSEAMAPWorldData2009}",CR and EN sea turtle species,P,,,,,Potential
+Seagrass beds\cite{unep-wcmcGlobalDistributionSeagrasses2005},,,,,L,,Likely
+Seamounts\cite{yessonGlobalDistributionSeamounts2011},,,,,P,,Potential
+Tiger Conservation Landscapes\cite{sandersonRangewideTrendsTiger2023},,L,,,,,Likely
+Tropical dry forest\cite{milesGlobalOverviewConservation2006},,,,,P,,Potential
+Tropical moist forest\cite{vancutsemLongterm19902019Monitoring2021},,,,,L,,Likely
+Tropical montane cloud forests\cite{kargerLimitedProtectionOngoing2021},,,,,L,,Likely
+Warm water coral reefs\cite{unep-wcmcGlobalDistributionCoral2010},,,,,L,L,Likely
+World Database on Protected Areas\cite{WDPA2024},All Ramsar sites,,,,L,,Likely
+World Database on Protected Areas\cite{WDPA2024},Ramsar sites under criterion 2,L,,,,,Likely
+World Database on Protected Areas\cite{WDPA2024},Ramsar sites under criteria 5 and 6,,,L,,,Likely
+World Database on Protected Areas\cite{WDPA2024},Ramsar sites under criteria 1 and 3,,,,L,,Likely
+World Database on Protected Areas\cite{WDPA2024},"Ramsar sites under criteria 4, 7, 8 and 9",,,P,,,Potential
+World Database on Protected Areas\cite{WDPA2024},Protected areas under IUCN management categories I and II,,,,L,,Likely
+World Database on Protected Areas\cite{WDPA2024},Natural and mixed World Heritage Sites,,,,L,,Likely

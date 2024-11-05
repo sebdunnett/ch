@@ -147,7 +147,7 @@ st_faster_union <- function(sf) {
 st_save <- function(sf,filename,outpath){
   
   if(nrow(sf)==0){
-    return()
+    return("Nothing to save")
   } else{}
   
   if(tail(str_split_1(filename, "\\."),n=1)=="shp"){
@@ -265,4 +265,30 @@ query_unepwcmc <- function(dataset=NULL,feature_layer=0,q="1=1"){
     st_read()
   
   return(sf)
+}
+
+query_unepwcmc_nogeo <- function(dataset=NULL,feature_layer=0,q="1=1"){
+  
+  if (!require('httr')) install.packages('httr'); library('httr')
+  
+  if(is.null(dataset)){
+    return("Please select a dataset")
+  } else {}
+  
+  url = parse_url("https://data-gis.unep-wcmc.org/server/rest/services")
+  
+  url$path <- paste(url$path, dataset,"FeatureServer",feature_layer,"query", sep = "/")
+  
+  url$query <- list(
+    where = q,
+    outFields = "*",
+    f = "geojson",
+    returnGeometry = "false"
+  )
+  
+  df = build_url(url)  %>% 
+    st_read(quiet=TRUE) |>
+    st_drop_geometry()
+  
+  return(df)
 }

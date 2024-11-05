@@ -77,12 +77,11 @@ plot_rst_sensitivity <- function(data_WGS,wrld,bkg,focus_ext,palette="acton",rev
     dir=1
   }
   
-  inset = ggplot(bkg) +
-    geom_sf(col=NA,fill=pal[1]) +
-    geom_sf(data=wrld, col=NA, fill=pal[2]) +
-    geom_sf(data=st_centroid(st_as_sfc(st_bbox(rast(ext=focus_ext)))),col=pal[3]) +
+  inset = ggplot(wrld) +
+    geom_sf(col=NA) +
+    geom_sf(data=st_centroid(st_as_sfc(st_bbox(rast(ext=focus_ext)))),col="red") +
     theme_map() +
-    theme(plot.background=element_rect(colour="white"))
+    theme(plot.background=element_rect(fill="white", colour=NA))
   
   rst_agg = crop(data_WGS,focus_ext) |>
     as.data.frame(xy=TRUE) |>
@@ -98,7 +97,7 @@ plot_rst_sensitivity <- function(data_WGS,wrld,bkg,focus_ext,palette="acton",rev
     theme(legend.position="bottom")
   
   ggdraw(main) +
-    draw_plot(inset,scale=0.25)
+    draw_plot(inset,scale=0.3)
   
 }
 
@@ -112,7 +111,9 @@ plot_rst <- function(data,wrld,bkg,palette="acton",revCol=FALSE){
     dir=1
   }
   
-  rst_agg = aggregate(data,fact=10,fun="modal") |>
+  rst_agg = aggregate(data,fact=10,fun="modal")
+  
+  rst_rpj = project(rst_agg,raster_eq,method="near") |>
     mask(vect(bkg)) |>
     as.data.frame(xy=TRUE) |>
     rename(filtr=3) |>
@@ -121,7 +122,7 @@ plot_rst <- function(data,wrld,bkg,palette="acton",revCol=FALSE){
   ggplot(bkg) +
     geom_sf(col=NA,fill=pal[1]) +
     geom_sf(data=wrld, col=NA, fill=pal[2]) +
-    geom_tile(data=rst_agg, aes(x=x,y=y), fill=pal[3]) +
+    geom_tile(data=rst_rpj, aes(x=x,y=y), fill=pal[3]) +
     theme_map()
   
 }

@@ -177,19 +177,37 @@ rl_full_simpl = st_transform(bind_rows(L_C1_IUCN_CR_D,
 pal = sample(size=1,scico_palette_names())
 pal="lajolla"
 
-plts = lapply(c(3,5,7,10,12,15,17,20,50), function(x){
-  plot_df = rl_full_simpl %>% filter(units::drop_units(st_area(.)) < (x*sd(units::drop_units(st_area(.)))) + mean(units::drop_units(st_area(.))))
-  area_diff_pct = (sum(units::drop_units(st_area(plot_df)))/sum(units::drop_units(st_area(rl_full_simpl))))*100
+rl_simpl = st_read("O:\\f01_projects_active\\Global\\p08868_CriticalHabitatUpdate\\outputs\\paper\\rl_full.shp") |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=10000)
+
+plts = lapply(c(3,7,15,50), function(x){
+  plot_df = rl_simpl %>% filter(units::drop_units(st_area(.)) < (x*sd(units::drop_units(st_area(.)))) + mean(units::drop_units(st_area(.))))
+  area_diff_pct = (sum(units::drop_units(st_area(plot_df)))/sum(units::drop_units(st_area(rl_simpl))))*100
   area_diff_pct = signif(area_diff_pct,3)
-  row_diff = nrow(rl_full_simpl)-nrow(plot_df)
-  ggplot(gisco_coastallines %>% st_transform("ESRI:54012")) +
+  row_diff = nrow(rl_simpl)-nrow(plot_df)
+  ggplot(gisco_coastallines |> st_transform("EPSG:8857")) +
     geom_sf(col=NA) +
-    geom_sf(data=plot_df,aes(fill=category),alpha=0.85,col=NA) +
+    geom_sf(data=plot_df,aes(fill=categry),alpha=0.85,col=NA) +
     scale_fill_manual(values=c("#191900","#5A2F22","#C7504B"), name=NULL) +
     cowplot::theme_map() +
-    labs(title=paste0("SD: ",x),
-         subtitle = paste0(area_diff_pct,"% of total area; ",row_diff," rows missing of ",nrow(rl_full_simpl))) +
+    labs(title = paste0(x,"SDs. ",area_diff_pct,"%, ",row_diff,"/",nrow(rl_simpl))) +
     theme(legend.position="none")
 })
 
 cowplot::plot_grid(plotlist=plts,nrow=3,ncol=3)
+
+y = lapply(1:50, function(x){
+  plot_df = rl_simpl %>% filter(units::drop_units(st_area(.)) < (x*sd(units::drop_units(st_area(.)))) + mean(units::drop_units(st_area(.))))
+  area_diff_pct = (sum(units::drop_units(st_area(plot_df)))/sum(units::drop_units(st_area(rl_simpl))))*100
+  area_diff_pct = signif(area_diff_pct,3)
+  return(area_diff_pct)
+})
+
+z = lapply(1:50, function(x){
+  plot_df = rl_simpl %>% filter(units::drop_units(st_area(.)) < (x*sd(units::drop_units(st_area(.)))) + mean(units::drop_units(st_area(.))))
+  area_diff_pct = (sum(units::drop_units(st_area(plot_df)))/sum(units::drop_units(st_area(rl_simpl))))*100
+  area_diff_pct = signif(area_diff_pct,3)
+  row_diff = nrow(rl_simpl)-nrow(plot_df)
+  return(row_diff)
+})

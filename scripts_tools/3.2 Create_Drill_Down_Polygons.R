@@ -23,7 +23,9 @@ feature_lookup = pull(lookup,Feature,Short)
 
 # import CH raster
 # set uniqe overlap ID as active layer, i.e. every unique combination of features globally
-ch_rast = rast(paste0(output_path,"Drill_Down_Critical_Habitat.tif"))
+ch_files = list.files(output_path, pattern = "Drill_Down_Critical_Habitat.*\\.tif$", full.names=TRUE)
+ch_file = ch_files[which.max(file.info(ch_files)$ctime)]
+ch_rast = rast(ch_file)
 activeCat(ch_rast) = "VALUE"
 
 # polygonise (draw polygons around the cells of each unique value)
@@ -31,7 +33,9 @@ ch_polys = as.polygons(ch_rast) |>
   st_as_sf()
 
 # import raster attribute table and join to newly made polygons
-ch_df = foreign::read.dbf(paste0(output_path,"Drill_Down_Critical_Habitat.tif.vat.dbf"))
+rat_files = list.files(output_path, pattern = "Drill_Down_Critical_Habitat.*\\.vat\\.dbf$", full.names=TRUE)
+rat_file = rat_files[which.max(file.info(rat_files)$ctime)]
+ch_df = foreign::read.dbf(rat_file)
 ch_polys_full = left_join(ch_polys,ch_df,by="VALUE")
 
 # pivot longer and summarise by each unique combination
@@ -71,4 +75,4 @@ out = reduce(list(ch_polys,dplyr::select(ch_df,VALUE,CH),criteria_join,features_
   arrange(CH,CRITERIA,ALL_FEATURES)
 
 # save
-st_save(sf=out,filename="Drill_Down_Critical_Habitat_Polygons.gpkg",outpath=output_path)
+st_save(sf=out,filename=paste0("Drill_Down_Critical_Habitat_Polygons",format(Sys.time(), "_%d%m%Y"),".gpkg"),outpath=output_path)

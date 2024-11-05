@@ -1,6 +1,9 @@
 ---
 title: "Untitled"
 format: scidata-pdf
+echo: false
+bibliography: references.bib
+abstract: test.
 ---
 
 ```{r setup}
@@ -8,58 +11,39 @@ format: scidata-pdf
 
 # Install packages (if required)
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse,terra,sf,giscoR,scico,cowplot,kableExtra,scales)
+pacman::p_load(tidyverse,terra,sf,giscoR,scico,cowplot,kableExtra,scales,vapour,units)
 terraOptions(progress=0,memfrac=0.9)
+options(scipen=999)
 
 ch_pal = c("#8400a8","#ff00c5","#e8e8e8")
 
 knitr::knit_hooks$set(inline = function(x) {
-  prettyNum(x, big.mark=",",digits=4)
-})
+      prettyNum(x, big.mark=",",digits=4)
+    })
 
 ```
 
-```{r import-rasters}
-#| include: false
+## Hello
 
-ch2023_areas = data.frame(
-  value=c(0,1,10),
-  area=c(441808946,16616792,51639884)
-)
+```{r top-ten}
+#| tbl-cap: "States (including associated territories) with the largest areas of identified Critical Habitat."
+#| label: tbl-top-ten
 
-features_table = read.csv("features_table.csv",check.names=F)
+wrld_areas = read.csv("O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/outputs/paper/wrld_ch_areas.csv", check.names=FALSE, encoding="latin1")
 
-```
-
-```{r ch-coverage-table-pdf}
-#| echo: false
-#| tbl-cap: "Areas and percentage coverage of each Critical Habitat category in 2018 and 2023 across Areas Beyond National Jurisdiction (ABNJ), Economic Exclusion Zones (EEZ) and Land."
-
-wrld_ch_areas = read.csv("wrld_ch_areas.csv",check.names = F) |>
-  group_by(type) |>
-  summarise(across(starts_with(c("2018","2023")),~sum(.x,na.rm=TRUE)/1000000))
-
-wrld_ch_pct = wrld_ch_areas |>
-  reframe(across(2:7,~label_percent(accuracy=.2)(.x/sum(.x)))) |>
-  rename_with(~paste0(.x,"_pct"))
-
-wrld_ch_areas_pct = cbind(wrld_ch_areas,wrld_ch_pct) %>% 
-  select(type,sort(names(.)))
-
-names(wrld_ch_areas_pct) <- NULL
-
-kable(wrld_ch_areas_pct,
-      format.args = list(digits=2,big.mark=","),
-      format="latex",
-      booktabs=T,
-      longtable=T) |>
-  add_header_above(header=c("Domain"=1,"Likely"=2,"Potential"=2,"Unclassified"=2,
-                           "Likely"=2,"Potential"=2,"Unclassified"=2)) |>
-  add_header_above(header=c(" "=1,"2018"=6,"2023"=6)) |>
-  column_spec(1,width="1cm") |>
-  column_spec(c(3,5,7,9,11,13),width="1cm") |>
-  column_spec(c(2,4,6,8,10,12),width="0.5cm") |>
-  kable_styling(font_size=8) |>
-  footnote(general="Areas in million $km^2$.",escape=F)
+wrld_areas |>
+    filter(!str_detect(iso_sov,";") & !str_starts(iso_sov,"x")) |>
+    group_by(iso_sov) |>
+    summarise(likely_total=sum(`2024_Likely`,na.rm=TRUE)/1000000,potential_total=sum(`2024_Potential`,na.rm=TRUE)/1000000) |>
+    mutate(total_ch = likely_total + potential_total) |>
+    ungroup() |>
+    slice_max(total_ch,n=10) |>
+    left_join(dplyr::select(gisco_countrycode,ISO3_CODE,iso.name.en),by=c("iso_sov"="ISO3_CODE")) |>
+    mutate(iso.name.en = case_when(iso_sov=="ABNJ" ~ "Areas Beyond National Jurisdiction",.default=iso.name.en)) |>
+    dplyr::select(iso.name.en,likely_total,potential_total,total_ch) |>
+    kable(col.names = c("State","Likely Critical Habitat","Potential Critical Habitat","Total Critical Habitat"),
+          format.args = list(digits=2,big.mark=",")) |>
+    column_spec(1:4,width="4cm") |>
+    footnote(general="Areas in million $km^2$. State areas include associated territories.",escape=F)
 
 ```

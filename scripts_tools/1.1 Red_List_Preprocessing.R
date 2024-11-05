@@ -11,7 +11,9 @@ p_load(tidyverse,sf,terra,tictoc,geos,giscoR,scico,units)
 tic("processing RL ranges")
 
 # location of full Red List geodatabase
-rl_gdb = "E:/Seb D/Critical habitat/IUCN_RL_2023_1_Species_Data/IUCN_RL_2023_1_Species_Data.gdb"
+rl_gdb = "O:/f00_data/IUCN_001_RedListSpecies/IUCN_RL_2024_1_Species_Data/IUCN_RL_2024_1_Species_Data.gdb"
+
+rl_gdb_layers = st_layers(rl_gdb)$name
 
 output_path = "scratch/"
 
@@ -21,7 +23,7 @@ source("scripts_tools/0 spatial_processing_functions.R")
 cat("read in lookup and pre-filter species IDs\n")
 
 # specify names for each layer
-rl_list = keep(rl_gdb_layers,str_detect(rl_gdb_layers,"List"))
+rl_list = keep(rl_gdb_layers,str_detect(rl_gdb_layers,"List|list"))
 rl_ranges = keep(rl_gdb_layers,str_detect(rl_gdb_layers,"Ranges"))
 rl_points = keep(rl_gdb_layers,str_detect(rl_gdb_layers,"Points"))
 

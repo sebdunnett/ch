@@ -56,6 +56,8 @@ lookup$Values = values
 lookup$Set = set
 lookup$Type_Feature = paste0(lookup$Type,"; ",lookup$Feature)
 
+raster_WGS = rast(res=1/120)
+
 ################################################################
 #### LIKELY ####################################################
 ################################################################
@@ -358,11 +360,11 @@ rss = classify(rast(paste0(scratch_path,"likely_potential_sum.tif")),as.matrix(c
 # saving files and removing previous versions
 cat("Saving raster...\n")
 
-rast_save(rst=rss,filename="Drill_Down_Critical_Habitat.tif",outpath=output_path,nms="Drill_Down_Critical_Habitat",dt="INT2U")
+rast_save(rst=rss,filename=paste0("Drill_Down_Critical_Habitat",format(Sys.time(), "_%d%m%Y"),".tif"),outpath=output_path,nms="Drill_Down_Critical_Habitat",dt="INT2U")
 
 cat("Saving RAT...\n")
 
-dbf_file = paste0(output_path,"Drill_Down_Critical_Habitat.tif.vat.dbf")
+dbf_file = paste0(output_path,"Drill_Down_Critical_Habitat",format(Sys.time(), "_%d%m%Y"),".tif.vat.dbf")
 old_fnm = str_replace(dbf_file,".tif.vat.dbf","_old.tif.vat.dbf")
 
 if(old_fnm %in% list.files(output_path, full.names=TRUE)){

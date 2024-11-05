@@ -32,20 +32,47 @@ presence_threshold = 0.5
 #### MODELLED COLDWATER CORAL ##################################
 ################################################################
 
-# cat("coldwater coral...")
-# 
-# coldwater_coral_modelled = rast(paste0(data_path,"Yesson_2012_ColdWaterCorals_Modelled/Yesson_2012_ColdWaterCorals_Modelled.tif"))
-# 
-# crs(coldwater_coral_modelled) = "ESRI:53034" # Cylindrical Equal Area proj
-# 
-# P_C4_C5_Coldwater_coral = project(coldwater_coral_modelled, raster_WGS, method="near", threads=TRUE) |>
-#   classify(cbind(NA,0))
-# 
-# cat("writing...")
-# 
-# rast_save(rst=P_C4_C5_Coldwater_coral,filename="P_C4_C5_Coldwater_coral.tif",outpath=output_path,nms="Cold water Coral - Modelled occurence",dt="FLT8S")
-# 
-# cat("done\n")
+cat("coldwater coral...")
+
+soft_files = list.files(paste0(data_path,"ZSL-001-ModelledOctocorals2012/02_Data_sources/Restricted-GeoTiffHighRes"),full.names=TRUE) %>% 
+  keep(str_ends(.,".tif")) %>% 
+  discard(str_detect(.,"Consensus"))
+
+soft = app(rast(soft_files)>90,any) |>
+  resample(raster_WGS,method="near") |>
+  classify(cbind(NA,0))
+
+stony_files = list.files(paste0(data_path,"Bangor-001-StonyCorals2011/DataPack-Bangor-001-StonyCorals2011/IndividualSpecies"),full.names=TRUE) |>
+  list.files(full.names=TRUE) %>% 
+  keep(str_ends(.,".tif"))
+
+stony = app(rast(stony_files)>0.9,any) |>
+  resample(raster_WGS,method="near") |>
+  classify(cbind(NA,0))
+
+P_C4_C5_Coldwater_coral = app(c(soft,stony),any)
+
+cat("writing...")
+
+rast_save(rst=P_C4_C5_Coldwater_coral,filename="P_C4_C5_Coldwater_coral.tif",outpath=output_path,nms="Cold water Coral - Modelled occurence",dt="FLT8S")
+
+cat("done\n")
+
+################################################################
+#### CLOUD FORESTS #############################################
+################################################################
+
+cat("cloud forests...")
+
+tcf = rast(paste0(data_path,"tcf_ensemble_mn_sd_2001-2018_v16/tcf/tcf_ensemble_mn_2018_v16.tif"))
+L_C4_Cloud_Forest = !is.na(tcf) |>
+  project(raster_WGS,method="near")
+
+cat("writing...")
+
+rast_save(rst=L_C4_Cloud_Forest,filename="L_C4_Cloud_Forest.tif",outpath=output_path,nms="Tropical montane cloud forests",dt="FLT8S")
+
+cat("done\n")
 
 ################################################################
 #### EVERWET FORESTS ###########################################
@@ -72,46 +99,46 @@ presence_threshold = 0.5
 #### TROPICAL MOIST FOREST #####################################
 ################################################################
 
-cat("tropical moist forests...")
-
-tmf_files = list.files(tmf_path,full.names=TRUE) %>%
-  discard(str_detect(.,"mosaic")) %>%
-  keep(str_ends(.,".tif"))
-
-cat("remove unnecessary tiles...")
-
-# some tiles don't have TMF category
-has_cat10 = unlist(lapply(1:length(tmf_files),function(x){
-  cat(paste0(x,"..."))
-  10 %in% terra::unique(rast(tmf_files[x]))[,1]
-  }))
-
-tmf_files = tmf_files %>% keep(.,has_cat10)
-
-cat("vrt...")
-
-vrt(x=tmf_files, filename=paste0(tmf_path,"tmf_mosaic.tif"), overwrite=TRUE)
-
-cat("aggregate...")
-
-terra::aggregate(rast(paste0(tmf_path,"tmf_mosaic.tif")),
-                 fact=round(res(raster_WGS)/res(rast(tmf_files[1]))),
-                 fun=function(x,...){sum((x == 10),na.rm = T)/length(x)},
-                 filename=paste0(tmf_path,"tmf_mosaic_agg.tif"),
-                 overwrite=TRUE)
-
-cat("resample and project...")
-
-L_C4_Tropical_Moist_Forest = rast(paste0(tmf_path,"tmf_mosaic_agg.tif")) %>%
-  resample(raster_WGS, method="bilinear") %>%
-  classify(cbind(NA,0)) %>%
-  classify(rbind(c(0,presence_threshold,0),c(presence_threshold,1,1)))
-
-cat("writing...")
-
-rast_save(rst=L_C4_Tropical_Moist_Forest,filename="L_C4_Tropical_Moist_Forest.tif",outpath=output_path,nms="Tropical moist forest",dt="FLT8S")
-
-cat("done\n")
+# cat("tropical moist forests...")
+# 
+# tmf_files = list.files(tmf_path,full.names=TRUE) %>%
+#   discard(str_detect(.,"mosaic")) %>%
+#   keep(str_ends(.,".tif"))
+# 
+# cat("remove unnecessary tiles...")
+# 
+# # some tiles don't have TMF category
+# has_cat10 = unlist(lapply(1:length(tmf_files),function(x){
+#   cat(paste0(x,"..."))
+#   10 %in% terra::unique(rast(tmf_files[x]))[,1]
+#   }))
+# 
+# tmf_files = tmf_files %>% keep(.,has_cat10)
+# 
+# cat("vrt...")
+# 
+# vrt(x=tmf_files, filename=paste0(tmf_path,"tmf_mosaic.tif"), overwrite=TRUE)
+# 
+# cat("aggregate...")
+# 
+# terra::aggregate(rast(paste0(tmf_path,"tmf_mosaic.tif")),
+#                  fact=round(res(raster_WGS)/res(rast(tmf_files[1]))),
+#                  fun=function(x,...){sum((x == 10),na.rm = T)/length(x)},
+#                  filename=paste0(tmf_path,"tmf_mosaic_agg.tif"),
+#                  overwrite=TRUE)
+# 
+# cat("resample and project...")
+# 
+# L_C4_Tropical_Moist_Forest = rast(paste0(tmf_path,"tmf_mosaic_agg.tif")) %>%
+#   resample(raster_WGS, method="bilinear") %>%
+#   classify(cbind(NA,0)) %>%
+#   classify(rbind(c(0,presence_threshold,0),c(presence_threshold,1,1)))
+# 
+# cat("writing...")
+# 
+# rast_save(rst=L_C4_Tropical_Moist_Forest,filename="L_C4_Tropical_Moist_Forest.tif",outpath=output_path,nms="Tropical moist forest",dt="FLT8S")
+# 
+# cat("done\n")
 
 ################################################################
 #### TROPICAL DRY FOREST #######################################
