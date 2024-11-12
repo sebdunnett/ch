@@ -29,3 +29,4 @@ outputs/paper/*.tif
 outputs/paper/*.dbf
 outputs/paper/*.gpkg
 .Rproj.user
+outputs/paper/.trackdown/

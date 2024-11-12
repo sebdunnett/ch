@@ -42,23 +42,22 @@ execute:
   echo: false
   message: false
   warning: false
+  cache: true
+abstract: "The International Finance Corporation (IFC) defines Critical Habitat as areas of high biodiversity value in their Performance Standard 6 (PS6), requiring projects located in Critical Habitat to achieve a net gain of biodiversity. IFC's definition of Critical Habitat has since been frequently used by the finance sector and businesses to identify areas of high biodiversity value. Here we present an update to previous global screening layers of Critical Habitat in the marine and terrestrial realms, derived from global spatial datasets covering the distributions of 53 biodiversity features aligned with guidance provided by the IFC. As with previous layers, each biodiversity feature is categorised as 'Likely' or 'Potential' Critical Habitat based on: 1. Alignment between the biodiversity feature and the IFC Critical Habitat definition; and 2. Suitability of the spatial resolution for indicating a feature's presence on the ground. This analysis indicates that a total of 52.77 million km^2^ (10.4%) and 15.94 million km^2^ (3.2%) of the globe can be considered as Likely and Potential Critical Habitat respectively, while the remaining 441.4 million km^2^ (86.4%) did not overlap with any of the biodiversity features assessed. This represents a significant increase to the 26.2 million km^2^ (5%) and 10 million km^2^ (2%) Likely and Potential Critical Habitat identified previously. Classification of Likely Critical Habitat was dominated by Important Bird and Biodiversity Areas, Intact Forest Landscapes, and protected areas; Potential Critical Habitat by Important Marine Mammal Areas (IMMAs) and ranges of species classified as Vulnerable by the International Union for Conservation of Nature (IUCN) Red List of Threatened Species. Our results can aid businesses to prioritise impact avoidance by screening potential development sites at an early project stage for biodiversity features."
 ---
 
 ```{r setup}
+#| cache: false
 
 if (!require("pacman")) install.packages("pacman")
-p_load(sf,scico,tidyverse,cowplot,terra,units,vapour)
+p_load(sf,scico,tidyverse,cowplot,terra,units,vapour,giscoR,scales)
 terraOptions(progress=0)
 
 source("plot_functions.R")
 source("../../scripts_tools/0 spatial_processing_functions.R")
 
-# good palettes: turku; oslo; oleron; nuuk; navia; lipari; lapaz; lajolla; fes; devon; davos; bukavu; batlow; bamako; acton
-pal=sample(c("turku","oslo","oleron","nuuk","navia","lipari","lapaz","lajolla","fes","devon","davos","bukavu","batlow","bamako","acton"),1)
-revCol=runif(1)>0.5
-
-#pal="acton"
-#revCol=TRUE
+pal="lipari"
+revCol=TRUE
 
 options(scipen=999)
 
@@ -72,6 +71,7 @@ knitr::knit_hooks$set(inline = function(x) {
 ```
 
 ```{r wrld-import}
+#| cache: false
 
 sphere <- st_graticule(ndiscr = 10000, margin = 10e-6) %>%
   st_transform(crs = st_crs("ESRI:54009")) %>%
@@ -80,18 +80,29 @@ sphere <- st_graticule(ndiscr = 10000, margin = 10e-6) %>%
   st_buffer(1000) |> st_union() |> st_buffer(-1000) |>
   st_transform("EPSG:8857")
 
-wrld = st_read("../../raw_data/UN map borders/Countries_Combined_with_associated_territories.json",quiet=TRUE) |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
+wrld = gisco_get_coastallines(resolution="03") |>
+  st_transform("EPSG:8857")
+
+ch_basic_files = list.files("..", pattern = "Basic_Critical_Habitat.*\\.tif$", full.names=TRUE)
+ch_basic_file = ch_basic_files[which.max(file.info(ch_basic_files)$ctime)]
+
+ch2024_30as = rast(ch_basic_file)
+
+ch2024_areas = expanse(ch2024_30as,unit="km",byValue=TRUE)[,2:3]
 
 area_lookup = read.csv("../../outputs/area_comparisons.csv")
+
+feat_areas = read.csv("drill_down_change_areas.csv") |> pivot_longer(starts_with(c("L_","P_")),names_to="feature",values_to="presence") |>
+  filter(presence==1) |>
+  group_by(feature) |>
+  summarise(total_area=sum(area,na.rm=TRUE)) |> ungroup() |>
+  mutate(pct = total_area/sum(ch2024_areas[2:3,2]))
 
 raster_eq <- project(rast(res=1/12),"EPSG:8857",res=10000)
 
 ```
 
-## Spherical geometries with the S2 library {#sec-s2 .unnumbered}
+## Spherical geometries with the S2 library {#sec-s2}
 
 To maintain the highest standards of accuracy, spatial processing is carried out with the `sf` package in **R**, using the S2 spherical geometry library. This allows spatial processing, e.g. intersections and buffers, using Great Circle distances.
 
@@ -100,6 +111,8 @@ However, many conservation datasets are set up for planar geometry and are not v
 ## Unioning geometries {#sec-union}
 
 In order to compute accurate area measurements for polygon input features and remove duplicate records from point data, all data are unioned using `st_union` from the `sf` package. However, using `st_union` for spherical spatial processing becomes extremely inefficient (e.g. days to compute) with large, high precision datasets. For this reason, an arbitrary complexity limit was used, above which planar intersection with `unary_union` from the `geos` package was performed. This limit was set at 10,000,000 vertices: only a handful of datasets are more detailed than this, and it speeds up processing markedly with limited impact on accuracy.
+
+{{< pagebreak >}}
 
 ## Cold seeps {#sec-coldseeps}
 
@@ -122,25 +135,30 @@ plot_data_sf(data=coldseeps,
 - **Data type**: Point
 - **Number of records**: `r nrow(query_unepwcmc_nogeo(dataset="Hosted/ChEssBase_ColdSeeps"))`
 - **Original CRS**: WGS 84
-- **Source**: Ramirez-Llodra 2020[@coldseeps]
 - **Critical Habitat type**: Likely/Potential
 - **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems) and C5 (Key Evolutionary Processes)/C2 (Endemic and Restricted-range Species)
+- **Source**: Ramirez-Llodra 2020[@coldseeps]
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-- No filtering of data from source.
+See Martin *et al.* 2015[@martinGlobalMapAid2015]. No change to data.
 
-#### How the data are processed
+#### How the data are filtered{.unnumbered}
 
-- Data are unioned to remove duplicates (see @sec-union).
+No filtering of data from source.
+
+#### How the data are processed{.unnumbered}
+
+Data are unioned to remove duplicates (see @sec-union).
+
+{{< pagebreak >}}
 
 ## Cold water corals {#sec-cold-corals}
 ### Modelled occurrence
 
 ```{r cold-coral-model}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global modelled distribution of cold water corals.
+#| cache: false
 
 plot_rst(data=rast("../../scratch/P_C4_C5_Coldwater_coral.tif"),
          wrld=wrld,
@@ -155,24 +173,28 @@ cold_coral_model_crs = st_crs(rast("../../raw_data/Yesson_2012_ColdWaterCorals_M
 - **Data type**: Raster
 - **Original CRS**: `r st_crs(rast("../../raw_data/Yesson_2012_ColdWaterCorals_Modelled/Yesson_2012_ColdWaterCorals_Modelled.tif"))$input`
 - **Original resolution**: `r res(rast("../../raw_data/Yesson_2012_ColdWaterCorals_Modelled/Yesson_2012_ColdWaterCorals_Modelled.tif"))[1]`
-- **Extent**: Global
-- **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/P_C4_C5_Coldwater_coral.tif"), unit="km", byValue=T) |> filter(value==1) |> pull(area)`
-- **Source**: Yesson *et al.* 2012[@yessonGlobalHabitatSuitability2012]
+- **Extent**: `r st_bbox(rast("../../raw_data/Yesson_2012_ColdWaterCorals_Modelled/Yesson_2012_ColdWaterCorals_Modelled.tif"))`
+- **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/P_C4_C5_Coldwater_coral.tif"), unit="km", byValue=T)[2,3]`
 - **Critical Habitat type**: Potential
 - **IFC PS6 Criteria triggered**:
     - C4 (Highly Threatened or Unique Ecosystems)
     - C5 (Key Evolutionary Processes)
+- **Source**: Yesson *et al.* 2012[@yessonGlobalHabitatSuitability2012]
 
-#### How the data are processed
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Martin *et al.* 2015[@martinGlobalMapAid2015]. No change to data.
+
+#### How the data are processed{.unnumbered}
 
 - As per Martin *et al.* 2015[@martinGlobalMapAid2015], raster reclassified so that `>90 = 1` and `<=90 = 0`.
 - Raster projected to WGS 84 using nearest neighbour resampling.
 
+{{< pagebreak >}}
+
 ### Observed occurence
 
 ```{r cold-coral-obs-polys}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: "Global observed distribution of cold water corals - polygons (inset: North Atlantic and North Sea)."
 
 cold_coral_obs_polys = st_read("../../scratch/L_C4_C5_Cold_water_coral_observed_polys.shp",quiet=TRUE)
@@ -194,10 +216,7 @@ plot_inset_sf(data=cold_coral_obs_polys,
 
 ```
 
-
 ```{r cold-coral-obs-pts}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global observed distribution of cold water corals - points.
 
 cold_coral_obs_pts = st_read("../../scratch/L_C4_C5_Cold_water_coral_observed_pts.shp",quiet=TRUE) |>
@@ -215,26 +234,32 @@ plot_data_sf(data=cold_coral_obs_pts,
 - **Number of records**: `r nrow(query_unepwcmc_nogeo(dataset="HabitatsAndBiotopes/Global_Distribution_of_Cold_water_Corals", feature_layer=0))` (point) and `r nrow(query_unepwcmc_nogeo(dataset="HabitatsAndBiotopes/Global_Distribution_of_Cold_water_Corals", feature_layer=1))` (polygon)
 - **Original CRS**: WGS 84
 - **Area (polygons)**: `r cold_coral_obs_polys_area` km^2^
-- **Source**: Freiwald *et al.* 2021[@freiwaldGlobalDistributionColdwater2021]
 - **Critical Habitat type**: Likely
 - **IFC PS6 Criteria triggered**:
     - C4 (Highly Threatened or Unique Ecosystems)
     - C5 (Key Evolutionary Processes)
+- **Source**: Freiwald *et al.* 2021[@freiwaldGlobalDistributionColdwater2021]
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-- No filtering of data from source.
+See Martin *et al.* 2015[@martinGlobalMapAid2015]. No change to data.
 
-#### How the data are processed
+#### How the data are filtered{.unnumbered}
+
+No filtering of data from source.
+
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 polygon geometries (see @sec-s2) are made valid.
 - Data are unioned to remove overlap (polygons) and duplicates (points) (see @sec-union).
 
+{{< pagebreak >}}
+
+{{< pagebreak >}}
+
 ## Ever-wet tropical forest {#sec-everwet}
 
 ```{r everwet}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of ever-wet tropical forests.
 #| cache: false
 
@@ -251,15 +276,24 @@ plot_rst(data=rast("../../scratch/P_C4_Everwet_Zones.tif"),
 -   **Original resolution**: `r res(rast("../../raw_data/Everwet_Zones/Everwet_Zones/everwet_zones"))[1]`
 -   **Extent**: `r st_bbox(rast("../../raw_data/Everwet_Zones/Everwet_Zones/everwet_zones"))`
 -   **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/P_C4_Everwet_Zones.tif"), unit="km", byValue=T) |> filter(value==1) |> pull(area)`
--   **Source**: @underwoodEverwetTropicalForests2014
 -   **Critical Habitat type**: Potential
 -   **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+-   **Source**: Underwood *et al* 2014[@underwoodEverwetTropicalForests2014]
+
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. No change to data.
+
+#### How the data are processed{.unnumbered}
+
+- Reclassify Current ever-wet zones to 1, all other categories to 0.
+- Simple disaggregation to desired resolution, i.e. each cell split into several cells, all of which are given the same value as the parent cell.
+
+{{< pagebreak >}}
 
 ## Hydrothermal vents {#sec-hydro}
 
 ```{r hydrothermal-vents}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of active hydrothermal vents.
 
 hydrothermal_vents = st_read("../../scratch/P_C4_Hydrothermal_Vents_pts.shp",quiet=TRUE)
@@ -275,17 +309,23 @@ plot_data_sf(data=hydrothermal_vents,
 - **Data type**: Point
 - **Number of records**: `r nrow(st_read("../../raw_data/PANGEA_2020_InterRidge_Database_Hydrothermal_Vent_v3_4/vent_fields_all_20200325.shp", quiet=TRUE))`; of which `r nrow(st_read("../../raw_data/PANGEA_2020_InterRidge_Database_Hydrothermal_Vent_v3_4/vent_fields_all_20200325.shp", quiet=TRUE) |> filter(Activity %in% c("active, inferred","active, confirmed")))` are active
 - **Original CRS**: `r st_crs(st_read("../../raw_data/PANGEA_2020_InterRidge_Database_Hydrothermal_Vent_v3_4/vent_fields_all_20200325.shp", quiet=TRUE))$input`
-- **Source**: @beaulieuInterRidgeGlobalDatabase2020
 - **Critical Habitat type**: Likely (if active) / Potential
 - **IFC PS6 Criteria triggered**: C2 (Endemic and Restricted-range Species) and C5 (Key Evolutionary Processes) (if active) / C4 (Highly Threatened or Unique Ecosystems)
+- **Source**: Beaulieu and Szafrański 2020[@beaulieuInterRidgeGlobalDatabase2020]
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-- Records whose `Activity` is classified as `active,inferred` or `active, confirmed`.
+See Martin *et al.* 2015[@martinGlobalMapAid2015]. No change to data.
 
-#### How the data are processed
+#### How the data are filtered{.unnumbered}
 
-- Data are unioned to remove duplicates (see @sec-union).
+Records whose `Activity` is classified as `active,inferred` or `active, confirmed`.
+
+#### How the data are processed{.unnumbered}
+
+Data are unioned to remove duplicates (see @sec-union).
+
+{{< pagebreak >}}
 
 ## Key Biodiversity Areas (KBAs) {#sec-kbas}
 
@@ -304,13 +344,11 @@ kba_sql = paste0("select * from \"",kba_layer,"\" limit 1")
 - **Original CRS**: `r st_crs(st_read("O:/f00_data/Birdlife-001-KBA-IBA-AZE/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_POL.shp",quiet=TRUE,query=kba_sql))$input`
 - **Area (polygons - reported)**: `r sum(kba_aze_iba_polys$GISArea,na.rm=TRUE) %>% units::set_units(ha) %>% units::set_units(km2) %>% as.numeric()` km^2^
 - **Area (point - reported)**: `r sum(as.numeric(kba_aze_iba_pts$sitarea),na.rm=TRUE) %>% units::set_units(ha) %>% units::set_units(km2) %>% as.numeric()` km^2^
-- **Source**: @KBA2023
+- **Source**: BirdLife International 2024[@KBA2024]
 
 ### Alliance for Zero Extinction Sites (AZEs)
 
 ```{r azes}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Alliance for Zero Extinction sites.
 
 azes = st_read("../../scratch/L_C1_C2_C3_AZEs_polys.shp",quiet=TRUE)
@@ -338,21 +376,25 @@ plot_data_sf(data=azes,
   - C2 (Endemic and Restricted-range Species)
   - C3 (Migratory and Congregatory Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
+
+#### How the data are filtered{.unnumbered}
 
 - Sites with `AzeStatus = confirmed`.
 - All polygons, and point data with reported areas.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### KBAs under criteria A1a and A1e
 
 ```{r kbas-A1ae}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Key Biodiversity Areas under criteria A1a and A1e.
 
 kbasA1ae = st_read("../../scratch/L_C1_KBAs_A1ae_polys.shp",quiet=TRUE)
@@ -377,7 +419,11 @@ plot_data_sf(data=kbasA1ae,
 - **Critical Habitat type**: Likely
 - **IFC PS6 Criteria triggered**: C1 (Critically Endangered and Endangered Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criteria A1a (\>=0.5% of global population size and \>=5 reproductive units (RU) of a CR/EN species) and KBA Criteria A1e (Effectively the entire population size of a CR/EN species) align directly with thresholds GN72(a) and GN72(c) of GN2019 GN72[@internationalfinancecorporationInternationalFinanceCorporation2019].
+
+#### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
 - Sites designated under:
@@ -385,17 +431,17 @@ plot_data_sf(data=kbasA1ae,
     - KBA Criteria A1e (Effectively the entire population size of a CR/EN species).
 - All polygons, and point data with reported areas.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Point data buffered to reported area, `sitarea`.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### KBAs under criterion A1b
 
 ```{r kbas-A1b}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Key Biodiversity Areas under criterion A1b.
 
 kbasA1b = st_read("../../scratch/P_C1_KBAs_A1b_polys.shp",quiet=TRUE)
@@ -415,36 +461,44 @@ plot_data_sf(data=kbasA1b,
 
 ```
 
-- **Number of records**: `r nrow(filter(kba_aze_iba_pts, KbaStatus == "confirmed" & str_detect(Criteria,"A1b")))` (point) and `r `nrow(filter(kba_aze_iba_polys, KbaStatus == "confirmed" & str_detect(Criteria,"A1b")))` (polygon)
+- **Number of records**: `r nrow(filter(kba_aze_iba_pts, KbaStatus == "confirmed" & str_detect(Criteria,"A1b")))` (point) and `r nrow(filter(kba_aze_iba_polys, KbaStatus == "confirmed" & str_detect(Criteria,"A1b")))` (polygon)
 - **Area (including buffered point data)**: `r kbasA1b_area` km^2^
 - **Critical Habitat type**: Potential
 - **IFC PS6 Criteria triggered**: C1 (Critically Endangered and Endangered Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion A1b (\>=1.0% of global population size and \>=10 RU of a VU species) align with threshold GN72(b) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019] by representing globally important concentrations of IUCN Red-listed VU species.
+
+#### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
 - Sites designated under KBA Criterion A1b (\>=1.0% of global population size and \>=10 RU of a VU species).
 - All polygons, and point data with reported areas.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 -   Invalid S2 geometries (see @sec-s2) are made valid.
 -   Point data buffered to reported area, `sitarea`.
 -   Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### KBAs under criterion A2a
 
 No data present.
+
+{{< pagebreak >}}
 
 ### KBAs under criterion A2b
 
 No data present.
 
+{{< pagebreak >}}
+
 ### KBAs under criterion B1
 
 ```{r kbas-B1}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Key Biodiversity Areas under criterion B1.
 
 kbasB1 = st_read("../../scratch/L_C2_KBAs_B1_polys.shp",quiet=TRUE)
@@ -469,23 +523,27 @@ plot_data_sf(data=kbasB1,
 - **Critical Habitat type**: Likely
 - **IFC PS6 Criteria triggered**: C2 (Endemic and Restricted-range Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion B1 (Site regularly holds \>=10% of the global population size AND \>=10 reproductive units of a species) align directly with threshold GN75(a) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019].
+
+#### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
 - Sites designated under KBA Criterion B1 (Site regularly holds \>=10% of the global population size AND \>=10 reproductive units of a species).
 - All polygons, and point data with reported areas.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Point data buffered to reported area, `sitarea`.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### KBAs under criterion B4
 
 ```{r kbas-B4}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Key Biodiversity Areas under criterion B4.
 
 kbasB4 = st_read("../../scratch/P_C4_KBAs_B4_polys.shp",quiet=TRUE)
@@ -510,27 +568,33 @@ plot_data_sf(data=kbasB4,
 - **Critical Habitat type**: Potential
 - **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion B4 (Site holds \>=20% of the global extent of an ecosystem type) align with threshold GN80(a) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019]. The IUCN Red List of Ecosystems does not yet have full global coverage, but KBA Criterion B4 aligns by providing a higher threshold (\>=20%) than GN80(a) (\>=5%) to account for lack of threat classifications.
+
+#### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
 - Sites designated under KBA Criterion B4 (Site holds \>=20% of the global extent of an ecosystem type).
 - All polygons, and point data with reported areas.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Point data buffered to reported area, `sitarea`.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### KBAs under criterion C
 
 No data present.
 
+{{< pagebreak >}}
+
 ### KBAs under criterion D1a
 
 ```{r kbas-D1a}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Key Biodiversity Areas under criterion D1a.
 
 kbasD1a = st_read("../../scratch/L_C3_KBAs_D1a_polys.shp",quiet=TRUE)
@@ -555,23 +619,27 @@ plot_data_sf(data=kbasD1a,
 - **Critical Habitat type**: Likely
 - **IFC PS6 Criteria triggered**: C3 (Migratory and Congregatory Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion D1a (Site holds an aggregation representing \>=1% of the global population size of a species, over a season, and during one or more key stages of its life cycle) align directly with threshold GN78(a) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019].
+
+#### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
 - Sites designated under KBA Criterion D1a (Site holds an aggregation representing \>=1% of the global population size of a species, over a season, and during one or more key stages of its life cycle).
 - All polygons, and point data with reported areas.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Point data buffered to reported area, `sitarea`.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### KBAs under criterion D1b
 
 ```{r kbas-D1b}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Key Biodiversity Areas under criterion D1b.
 
 kbasD1b = st_read("../../scratch/P_C3_KBAs_D1b_polys.shp",quiet=TRUE)
@@ -596,23 +664,27 @@ plot_data_sf(data=kbasD1b,
 - **Critical Habitat type**: Potential
 - **IFC PS6 Criteria triggered**: C3 (Migratory and Congregatory Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion D1b (Site holds a number of mature individuals that ranks the site among the largest 10 aggregations known for the species) align with threshold GN78(a) and GN78(b) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019].
+
+#### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
 - Sites designated under KBA Criterion D1b (Site holds a number of mature individuals that ranks the site among the largest 10 aggregations known for the species).
 - All polygons, and point data with reported areas.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Point data buffered to reported area, `sitarea`.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### KBAs under criterion D2
 
 ```{r kbas-D2}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Key Biodiversity Areas under criterion D2.
 
 kbasD2 = st_read("../../scratch/L_C3_KBAs_D2_polys.shp",quiet=TRUE)
@@ -637,23 +709,27 @@ plot_data_sf(data=kbasD2,
 - **Critical Habitat type**: Likely
 - **IFC PS6 Criteria triggered**: C3 (Migratory and Congregatory Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion D2 (Site supports \>=10% of the global population size of one or more species during periods of environmental stress, for which historical evidence shows that it has served as a refugium in the past and for which there is evidence to suggest it would continue to do so in the foreseeable future) align directly with threshold GN78(b) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019].
+
+#### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
 - Sites designated under KBA Criterion D2 (Site supports \>=10% of the global population size of one or more species during periods of environmental stress, for which historical evidence shows that it has served as a refugium in the past and for which there is evidence to suggest it would continue to do so in the foreseeable future).
 - All polygons, and point data with reported areas.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Point data buffered to reported area, `sitarea`.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### KBAs under criterion D3
 
 ```{r kbas-D3}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Key Biodiversity Areas under criterion D3.
 
 kbasD3 = st_read("../../scratch/P_C3_KBAs_D3_polys.shp",quiet=TRUE)
@@ -678,23 +754,27 @@ plot_data_sf(data=kbasD3,
 - **Critical Habitat type**: Potential
 - **IFC PS6 Criteria triggered**: C3 (Migratory and Congregatory Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion D3 (Site predictably produces propagules, larvae, or juveniles that maintain \>=10% of the global population size of a species) align with threshold GN78(a) and GN78(b) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019].
+
+#### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
 - Sites designated under KBA Criterion D3 (Site predictably produces propagules, larvae, or juveniles that maintain \>=10% of the global population size of a species).
 - All polygons, and point data with reported areas.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Point data buffered to reported area, `sitarea`.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### KBAs under criterion E
 
 ```{r kbas-E}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Key Biodiversity Areas under criterion E.
 
 kbasE = st_read("../../scratch/P_C1_KBAs_E_polys.shp",quiet=TRUE)
@@ -719,17 +799,23 @@ plot_data_sf(data=kbasE,
 - **Critical Habitat type**: Potential
 - **IFC PS6 Criteria triggered**: C1 (Critically Endangered and Endangered Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion E (Site has a level of irreplaceability of \>=0.90 (on a 0–1 scale), measured by quantitative spatial analysis, and is characterised by the regular presence of species with \>=10 reproductive units known to occur (or \>= 5 units for EN or CR species)) align with threshold GN72(a) and GN72(c) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019].
+
+#### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
 - Sites designated under KBA Criterion E (Site has a level of irreplaceability of \>=0.90 (on a 0–1 scale), measured by quantitative spatial analysis, and is characterised by the regular presence of species with \>=10 reproductive units known to occur (or \>= 5 units for EN or CR species)).
 - All polygons, and point data with reported areas.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Point data buffered to reported area, `sitarea`.
 - Data are unioned to remove overlap (see @sec-union).
+
+{{< pagebreak >}}
 
 ## Important Bird and Biodiversity Areas (IBAs) {#sec-ibas}
 
@@ -749,16 +835,14 @@ iba_sql = paste0("select * from \"",iba_layer,"\" limit 1")
 
 - **Data type**: Point and polygon
 - **Number of records**: `r nrow(iba_pts)` (point) and `r nrow(iba_polys)` (polygon)
+- **Original CRS**: `r st_crs(st_read("../../raw_data/IBAsGlobal_2023_September_02/IBAsGlobal_2023_September_POL_02.shp",quiet=TRUE,query=iba_sql))$input`
 - **Area (polygons - reported)**: `r sum(iba_polys$GISArea,na.rm=TRUE) %>% units::set_units(ha) %>% units::set_units(km2) %>% as.numeric()` km^2^
 - **Area (point - reported)**: `r sum(as.numeric(iba_pts$sitarea),na.rm=TRUE) %>% units::set_units(ha) %>% units::set_units(km2) %>% as.numeric()` km^2^
-- **Original CRS**: `r st_crs(st_read("../../raw_data/IBAsGlobal_2023_September_02/IBAsGlobal_2023_September_POL_02.shp",quiet=TRUE,query=iba_sql))$input`
-- **Source**: @birdlifeinternationalDigitalBoundariesImportant2023
+- **Source**: BirdLife International 2023[@birdlifeinternationalDigitalBoundariesImportant2023]
 
 ### IBAs under criterion A1
 
 ```{r ibas-A1}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Important Bird and Biodiversity Areas under criterion A1.
 
 ibasA1 = st_read("../../scratch/L_C1_IBAs_A1_polys.shp",quiet=TRUE) |>
@@ -781,22 +865,26 @@ ibasA1_area = filter(area_lookup,Feature==ibasA1$Feature)$Area_polys_sqkm
 - **Critical Habitat type**: Likely
 - **IFC PS6 Criteria triggered**: C1 (Critically Endangered and Endangered Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
+
+#### How the data are filtered{.unnumbered}
 
 - Sites designated under IBA Criterion A1 (The site is known or thought regularly to hold significant numbers of a globally threatened species).
 - All polygons, and point data with reported areas.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Point data buffered to reported area, `SitArea`.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### IBAs under criterion A2
 
 ```{r ibas-A2}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Important Bird and Biodiversity Areas under criterion A2.
 
 ibasA2 = st_read("../../scratch/P_C2_IBAs_A2_polys.shp",quiet=TRUE)
@@ -821,22 +909,26 @@ plot_data_sf(data=ibasA2,
 - **Critical Habitat type**: Potential
 - **IFC PS6 Criteria triggered**: C2 (Endemic and Restricted-range Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
+
+#### How the data are filtered{.unnumbered}
 
 - Sites designated under IBA Criterion A2 (The site is known or thought to hold a significant population of at least two range-restricted species).
 - All polygons, and point data with reported areas.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Point data buffered to reported area, `SitArea`.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### IBAs under criterion A3
 
 ```{r ibas-A3}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Important Bird and Biodiversity Areas under criterion A3.
 
 ibasA3 = st_read("../../scratch/P_C4_IBAs_A3_polys.shp",quiet=TRUE)
@@ -861,22 +953,26 @@ plot_data_sf(data=ibasA3,
 - **Critical Habitat type**: Potential
 - **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
+
+#### How the data are filtered{.unnumbered}
 
 - Sites designated under IBA Criterion A3 (The site is known or thought to hold a significant component of the group of species whose distributions are largely or wholly confined to one biome-realm).
 - All polygons, and point data with reported areas.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Point data buffered to reported area, `SitArea`.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### IBAs under criterion A4
 
 ```{r ibas-A4}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Important Bird and Biodiversity Areas under criterion A4.
 
 ibasA4 = st_read("../../scratch/L_C3_IBAs_A4_polys.shp",quiet=TRUE)
@@ -901,22 +997,26 @@ plot_data_sf(data=ibasA4,
 - **Critical Habitat type**: Likely
 - **IFC PS6 Criteria triggered**: C3 (Migratory and Congregatory Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
+
+#### How the data are filtered{.unnumbered}
 
 - Sites designated under IBA Criterion A4 (The site is known or thought to hold congregations of >=1% of the global population of one or more species on a regular or predictable basis).
 - All polygons, and point data with reported areas.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Point data buffered to reported area, `SitArea`.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### IBAs under criterion B1b
 
 ```{r ibas-B1b}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Important Bird and Biodiversity Areas under criterion B1b.
 
 ibasB1b = st_read("../../scratch/P_C1_IBAs_B1b_polys.shp",quiet=TRUE)
@@ -941,16 +1041,22 @@ plot_data_sf(data=ibasB1b,
 - **Critical Habitat type**: Potential
 - **IFC PS6 Criteria triggered**: C1 (Critically Endangered and Endangered Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
+
+#### How the data are filtered{.unnumbered}
 
 - Sites designated under IBA Criterion B1b (The site is one of the ‘n’ most important in a country for a species with an unfavourable conservation status in the region, and for which the site-protection approach is thought to be appropriate).
 - All polygons, and point data with reported areas.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Point data buffered to reported area, `SitArea`.
 - Data are unioned to remove overlap (see @sec-union).
+
+{{< pagebreak >}}
 
 ## Important Marine Mammal Sites (IMMAs) {#sec-immas}
 
@@ -967,13 +1073,11 @@ rm(imma_kml)
 - **Number of records**: `r nrow(imma)`
 - **Original CRS**: `r st_crs(imma)$input`
 - **Area - reported**: `r sum(imma$Area.Squar)` km^2^
-- **Source**: @IMMA2020
+- **Source**: IUCN-MMPATF 2023[@IMMA2023]
 
 ### IMMAs under criterion A
 
 ```{r imma-A}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Important Marine Mammal Areas under criterion A.
 
 immaA = st_read("../../scratch/P_C1_IMMAs_A_polys.shp",quiet=TRUE)
@@ -998,20 +1102,30 @@ plot_data_sf(data=immaA,
 - **Critical Habitat type**: Potential
 - **IFC PS6 Criteria triggered**: C1 (Critically Endangered and Endangered Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-- Sites designated under IMMA Criterion A (Species or Population Vulnerability).
+An Important Marine Mammal Area (IMMA) is *"a discrete portion of habitat, important for one or more marine mammal species, that has the potential to be delineated and managed for conservation"*[@iucnmarinemammalprotectedareastaskforceIMMAHandbookVersion2024]. IMMAs are identified through a science-based, expert-led three-stage process:
 
-#### How the data are processed
+1. Nomination of preliminary Areas of Interest (pAoI)
+2. Workshop to develop "candidate IMMAs"
+3. Independent review and IMMA Status Qualification
+
+We only consider confirmed IMMAs. Sites designated under IMMA Criterion A (Species or Population Vulnerability) align with GN72(b) and GN72(c) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019] as they are *"Areas containing habitat important for the survival and recovery of threatened species"*, where *"threatened species"* refers to marine mammal species, subspecies or subpopulations classified as CR, EN or VU[@iucnmarinemammalprotectedareastaskforceIMMAHandbookVersion2024].
+
+#### How the data are filtered{.unnumbered}
+
+Sites designated under IMMA Criterion A (Species or Population Vulnerability).
+
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### IMMAs under criterion B1
 
 ```{r imma-B1}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Important Marine Mammal Areas under criterion B1.
 
 immaB1 = st_read("../../scratch/P_C2_IMMAs_B1_polys.shp",quiet=TRUE)
@@ -1036,20 +1150,30 @@ plot_data_sf(data=immaB1,
 - **Critical Habitat type**: Potential
 - **IFC PS6 Criteria triggered**: C2 (Endemic and Restricted-range Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-- Sites designated under IMMA Criterion B1 (Small and Resident Populations).
+An Important Marine Mammal Area (IMMA) is *"a discrete portion of habitat, important for one or more marine mammal species, that has the potential to be delineated and managed for conservation"*[@iucnmarinemammalprotectedareastaskforceIMMAHandbookVersion2024]. IMMAs are identified through a science-based, expert-led three-stage process:
 
-#### How the data are processed
+1. Nomination of preliminary Areas of Interest (pAoI)
+2. Workshop to develop "candidate IMMAs"
+3. Independent review and IMMA Status Qualification
+
+We only consider confirmed IMMAs. Sites designated under IMMA Criterion B1 (Small and Resident Populations) align with GN75(a) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019] as they are *"Areas supporting at least one resident population, containing an important proportion of that species or population, that are occupied consistently"*[@iucnmarinemammalprotectedareastaskforceIMMAHandbookVersion2024]. There is no definition as to what areas are considered small (cf. GN74 defining restricted-range species in marine systems as provisionally those with an extent of occupancy (EOO) of \<=100,000 km^2^), rather the size is assessed in the context of the global distribution and abundance of the species.
+
+#### How the data are filtered{.unnumbered}
+
+Sites designated under IMMA Criterion B1 (Small and Resident Populations).
+
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### IMMAs under criterion B2
 
 ```{r imma-B2}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Important Marine Mammal Areas under criterion B2.
 
 immaB2 = st_read("../../scratch/L_C3_IMMAs_B2_polys.shp",quiet=TRUE)
@@ -1074,20 +1198,30 @@ plot_data_sf(data=immaB2,
 - **Critical Habitat type**: Likely
 - **IFC PS6 Criteria triggered**: C3 (Migratory and Congregatory Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-- Sites designated under IMMA Criterion B2 (Aggregations).
+An Important Marine Mammal Area (IMMA) is *"a discrete portion of habitat, important for one or more marine mammal species, that has the potential to be delineated and managed for conservation"*[@iucnmarinemammalprotectedareastaskforceIMMAHandbookVersion2024]. IMMAs are identified through a science-based, expert-led three-stage process:
 
-#### How the data are processed
+1. Nomination of preliminary Areas of Interest (pAoI)
+2. Workshop to develop "candidate IMMAs"
+3. Independent review and IMMA Status Qualification
+
+We only consider confirmed IMMAs. Sites designated under IMMA Criterion B2 (Aggregations) directly align with GN78(a) and GN78(b) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019] as they are *"Areas with underlying qualities that support important concentrations of a species or population"*[@iucnmarinemammalprotectedareastaskforceIMMAHandbookVersion2024].
+
+#### How the data are filtered{.unnumbered}
+
+Sites designated under IMMA Criterion B2 (Aggregations).
+
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### IMMAs under criteria C1, C2, and C3
 
 ```{r imma-C}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Important Marine Mammal Areas under criterion C.
 
 immaC = st_read("../../scratch/P_C3_IMMAs_C1_C2_C3_polys.shp",quiet=TRUE)
@@ -1112,23 +1246,33 @@ plot_data_sf(data=immaC,
 - **Critical Habitat type**: Potential
 - **IFC PS6 Criteria triggered**: C3 (Migratory and Congregatory Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+An Important Marine Mammal Area (IMMA) is *"a discrete portion of habitat, important for one or more marine mammal species, that has the potential to be delineated and managed for conservation"*[@iucnmarinemammalprotectedareastaskforceIMMAHandbookVersion2024]. IMMAs are identified through a science-based, expert-led three-stage process:
+
+1. Nomination of preliminary Areas of Interest (pAoI)
+2. Workshop to develop "candidate IMMAs"
+3. Independent review and IMMA Status Qualification
+
+We only consider confirmed IMMAs. Sites designated under IMMA Criteria C1 (Reproductive Areas), IMMA C2 (Feeding Areas), and IMMA C3 (Migration Routes) align with GN78(a) and GN78(b) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019] as they are *"Areas that are important for a species or population to mate, give birth, and/or care for young until weaning"*[@iucnmarinemammalprotectedareastaskforceIMMAHandbookVersion2024].
+
+#### How the data are filtered{.unnumbered}
 
 - Sites designated under:
   -   IMMA Criteria C1 (Reproductive Areas);
   -   IMMA C2 (Feeding Areas); and
   -   IMMA C3 (Migration Routes).
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### IMMAs under criterion D1
 
 ```{r imma-D1}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Important Marine Mammal Areas under criterion D1.
 
 immaD1 = st_read("../../scratch/P_C2_C4_IMMAs_D1_polys.shp",quiet=TRUE)
@@ -1155,20 +1299,30 @@ plot_data_sf(data=immaD1,
   - C2 (Endemic and Restricted-range Species)
   - C4 (Highly Threatened or Unique Ecosystems)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-- Sites designated under IMMA Criterion D1 (Distinctiveness).
+An Important Marine Mammal Area (IMMA) is *"a discrete portion of habitat, important for one or more marine mammal species, that has the potential to be delineated and managed for conservation"*[@iucnmarinemammalprotectedareastaskforceIMMAHandbookVersion2024]. IMMAs are identified through a science-based, expert-led three-stage process:
 
-#### How the data are processed
+1. Nomination of preliminary Areas of Interest (pAoI)
+2. Workshop to develop "candidate IMMAs"
+3. Independent review and IMMA Status Qualification
+
+We only consider confirmed IMMAs. Sites designated under IMMA Criterion D1 (Distinctiveness) align with GN75(a) and GN80(b) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019] as they are *"Areas that sustain populations with important genetic, behavioural or ecologically distinctive characteristics"*[@iucnmarinemammalprotectedareastaskforceIMMAHandbookVersion2024]: GN75(a) as these sites require some form of *"geographic isolation"* and GN80(a) as example characteristics of mammal populations include *"rare or unusual behaviour or ecological linkages"*.
+
+#### How the data are filtered{.unnumbered}
+
+Sites designated under IMMA Criterion D1 (Distinctiveness).
+
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### IMMAs under criterion D2
 
 ```{r imma-D2}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Important Marine Mammal Areas under criterion D2.
 
 immaD2 = st_read("../../scratch/P_C4_IMMAs_D2_polys.shp",quiet=TRUE)
@@ -1193,20 +1347,30 @@ plot_data_sf(data=immaD2,
 - **Critical Habitat type**: Potential
 - **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-- Sites designated under IMMA Criterion D2 (Diversity).
+An Important Marine Mammal Area (IMMA) is *"a discrete portion of habitat, important for one or more marine mammal species, that has the potential to be delineated and managed for conservation"*[@iucnmarinemammalprotectedareastaskforceIMMAHandbookVersion2024]. IMMAs are identified through a science-based, expert-led three-stage process:
 
-#### How the data are processed
+1. Nomination of preliminary Areas of Interest (pAoI)
+2. Workshop to develop "candidate IMMAs"
+3. Independent review and IMMA Status Qualification
+
+We only consider confirmed IMMAs. Sites designated under IMMA Criterion D1 (Diversity) align with GN80(b) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019] as they are *"Areas containing habitat that supports an important diversity of marine mammal species"*[@iucnmarinemammalprotectedareastaskforceIMMAHandbookVersion2024].
+
+#### How the data are filtered{.unnumbered}
+
+Sites designated under IMMA Criterion D2 (Diversity).
+
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ## Intact Forest Landscapes {#sec-ifls}
 
 ```{r ifl}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Intact Forest Landscapes.
 
 ifl = st_read("../../scratch/L_C4_Intact_Forest_Landscapes_polys.shp",quiet=TRUE) |>
@@ -1229,28 +1393,32 @@ ifl_sql = paste0("select * from \"",ifl_layer,"\" limit 1")
 
 ```
 
--   **Number of records**: `r ifl_n`
--   **Area**: `r ifl_area` km^2^
--   **Original CRS**: `r st_crs(st_read("../../raw_data/IFL_2020/ifl_2020.shp",quiet=TRUE,query=ifl_sql))$input`
 -   **Data type**: Polygon
+-   **Number of records**: `r ifl_n`
+-   **Original CRS**: `r st_crs(st_read("../../raw_data/IFL_2020/ifl_2020.shp",quiet=TRUE,query=ifl_sql))$input`
+-   **Area**: `r ifl_area` km^2^
 -   **Critical habitat type**: Likely
 -   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
--   **Source**: @potapovLastFrontiersWilderness2017
+-   **Source**: Potapov *et al.* 2017[@potapovLastFrontiersWilderness2017]
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-- No filtering of data from source.
+Despite being aligned with IFC PS6 criteria, Intact Forest Landscapes (IFLs) were initially excluded by Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018] on account of their spatial extent. However, on reassessment IFLs are no larger in spatial extent than other included datasets: they comprise `r label_percent(accuracy=0.01)(feat_areas[feat_areas$feature=="L_IFL","pct"][[1]])` of Critical Habitat; IBAs under criteria A1 and A4, neither of which were excluded, comprise `r label_percent(accuracy=0.01)(feat_areas[feat_areas$feature=="L_IBAA1","pct"][[1]])` and `r label_percent(accuracy=0.01)(feat_areas[feat_areas$feature=="L_IBAA4","pct"][[1]])`. IFLs constitute 20% of all "forest zones" -- areas with tree canopy cover of \>20% -- and are defined as *"seamless mosaics of forests and associated natural treeless ecosystems that exhibit no remotely detected signs of human activity or habitat fragmentation and are large enough to maintain all native biological diversity, including viable populations of wide-ranging species"*[@potapovLastFrontiersWilderness2017]. Intactness correlates well with the full conservation value of forest landscapes[@luyssaertOldgrowthForestsGlobal2008;@balmfordEconomicReasonsConserving2002;@franklinPreservingBiodiversitySpecies1993]. For this reason, they are likely to be of high priority for conservation and therefore align directly with GN80(b).
 
-#### How the data are processed
+#### How the data are filtered{.unnumbered}
+
+No filtering of data from source.
+
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ## Irreplaceable protected areas {#sec-irrepl-pas}
 
 ```{r irrep-pas}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of irreplaceable protected areas.
 
 irrep_pas = st_read("../../scratch/L_C4_Irrep_PAs_polys.shp",quiet=TRUE)
@@ -1273,18 +1441,24 @@ plot_data_sf(data=irrep_pas,
 - **Number of records**: `r nrow(st_read("../../raw_data/Irreplaceable/irrep_pa_WDPA_poly_Nov2022.shp", quiet=TRUE))`
 - **Original CRS**: `r st_crs(st_read("../../raw_data/Irreplaceable/irrep_pa_WDPA_poly_Nov2022.shp", quiet=TRUE))$input`
 - **Area**: `r irrep_pas_area` km^2^
-- **Source**: @lesaoutProtectedAreasEffective2013
 - **Critical Habitat type**: Likely
 - **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+- **Source**: Le Saout *et al.* 2013[@lesaoutProtectedAreasEffective2013]
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-- No filtering of data from source.
+See Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. No change to data.
 
-#### How the data are processed
+#### How the data are filtered{.unnumbered}
+
+No filtering of data from source.
+
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Data are unioned to remove overlap (see @sec-union).
+
+{{< pagebreak >}}
 
 ## IUCN Red List of Threatened Species {#sec-redlist}
 
@@ -1306,71 +1480,24 @@ rl_full = st_read("rl_full.gpkg",quiet=TRUE)
 - **Data type**: Polygon (we exclude point data)
 - **Number of records**: `r nrow(st_read(rl_gdb,layer=rl_list,quiet=TRUE))`
 - **Original CRS**: `r st_crs(rl_full)$input`
-- **Source**: @iucnIUCNRedList2022
+- **Source**: IUCN 2024[@iucnIUCNRedList2024]
 - **Version**: `r str_match(rl_gdb, "RL_(.*?)_Species")[, 2]`
 
-#### How the data are filtered
+#### How the data are filtered{.unnumbered}
 
-- Critically Endangered, Endangered or Vulnerable species classified under Criterion D for CR or EN and D2 for VU.
+- Critically Endangered (CR), Endangered (EN) or Vulnerable (VU) species classified under Criterion D for CR or EN (Population size estimated to number fewer than 50(CR)/250(EN) mature individuals) and D2 for VU (Population with a very restricted area of occupancy (typically less than 20 km^2^) or number of locations (typically five or fewer) such that it is prone to the effects of human activities or stochastic events within a very short time period in an uncertain future, and is thus capable of becoming CR or even Extinct in a very short time period).
 - Exclude marine ranges (`biome_marine==false`).
 - Species in Family *Hominidae*.
 - Exclude *Extinct (post 1500)* or *Probably Extant* (deprecated category) ranges.
-- Ranges with areas >= three times the standard deviation of the data (see @fig-rl-sensitivity below). This exercise removes areas disproportionately large. Furthermore, some of the records removed include the northern white rhino, of which there is only one individual left, and the ivory-billed woodpecker, which is argued to be extinct.
+- Ranges with areas >= three times the standard deviation of the data (see Technical Validation in main text). This exercise removes areas disproportionately large. Furthermore, some of the records removed include the northern white rhino, of which there is only one individual left, and the ivory-billed woodpecker, which is argued to be extinct.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
-- Invalid S2 geometries (see @sec-s2) are made valid.
-
-```{r rl-sensitivity}
-#| fig-width: 8
-#| fig-height: 8
-#| fig-cap: Sensitivity analysis of IUCN Red List ranges. Plots show result of removing areas with 3x, 10x, 20x, 50x the standard deviation (SD) of the data. Each plot reports the SD, the number of records removed, and the percentage of the total area the data now represent.
-#| label: fig-rl-sensitivity
-
-rl_full = st_read("rl_full.gpkg",quiet=TRUE) |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=10000)
-
-plts = lapply(c(3,10,20,50), function(x){
-  plot_df = rl_full %>%
-    filter(units::drop_units(st_area(.)) < (x*sd(units::drop_units(st_area(.)))) + mean(units::drop_units(st_area(.))))
-  
-  area_diff_pct = (sum(units::drop_units(st_area(plot_df)))/sum(units::drop_units(st_area(rl_full))))*100
-  
-  area_diff_pct = signif(area_diff_pct,3)
-  
-  row_diff = nrow(rl_full)-nrow(plot_df)
-  
-  if(revCol){
-    rl_pal = rev(scico(palette=pal,n=5))
-  } else{
-    rl_pal = scico(palette=pal,n=5)
-  }
-  
-  ggplot() +
-    geom_sf(data=sphere, col=NA, fill=rl_pal[1]) +
-    geom_sf(data=wrld, col=NA, fill=rl_pal[2]) +
-    geom_sf(data=plot_df,aes(fill=category),alpha=0.85,col=NA) +
-    scale_fill_manual(values=rl_pal[3:5], name=NULL) +
-    cowplot::theme_map() +
-    labs(title=paste0("SD: ",x),
-         subtitle = paste0(area_diff_pct,"% of total area; ",row_diff," ranges missing of ",nrow(rl_full))) +
-    theme(legend.position="bottom",
-          legend.justification = "centre",
-          plot.title = element_text(hjust = 0.5),
-          plot.subtitle = element_text(hjust = 0.5))
-})
-
-cowplot::plot_grid(plotlist=plts,nrow=2,ncol=2)
-
-```
+Invalid S2 geometries (see @sec-s2) are made valid.
 
 ### Critically Endangered species under criterion D
 
 ```{r iucn-cr}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Critically Endangered species under criterion D.
 
 iucn_cr = st_read("../../scratch/L_C1_IUCN_CR_D_polys.shp",quiet=TRUE)
@@ -1394,20 +1521,24 @@ plot_data_sf(data=iucn_cr,
 - **Critical Habitat type**: Likely
 - **IFC PS6 Criteria triggered**: C1 (Critically Endangered or Endangered Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-- No further filtering of data.
+See Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
 
-#### How the data are processed
+#### How the data are filtered{.unnumbered}
+
+No further filtering of data.
+
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### Endangered species under criterion D
 
 ```{r iucn-en}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Endangered species under criterion D.
 
 iucn_en = st_read("../../scratch/L_C1_IUCN_EN_D_polys.shp",quiet=TRUE)
@@ -1431,20 +1562,24 @@ plot_data_sf(data=iucn_en,
 - **Critical Habitat type**: Likely
 - **IFC PS6 Criteria triggered**: C1 (Critically Endangered or Endangered Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-- No further filtering of data from source.
+See Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
 
-#### How the data are processed
+#### How the data are filtered{.unnumbered}
+
+No further filtering of data from source.
+
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### Vulnerable species under criterion D2
 
 ```{r iucn-vu}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Vulnerable species under criterion D2.
 
 iucn_vu = st_read("../../scratch/P_C1_IUCN_VU_D2_polys.shp",quiet=TRUE)
@@ -1468,20 +1603,24 @@ plot_data_sf(data=iucn_vu,
 - **Critical Habitat type**: Potential
 - **IFC PS6 Criteria triggered**: C1 (Critically Endangered or Endangered Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-- No further filtering of data.
+Species classified as VU under Criterion D2 represent a *"Population with a very restricted area of occupancy (typically less than 20 km^2^) or number of locations (typically five or fewer) such that it is prone to the effects of human activities or stochastic events within a very short time period in an uncertain future, and is thus capable of becoming CR or even Extinct in a very short time period"*. This aligns with GN72(b), although whether species classified in this manner also meet the thresholds of GN72(a), as required, is uncertain.
 
-#### How the data are processed
+#### How the data are filtered{.unnumbered}
+
+No further filtering of data.
+
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ### Great Apes species ranges
 
 ```{r iucn-apes}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: "Global distribution of Great Apes (inset: ranges in Central Africa and Southeast Asia)."
 
 iucn_apes = st_read("../../scratch/P_C1_IUCN_Great_Apes_polys.shp",quiet=TRUE)
@@ -1507,20 +1646,24 @@ plot_inset_sf(data=iucn_apes,
 - **Critical Habitat type**: Potential
 - **IFC PS6 Criteria triggered**: C1 (Critically Endangered or Endangered Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-- No further filtering of data.
+GN73 of GN2019 requests *"special consideration"* for great ape species. Any area with great apes present is likely to be treated as Critical Habitat but use of the IUCN Red List species ranges as a proxy for more accurate data from Ape Population Environments Surveys Portal (A.P.E.S.) means this feature does not *directly* align with GN73.
 
-#### How the data are processed
+#### How the data are filtered{.unnumbered}
+
+No further filtering of data.
+
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ## Mangroves {#sec-mangroves}
 
 ```{r mangroves}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of mangroves.
 #| cache: false
 
@@ -1536,15 +1679,19 @@ plot_rst(data=rast("../../scratch/L_C4_Mangrove.tif"),
 - **Original CRS**: `r st_crs(rast(paste0("../../raw_data/GMW_v3/gmw_v3_2020/",sample(list.files("../../raw_data/GMW_v3/gmw_v3_2020",pattern="^GMW"),size=1))))$input`
 - **Original resolution**: `r res(rast(paste0("../../raw_data/GMW_v3/gmw_v3_2020/",sample(list.files("../../raw_data/GMW_v3/gmw_v3_2020",pattern="^GMW"),size=1))))[1]`
 - **Extent**: `r st_bbox(rast(paste0("../../raw_data/GMW_v3/gmw_v3_2020/",list.files("../../raw_data/GMW_v3/gmw_v3_2020",pattern="agg.tif$"))))`
-- **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/L_C4_Mangrove.tif"), unit="km", byValue=T) |> filter(value==1) |> pull(area)`
-- **Source**: @buntingGlobalMangroveWatch2022
+- **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/L_C4_Mangrove.tif"), unit="km", byValue=T)[2,3]`
 - **Critical Habitat type**: Likely
 - **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+- **Source**: Bunting *et al.* 2022[@buntingGlobalMangroveWatch2022]
 
-#### How the data are processed
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
+
+#### How the data are processed{.unnumbered}
 
 - Raster tiles are mosaicked to a global extent.
-- Raster mosaic is then aggregated to a `r 1/120` resolution using the following function: `function(x,...){sum(x,na.rm=T)/length(x)}` that returns the percentage of cells identified as mangrove.
+- Raster mosaic is then aggregated to a 30 arcseconds resolution using the following function: `function(x,...){sum(x,na.rm=T)/length(x)}` that returns the percentage of cells identified as mangrove.
 - Resulting raster is then resampled to a template global raster.
 - Cells are then classified as a presence when the percentage is above a certain threshold (\>=50% in this case - see @fig-mangrove-sensitivity for a sensitivity analysis of this).
 
@@ -1556,19 +1703,18 @@ plot_rst(data=rast("../../scratch/L_C4_Mangrove.tif"),
 #| cache: false
 
 plot_rst_sensitivity(data_WGS=rast("../../raw_data/GMW_v3/gmw_v3_2020/mangrove_mosaic_agg.tif"),
-             wrld=st_transform(wrld,4326),
-             bkg=sphere,
+             wrld=wrld,
              focus_ext=ext(c(-16.717, -13.634, 10.917, 12.683)),
              palette=pal,
              revCol=revCol)
 
 ```
 
+{{< pagebreak >}}
+
 ## Saltmarsh {#sec-saltmarsh}
 
 ```{r saltmarsh}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of saltmarshes.
 
 saltmarsh = st_read("../../scratch/L_C4_Saltmarsh_polys.shp",quiet=TRUE) |>
@@ -1593,18 +1739,24 @@ saltmarsh_pols_n = nrow(query_unepwcmc_nogeo(dataset = "HabitatsAndBiotopes/Glob
 - **Number of records**: `r saltmarsh_pts_n + saltmarsh_pols_n`
 - **Original CRS**: WGS 84
 - **Area (polygons)**: `r saltmarsh_area` km^2^
-- **Source**: @mcowenGlobalMapSaltmarshes2017
 - **Critical Habitat type**: Likely
 - **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+- **Source**: Mcowen *et al.* 2017[@mcowenGlobalMapSaltmarshes2017]
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-- No filtering of data from source.
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. No change to data.
 
-#### How the data are processed
+#### How the data are filtered{.unnumbered}
+
+No filtering of data from source.
+
+#### How the data are processed{.unnumbered}
 
 - Invalid S2 geometries (see @sec-s2) are made valid.
 - Data are unioned to remove overlap (polygons) and duplicates (points) (see @sec-union).
+
+{{< pagebreak >}}
 
 ## Sea turtle nesting sites {#sec-turtles}
 
@@ -1617,13 +1769,11 @@ turtles = st_read("../../raw_data/obis_seamap_swot/obis_seamap_swot_5f7dd60721f1
 -   **Number of records**: `r nrow(turtles)`
 -   **Original CRS**: `r st_crs(turtles)$input`
 -   **Data type**: Point
--   **Source**:
+-   **Source**: Halpin *et al.* 2009; Kot *et al.* 2020[@halpinOBISSEAMAPWorldData2009;@kotStateWorldsSea2020]
 
 ### All sea turtle species
 
 ```{r all-sea-turtles}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of all sea turtle species nesting sites.
 
 all_sea_turtles = st_read("../../scratch/P_C3_C4_Turtle_all_pts.shp",quiet=TRUE) |>
@@ -1644,19 +1794,23 @@ plot_data_sf(data=all_sea_turtles,
     - C4 (Highly Threatened or Unique Ecosystems)
 -   **Source**:
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
--   No filtering of data from source.
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
 
-#### How the data are processed
+#### How the data are filtered{.unnumbered}
 
--   Data are unioned to remove duplicates (see @sec-union).
+No filtering of data from source.
+
+#### How the data are processed{.unnumbered}
+
+Data are unioned to remove duplicates (see @sec-union).
+
+{{< pagebreak >}}
 
 ### Critically Endangered and Endangered sea turtle species
 
 ```{r cren-sea-turtles}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of Critically Endangered or Endangered sea turtle species nesting sites.
 
 CREN_sea_turtles = st_read("../../scratch/L_C1_Turtle_CREN_pts.shp",quiet=TRUE) |>
@@ -1674,19 +1828,23 @@ plot_data_sf(data=CREN_sea_turtles,
 -   **Critical habitat type**: Likely
 -   **IFC PS6 criteria triggered**: C1 (Critically Endangered and Endangered Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
--   Records identified as belonging to Critically Endangered or Endangered sea turtles: Green Sea Turtle, Hawksbill Sea Turtle, and Kemp's Ridley.
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
 
-#### How the data are processed
+#### How the data are filtered{.unnumbered}
 
--   Data are unioned to remove duplicates (see @sec-union).
+Records identified as belonging to Critically Endangered or Endangered sea turtles: Green Sea Turtle, Hawksbill Sea Turtle, and Kemp's Ridley.
+
+#### How the data are processed{.unnumbered}
+
+Data are unioned to remove duplicates (see @sec-union).
+
+{{< pagebreak >}}
 
 ## Seagrass beds {#sec-seagrass}
 
 ```{r seagrass}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of seagrasses.
 
 seagrass = st_read("../../scratch/L_C4_Seagrass_polys.shp",quiet=TRUE) |>
@@ -1707,28 +1865,32 @@ seagrass_pols_n = nrow(query_unepwcmc_nogeo(dataset = "HabitatsAndBiotopes/Globa
 
 ```
 
--   **Number of records**: `r seagrass_pts_n + seagrass_pols_n`
--   **Area (polygons)**: `r seagrass_area` km^2^
--   **Original CRS**: WGS84
 -   **Data type**: Point and polygon
+-   **Number of records**: `r seagrass_pts_n + seagrass_pols_n`
+-   **Original CRS**: WGS84
+-   **Area (polygons)**: `r seagrass_area` km^2^
 -   **Critical habitat type**: Likely
 -   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
--   **Source**:
+-   **Source**: UNEP-WCMC 2005[@unep-wcmcGlobalDistributionSeagrasses2005]
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
--   No filtering of data from source.
+See Martin *et al.* 2015[@martinGlobalMapAid2015]. No change to data.
 
-#### How the data are processed
+#### How the data are filtered{.unnumbered}
+
+No filtering of data from source.
+
+#### How the data are processed{.unnumbered}
 
 -   Invalid S2 geometries (see @sec-s2) are made valid.
 -   Data are unioned to remove overlap (polygons) and duplicates (points) (see @sec-union).
 
+{{< pagebreak >}}
+
 ## Seamounts {#sec-seamounts}
 
 ```{r seamounts}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of seamounts.
 
 seamounts = st_read("../../scratch/P_C4_Seamounts_pts.shp",quiet=TRUE) |>
@@ -1741,27 +1903,31 @@ plot_data_sf(data=seamounts,
              revCol=revCol)
 ```
 
+-   **Data type**: Point
 -   **Number of records**: `r nrow(query_unepwcmc_nogeo(dataset = "Hosted/ZSL_ModelledSeamountsKnolls2011", feature_layer = 2))`
 -   **Original CRS**: WGS 84
--   **Data type**: Point
 -   **Critical habitat type**: Potential
 -   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
--   **Source**:
+-   **Source**: Yesson *et al.* 2011[@yessonGlobalDistributionSeamounts2011]
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
--   No filtering of data from source.
+See Martin *et al.* 2015[@martinGlobalMapAid2015]. No change to data.
 
-#### How the data are processed
+#### How the data are filtered{.unnumbered}
+
+No filtering of data from source.
+
+#### How the data are processed{.unnumbered}
 
 -   Invalid S2 geometries (see @sec-s2) are made valid.
 -   Data are unioned to remove duplicates (see @sec-union).
 
+{{< pagebreak >}}
+
 ## Tiger Conservation Landscapes {#sec-tigers}
 
 ```{r tigers}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: "Global distribution of Tiger Conservation Landscapes (inset: South Asia)."
 
 tigers = st_read("../../scratch/L_C1_Tiger_polys.shp",quiet=TRUE)
@@ -1782,27 +1948,31 @@ plot_inset_sf(data=tigers,
              inset_width=0.3,inset_height=0.3)
 ```
 
+-   **Data type**: Polygon
 -   **Number of records**: `r nrow(st_read("../../raw_data/Tiger_Conservation_Landscapes/Tiger_Conservation_Landscapes.shp", quiet=TRUE) %>% filter(tx2_tcl==0))`
 -   **Original CRS**: `r st_crs(st_read("../../raw_data/Tiger_Conservation_Landscapes/Tiger_Conservation_Landscapes.shp",quiet=TRUE))$input`
--   **Data type**: Polygon
 -   **Critical habitat type**: Likely
 -   **IFC PS6 criteria triggered**: C1 (Critically Endangered and Endangered Species)
--   **Source**:
+-   **Source**: Sanderson *et al.* 2023[@sandersonRangewideTrendsTiger2023]
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
--   Current tiger habitat only: `tx2_tcl==0`.
+See Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
 
-#### How the data are processed
+#### How the data are filtered{.unnumbered}
+
+Current tiger habitat only: `tx2_tcl==0`.
+
+#### How the data are processed{.unnumbered}
 
 -   Invalid S2 geometries (see @sec-s2) are made valid.
 -   Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}
+
 ## Tropical dry forest {#sec-tropical-dry}
 
 ```{r tropical-dry-forest}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of tropical dry forests.
 #| cache: false
 
@@ -1818,18 +1988,25 @@ plot_rst(data=rast("../../scratch/P_C4_Tropical_Dry_Forest.tif"),
 - **Original CRS**: `r st_crs(rast("../../raw_data/WCMC_065_TropicalDryForests2006/Tropical_Dry_Forests/trop_dryf/tropdryf"))$input`
 - **Original resolution**: `r res(rast("../../raw_data/WCMC_065_TropicalDryForests2006/Tropical_Dry_Forests/trop_dryf/tropdryf"))[1]`
 - **Extent**: `r st_bbox(rast("../../raw_data/WCMC_065_TropicalDryForests2006/Tropical_Dry_Forests/trop_dryf/tropdryf"))`
-- **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/P_C4_Tropical_Dry_Forest.tif"), unit="km", byValue=T) |> filter(value==1) |> pull(area)`
+- **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/P_C4_Tropical_Dry_Forest.tif"), unit="km", byValue=T)[2,3]`
+- **Critical habitat type**: Potential
+- **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+- **Source**: Miles *et al.* 2006[@milesGlobalOverviewConservation2006]
 
-#### How the data are processed
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. No change to data.
+
+#### How the data are processed{.unnumbered}
 
 - Missing data are reclassified to 0.
-- Raster aggregated from native resolution to 30 arc seconds using the mode of neighbouring cells before resampling to template raster using nearest neighbour.
+- Raster aggregated from native resolution to 30 arcseconds using the mode of neighbouring cells before resampling to template raster using nearest neighbour.
+
+{{< pagebreak >}}
 
 ## Tropical moist forest {#sec-tropical-moist}
 
 ```{r tropical-moist-forest}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of moist tropical forests.
 #| cache: false
 
@@ -1846,17 +2023,18 @@ plot_rst(data=rast("../../scratch/L_C4_Tropical_Moist_Forest.tif"),
 - **Original resolution**: `r res(rast(paste0("../../raw_data/Tropical Moist Forest/",sample(list.files("../../raw_data/Tropical Moist Forest",pattern="^JRC_TMF"),size=1))))[1]`
 - **Extent**: `r st_bbox(rast(paste0("../../raw_data/Tropical Moist Forest/",list.files("../../raw_data/Tropical Moist Forest",pattern="agg.tif$"))))`
 - **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/L_C4_Tropical_Moist_Forest.tif"), unit="km", byValue=T) |> filter(value==1) |> pull(area)`
-- **Source**: 
+- **Critical habitat type**: Likely
+- **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+- **Source**: Vancutsem *et al.* 2021[@vancutsemLongterm19902019Monitoring2021]
 
-
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 - Raster tiles are mosaicked to a global extent.
-- Raster mosaic is then aggregated to a `r 1/120` resolution using the following function: `function(x,...){sum((x == 10),na.rm = T)/length(x)}` that returns the percentage of cells equaling 10, "Undisturbed tropical moist forest".
+- Raster mosaic is then aggregated to a 30 arcseconds resolution using the following function: `function(x,...){sum((x == 10),na.rm = T)/length(x)}` that returns the percentage of cells equaling 10, "Undisturbed tropical moist forest".
 - Resulting raster is then resampled to a template global raster.
 - Cells are then classified as a presence when the percentage is above a certain threshold (\>=50% in this case - see @fig-tmf-sensitivity for a sensitivity analysis of this).
 
-```{r}
+```{r tmf-sensitivity}
 #| fig-width: 5
 #| fig-height: 5
 #| fig-cap: Sensitivity analysis of % presence cutoff values.
@@ -1864,52 +2042,55 @@ plot_rst(data=rast("../../scratch/L_C4_Tropical_Moist_Forest.tif"),
 #| cache: false
 
 plot_rst_sensitivity(data_WGS=rast("../../raw_data/Tropical Moist Forest/tmf_mosaic_agg.tif"),
-             wrld=st_transform(wrld,4326),
-             bkg=sphere,
+             wrld=wrld,
              focus_ext=ext(c(-63.0, -60.0, -5.0, -2.0)),
              palette=pal,
              revCol=revCol)
 
 ```
 
+{{< pagebreak >}}
+
 ## Tropical montane cloud forests {#sec-tropical-cloud}
 
 ```{r cloud-forests}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of tropical montane cloud forests.
+#| cache: false
 
-cloud_forests = st_read("../../scratch/P_C4_Cloud_Forest_pts.shp",quiet=TRUE) |>
-  st_transform("EPSG:8857")
-
-plot_data_sf(data=cloud_forests,
-             wrld=wrld,
-             bkg=sphere,
-             palette=pal,
-             revCol=revCol)
+plot_rst(data=rast("../../scratch/L_C4_Cloud_Forest.tif"),
+         wrld=wrld,
+         bkg=sphere,
+         palette=pal,
+         revCol=revCol)
 
 ```
 
--   **Number of records**: `r nrow(query_unepwcmc_nogeo(dataset="Global_Distribution_of_Tropical_Montane_Cloud_Forests"))`
--   **Original CRS**: WGS 84
--   **Data type**: Point
--   **Source**: 
--   **Critical habitat type**: Potential
--   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+- **Data type**: Raster
+- **Original CRS**: `r st_crs(rast("../../raw_data/tcf_ensemble_mn_sd_2001-2018_v16/tcf/tcf_ensemble_mn_2018_v16.tif"))$input`
+- **Original resolution**: `r res(rast("../../raw_data/tcf_ensemble_mn_sd_2001-2018_v16/tcf/tcf_ensemble_mn_2018_v16.tif"))[1]`
+- **Extent**: `r st_bbox(rast("../../raw_data/tcf_ensemble_mn_sd_2001-2018_v16/tcf/tcf_ensemble_mn_2018_v16.tif"))`
+- **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/L_C4_Cloud_Forest.tif"), unit="km", byValue=T)[2,3]`
+- **Critical habitat type**: Likely
+- **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
+- **Source**: Karger *et al.* 2021[@kargerLimitedProtectionOngoing2021]
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. New data source.
+
+#### How the data are filtered{.unnumbered}
 
 No filtering of data from source.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 Data are unioned to remove duplicates (see @sec-union).
+
+{{< pagebreak >}}
 
 ## Warm water coral reefs {#sec-warm-coral}
 
 ```{r warm-coral}
-#| fig-width: 5
-#| fig-height: 3
 #| fig-cap: Global distribution of warm water coral reefs.
 
 warm_coral = st_read("../../scratch/L_C4_C5_Warm_water_coral_polys.shp",quiet=TRUE) |>
@@ -1930,24 +2111,30 @@ warm_coral_pols_n = nrow(query_unepwcmc_nogeo(dataset = "HabitatsAndBiotopes/Glo
 
 ```
 
-- **Number of records**: `r warm_coral_pts_n + warm_coral_pols_n`
-- **Area (polygons)**: `r warm_coral_area`
-- **Original CRS**: WGS 84
 - **Data type**: Point and polygon
+- **Number of records**: `r warm_coral_pts_n + warm_coral_pols_n`
+- **Original CRS**: WGS 84
+- **Area (polygons)**: `r warm_coral_area`
 - **Critical habitat type**: Likely
 - **IFC PS6 criteria triggered**:
     - C4 (Highly Threatened or Unique Ecosystems)
     - C5 (Key Evolutionary Processes)
-- **Source**:
+- **Source**: UNEP-WCMC, WorldFish, World Resources Institute, and The Nature Conservancy 2010[@unep-wcmcGlobalDistributionCoral2010]
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Martin *et al.* 2015[@martinGlobalMapAid2015]. No change to data.
+
+#### How the data are filtered{.unnumbered}
 
 No filtering of data from source.
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 -   Invalid S2 geometries (see @sec-s2) are made valid.
 -   Data are unioned to remove overlap (polygons) and duplicates (point) (see @sec-union).
+
+{{< pagebreak >}}
 
 ## World Database on Protected Areas (WDPA) {#sec-wdpa}
 
@@ -1958,13 +2145,13 @@ wdpa_pts = query_unepwcmc_nogeo(dataset = "ProtectedSites/The_World_Database_of_
 
 ```
 
--   **Version**: October 2024
+-   **Data type**: Point and polygon
 -   **Number of records**: `r nrow(wdpa_polys) + nrow(wdpa_pts)`
+-   **Original CRS**: WGS 84
 -   **Area (polygons - reported)**: `r sum(wdpa_polys$rep_area,na.rm=TRUE)` km^2^
 -   **Area (point - reported)**: `r sum(wdpa_pts$rep_area,na.rm=TRUE)` km^2^
--   **Original CRS**: WGS 84
--   **Data type**: Point and polygon
--   **Source**: @WDPA2023
+-   **Source**: UNEP-WCMC and IUCN 2024[@WDPA2024]
+-   **Version**: October 2024
 
 For all data sourced from the WDPA, point data were buffered to reported area, as recommended by the WDPA Manual v1.6.
 
@@ -1997,17 +2184,23 @@ plot_data_sf(data=ramsar,
 -   **Critical habitat type**: Likely
 -   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
+
+#### How the data are filtered{.unnumbered}
 
 -   Sites where Status is not "Proposed" or "Not Reported".
 -   Sites labelled as "Ramsar Site, Wetland of International Importance", with Designation Type "International".
 -   Point data with present, non-zero reported area (`REP_AREA > 0`).
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 -   Invalid S2 geometries (see @sec-s2) are made valid.
 -   Point data buffered to reported area, `REP_AREA`.
 -   Data are unioned to remove overlap (see @sec-union).
+
+{{< pagebreak >}}
 
 ### Ramsar sites under criterion 2
 
@@ -2037,18 +2230,24 @@ plot_data_sf(data=ramsar_ii,
 -   **Critical habitat type**: Likely
 -   **IFC PS6 criteria triggered**: C1 (Critically Endangered and Endangered Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
+
+#### How the data are filtered{.unnumbered}
 
 -   Sites where status is not "Proposed" or "Not Reported".
 -   Sites labelled as "Ramsar Site, Wetland of International Importance", with Designation Type "International"
 -   Sites designated under Ramsar Sites Criterion 2 (Sites supporting vulnerable, endangered, or critically endangered species or threatened ecological communities).
 -   All polygon data and point data with present, non-zero reported area (`REP_AREA > 0`).
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 -   Invalid S2 geometries (see @sec-s2) are made valid.
 -   Point data buffered to reported area, `REP_AREA`.
 -   Data are unioned to remove overlap (see @sec-union).
+
+{{< pagebreak >}}
 
 ### Ramsar sites under criteria 5 and 6
 
@@ -2078,7 +2277,11 @@ plot_data_sf(data=ramsar_v_vi,
 -   **Critical habitat type**: Likely
 -   **IFC PS6 criteria triggered**: C3 (Migratory and Congregatory Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
+
+#### How the data are filtered{.unnumbered}
 
 -   Sites where status is not "Proposed" or "Not Reported".
 -   Sites labelled as "Ramsar Site, Wetland of International Importance", with Designation Type "International"
@@ -2087,11 +2290,13 @@ plot_data_sf(data=ramsar_v_vi,
     -   Ramsar Sites Criteria 6 (Sites that regularly support 1% of the individuals in a population of one species or subspecies of waterbird).
 -   All polygon data and point data with present, non-zero reported area (`REP_AREA > 0`).
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 -   Invalid S2 geometries (see @sec-s2) are made valid.
 -   Point data buffered to reported area, `REP_AREA`.
 -   Data are unioned to remove overlap (see @sec-union).
+
+{{< pagebreak >}}
 
 ### Ramsar sites under criteria 1 and 3
 
@@ -2121,7 +2326,11 @@ plot_data_sf(data=ramsar_i_iii,
 -   **Critical habitat type**: Likely
 -   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
+
+#### How the data are filtered{.unnumbered}
 
 -   Sites where status is not "Proposed" or "Not Reported".
 -   Sites labelled as "Ramsar Site, Wetland of International Importance", with Designation Type "International"
@@ -2130,11 +2339,13 @@ plot_data_sf(data=ramsar_i_iii,
     -   Ramsar Sites Criteria 3 (Sites that support populations of plant and/or animal species important for maintaining the biological diversity of a particular biogeographic region).
 -   All polygon data and point data with present, non-zero reported area (`REP_AREA > 0`).
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 -   Invalid S2 geometries (see @sec-s2) are made valid.
 -   Point data buffered to reported area, `REP_AREA`.
 -   Data are unioned to remove overlap (see @sec-union).
+
+{{< pagebreak >}}
 
 ### Ramsar sites under criteria 4, 7, 8 and 9
 
@@ -2164,7 +2375,11 @@ plot_data_sf(data=ramsar_iv_vii_viii_ix,
 -   **Critical habitat type**: Potential
 -   **IFC PS6 criteria triggered**: C3 (Migratory and Congregatory Species)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
+
+#### How the data are filtered{.unnumbered}
 
 -   Sites where status is not "Proposed" or "Not Reported".
 -   Sites labelled as "Ramsar Site, Wetland of International Importance", with Designation Type "International".
@@ -2175,11 +2390,13 @@ plot_data_sf(data=ramsar_iv_vii_viii_ix,
     -   Ramsar Sites Criteria 9 (Sites that regularly support 1% of the individuals in a population of one species or subspecies of wetland-dependent nonavian animal species).
 -   All polygon data and point data with present, non-zero reported area (`REP_AREA > 0`).
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 -   Invalid S2 geometries (see @sec-s2) are made valid.
 -   Point data buffered to reported area, `REP_AREA`.
 -   Data are unioned to remove overlap (see @sec-union).
+
+{{< pagebreak >}}
 
 ### Protected areas under IUCN management categories I and II
 
@@ -2208,7 +2425,11 @@ iucn_i_ii_area = filter(area_lookup,Feature==iucn_i_ii$Feature)$Area_polys_sqkm
 -   **Critical habitat type**: Likely
 -   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
+
+#### How the data are filtered{.unnumbered}
 
 -   Sites where Status is not "Proposed" or "Not Reported".
 -   Sites where the reported IUCN Management Category is:
@@ -2216,11 +2437,13 @@ iucn_i_ii_area = filter(area_lookup,Feature==iucn_i_ii$Feature)$Area_polys_sqkm
     -   Ib (wilderness area); or
     -   II (national park).
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 -   Invalid S2 geometries (see @sec-s2) are made valid.
 -   Point data buffered to reported area, `REP_AREA`.
 -   Data are unioned to remove overlap (see @sec-union).
+
+{{< pagebreak >}}
 
 ### Natural and mixed World Heritage Sites
 
@@ -2250,14 +2473,19 @@ plot_data_sf(data=whs,
 -   **Critical habitat type**: Likely
 -   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
 
-#### How the data are filtered
+#### Justification and alignment with IFC PS6 criteria{.unnumbered}
+
+See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018]. Updated data.
+
+#### How the data are filtered{.unnumbered}
 
 -   Sites where Status is not "Proposed", "Established", or "Not Reported".
 -   Sites labelled as "World Heritage Site (natural or mixed)", with Designation Type "International".
 
-#### How the data are processed
+#### How the data are processed{.unnumbered}
 
 -   Invalid S2 geometries (see @sec-s2) are made valid.
 -   Point data buffered to reported area, `REP_AREA`.
 -   Data are unioned to remove overlap (see @sec-union).
 
+{{< pagebreak >}}

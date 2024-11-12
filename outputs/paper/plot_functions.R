@@ -9,7 +9,7 @@ plot_data_sf <- function(data,wrld,bkg,palette="acton",revCol=FALSE){
     ggplot(bkg) +
       geom_sf(col=NA,fill=pal[1]) +
       geom_sf(data=wrld, col=NA, fill=pal[2]) +
-      geom_sf(data=data, col=pal[3]) +
+      geom_sf(data=data, col=pal[3], size=0.25) +
       theme_map()
   }
   
@@ -30,23 +30,24 @@ plot_inset_sf <- function(data,wrld,bkg,palette="acton",revCol=FALSE,inset_x=0.5
     pal = scico(palette=palette,n=3)
   }
   
-  inset = ggplot(bkg) +
-    geom_sf(col=NA,fill=pal[1]) +
-    geom_sf(data=wrld, col=NA, fill=pal[2]) +
-    geom_sf(data=data,fill=pal[3],col=NA) +
-    geom_sf(data=st_as_sfc(st_bbox(data)),col=pal[3],fill=NA) +
-    theme_map() +
-    theme(panel.background = element_rect(colour="white"))
+  wrld = st_transform(wrld,4326)
+  data = st_transform(data,4326)
   
-  bkg = st_crop(bkg,data)
-  wrld = st_crop(wrld,data)
-    
+  focus_ext = ext(data)
+  
+  inset = ggplot(wrld) +
+    geom_sf(col=NA) +
+    geom_sf(data=st_as_sfc(st_bbox(focus_ext,crs=4326)),col="red",fill=NA) +
+    theme_map() +
+    theme(panel.background = element_rect(fill="gray",colour=NA))
+  
   if(st_geometry_type(data) %in% c("POINT","MULTIPOINT")){
-    main = ggplot(bkg) +
-      geom_sf(col=NA,fill=pal[1]) +
+    main = ggplot(wrld) +
       geom_sf(data=wrld, col=NA, fill=pal[2]) +
-      geom_sf(data=data, col=pal[3]) +
-      theme_map()
+      geom_sf(data=data, col=pal[3], size=0.25) +
+      theme_map() +
+      coord_sf(xlim = focus_ext[1:2], ylim = focus_ext[3:4], expand = FALSE) +
+      theme(panel.background=element_rect(fill=pal[1],colour=NA))
     
     ggdraw(main) +
       draw_plot(inset,x=inset_x,y=inset_y,width=inset_width,height=inset_height)
@@ -54,11 +55,12 @@ plot_inset_sf <- function(data,wrld,bkg,palette="acton",revCol=FALSE,inset_x=0.5
   }
   
   else if(st_geometry_type(data) %in% c("POLYGON","MULTIPOLYGON")){
-    main = ggplot(bkg) +
-      geom_sf(col=NA,fill=pal[1]) +
+    main = ggplot(wrld) +
       geom_sf(data=wrld, col=NA, fill=pal[2]) +
-      geom_sf(data=data, col=NA, fill=pal[3]) +
-      theme_map()
+      geom_sf(data=data, fill=pal[3],col=NA) +
+      theme_map()+
+      coord_sf(xlim = focus_ext[1:2], ylim = focus_ext[3:4], expand = FALSE) +
+      theme(panel.background=element_rect(fill=pal[1],colour=NA))
     
     ggdraw(main) +
       draw_plot(inset,x=inset_x,y=inset_y,width=inset_width,height=inset_height)
@@ -67,7 +69,7 @@ plot_inset_sf <- function(data,wrld,bkg,palette="acton",revCol=FALSE,inset_x=0.5
   
 }
 
-plot_rst_sensitivity <- function(data_WGS,wrld,bkg,focus_ext,palette="acton",revCol=FALSE){
+plot_rst_sensitivity <- function(data_WGS,wrld,focus_ext,palette="acton",revCol=FALSE){
   
   if(revCol){
     pal = rev(scico(palette=palette,n=3))
@@ -77,11 +79,16 @@ plot_rst_sensitivity <- function(data_WGS,wrld,bkg,focus_ext,palette="acton",rev
     dir=1
   }
   
+  wrld = st_transform(wrld,4326)
+  
+  inset_ext = focus_ext + 25
+  
   inset = ggplot(wrld) +
     geom_sf(col=NA) +
-    geom_sf(data=st_centroid(st_as_sfc(st_bbox(rast(ext=focus_ext)))),col="red") +
+    geom_sf(data=st_as_sfc(st_bbox(focus_ext,crs=4326)),col="red",fill=NA) +
     theme_map() +
-    theme(plot.background=element_rect(fill="white", colour=NA))
+    theme(panel.background = element_rect(fill="gray",colour=NA)) +
+    coord_sf(xlim = inset_ext[1:2], ylim = inset_ext[3:4], expand = FALSE)
   
   rst_agg = crop(data_WGS,focus_ext) |>
     as.data.frame(xy=TRUE) |>
@@ -89,17 +96,21 @@ plot_rst_sensitivity <- function(data_WGS,wrld,bkg,focus_ext,palette="acton",rev
     mutate(`>25%`=pct>0.25,`>50%`=pct>0.5,`>75%`=pct>0.75,`>90%`=pct>0.9) |>
     pivot_longer(4:7, names_to="Threshold",values_to="Presence")
   
-  main = ggplot(rst_agg, aes(x=x,y=y,fill=Presence)) +
-    geom_tile() +
+  main = ggplot() +
+    geom_sf(data=st_crop(gisco_get_coastallines(resolution="01"),st_bbox(extend(focus_ext,y=0.5))),col=NA,fill=pal[2]) +
+    geom_tile(data=filter(rst_agg,Presence), aes(x=x,y=y),fill=pal[3],col=NA) +
     facet_wrap(~Threshold) +
     scale_fill_scico_d(palette=palette, direction=dir) +
     theme_void() +
-    theme(legend.position="bottom")
+    theme(legend.position="bottom",
+          panel.background=element_rect(fill=pal[1], colour=NA)) +
+    coord_sf(xlim = focus_ext[1:2], ylim = focus_ext[3:4], expand = FALSE)
   
   ggdraw(main) +
     draw_plot(inset,scale=0.3)
   
 }
+
 
 plot_rst <- function(data,wrld,bkg,palette="acton",revCol=FALSE){
   
@@ -122,7 +133,7 @@ plot_rst <- function(data,wrld,bkg,palette="acton",revCol=FALSE){
   ggplot(bkg) +
     geom_sf(col=NA,fill=pal[1]) +
     geom_sf(data=wrld, col=NA, fill=pal[2]) +
-    geom_tile(data=rst_rpj, aes(x=x,y=y), fill=pal[3]) +
+    geom_tile(data=rst_rpj, aes(x=x,y=y), fill=pal[3], col=NA) +
     theme_map()
   
 }

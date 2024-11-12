@@ -1,4 +1,4 @@
-# Update to the global critical habitat screening layer
+# Update to the global Critical Habitat screening layer
 
 The process for compiling the complete Critical Habitat layers comprises three main steps, split across six separate scripts.
 
