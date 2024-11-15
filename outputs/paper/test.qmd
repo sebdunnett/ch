@@ -11,40 +11,23 @@ author:
 #| include: false
 
 if (!require("pacman")) install.packages("pacman")
-p_load(sf,scico,tidyverse,cowplot,terra,units,vapour,giscoR)
-terraOptions(progress=0)
+p_load(sf,scico,tidyverse,cowplot,terra,units,vapour,giscoR,kableExtra,scales)
 
-source("plot_functions.R")
-source("../../scripts_tools/0 spatial_processing_functions.R")
+ch_basic_files = list.files("..", pattern = "Basic_Critical_Habitat.*\\.tif$", full.names=TRUE)
+ch_basic_file = ch_basic_files[which.max(file.info(ch_basic_files)$ctime)]
 
-pal="fes"
-revCol=TRUE
+ch2024_30as = rast(ch_basic_file)
 
-options(scipen=999)
-
-knitr::knit_hooks$set(inline = function(x) {
-  if(!is.numeric(x)){x}
-  else{
-    prettyNum(signif(x,3), big.mark=",")
-    }
-  })
-
-sphere <- st_graticule(ndiscr = 10000, margin = 10e-6) %>%
-  st_transform(crs = st_crs("ESRI:54009")) %>%
-  st_convex_hull() %>%
-  summarise(geometry = st_union(geometry)) |>
-  st_buffer(1000) |> st_union() |> st_buffer(-1000) |>
-  st_transform("EPSG:8857")
-
-wrld = gisco_get_coastallines(resolution="03") |>
-  st_transform("EPSG:8857")
-
-raster_eq <- project(rast(res=1/12),"EPSG:8857",res=10000)
+ch2024_areas = expanse(ch2024_30as,unit="km",byValue=TRUE)[,2:3]
 
 ```
 
-## Testing
+### Coverage
 
-km^2^ x 10^6^
+Thoughts on this sentence? $>=$90
 
-km^2 x 10^6
+$\geq90$
+
+$\geq$ 90
+
+>=90

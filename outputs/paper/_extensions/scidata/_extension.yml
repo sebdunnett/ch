@@ -8,6 +8,13 @@ contributes:
       knitr:
         opts_chunk:
           echo: false
+          warning: false
+          message: false
+          cache: true
+        opts_knit: 
+          R.options:
+            digits: 4
+            knitr.digits.signif: true #true for signif(), false for round()
     pdf:
       documentclass: wlscirep
       colorlinks: true

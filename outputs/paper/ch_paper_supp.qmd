@@ -64,7 +64,7 @@ options(scipen=999)
 knitr::knit_hooks$set(inline = function(x) {
   if(!is.numeric(x)){x}
   else{
-    prettyNum(signif(x,3), big.mark=",")
+    prettyNum(signif(x,4), big.mark=",")
     }
   })
 
@@ -421,13 +421,13 @@ plot_data_sf(data=kbasA1ae,
 
 #### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criteria A1a (\>=0.5% of global population size and \>=5 reproductive units (RU) of a CR/EN species) and KBA Criteria A1e (Effectively the entire population size of a CR/EN species) align directly with thresholds GN72(a) and GN72(c) of GN2019 GN72[@internationalfinancecorporationInternationalFinanceCorporation2019].
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criteria A1a ($\geq$ 0.5% of global population size and $\geq$ 5 reproductive units (RU) of a CR/EN species) and KBA Criteria A1e (Effectively the entire population size of a CR/EN species) align directly with thresholds GN72(a) and GN72(c) of GN2019 GN72[@internationalfinancecorporationInternationalFinanceCorporation2019].
 
 #### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
 - Sites designated under:
-    - KBA Criteria A1a (\>=0.5% of global population size and \>=5 reproductive units (RU) of a CR/EN species); and
+    - KBA Criteria A1a ($\geq$ 0.5% of global population size and $\geq$ 5 reproductive units (RU) of a CR/EN species); and
     - KBA Criteria A1e (Effectively the entire population size of a CR/EN species).
 - All polygons, and point data with reported areas.
 
@@ -468,12 +468,12 @@ plot_data_sf(data=kbasA1b,
 
 #### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion A1b (\>=1.0% of global population size and \>=10 RU of a VU species) align with threshold GN72(b) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019] by representing globally important concentrations of IUCN Red-listed VU species.
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion A1b ($\geq$ 1.0% of global population size and $\geq$ 10 RU of a VU species) align with threshold GN72(b) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019] by representing globally important concentrations of IUCN Red-listed VU species.
 
 #### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
-- Sites designated under KBA Criterion A1b (\>=1.0% of global population size and \>=10 RU of a VU species).
+- Sites designated under KBA Criterion A1b ($\geq$ 1.0% of global population size and $\geq$ 10 RU of a VU species).
 - All polygons, and point data with reported areas.
 
 #### How the data are processed{.unnumbered}
@@ -525,12 +525,12 @@ plot_data_sf(data=kbasB1,
 
 #### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion B1 (Site regularly holds \>=10% of the global population size AND \>=10 reproductive units of a species) align directly with threshold GN75(a) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019].
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion B1 (Site regularly holds $\geq$ 10% of the global population size AND $\geq$ 10 reproductive units of a species) align directly with threshold GN75(a) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019].
 
 #### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
-- Sites designated under KBA Criterion B1 (Site regularly holds \>=10% of the global population size AND \>=10 reproductive units of a species).
+- Sites designated under KBA Criterion B1 (Site regularly holds $\geq$ 10% of the global population size AND $\geq$ 10 reproductive units of a species).
 - All polygons, and point data with reported areas.
 
 #### How the data are processed{.unnumbered}
@@ -570,12 +570,12 @@ plot_data_sf(data=kbasB4,
 
 #### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion B4 (Site holds \>=20% of the global extent of an ecosystem type) align with threshold GN80(a) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019]. The IUCN Red List of Ecosystems does not yet have full global coverage, but KBA Criterion B4 aligns by providing a higher threshold (\>=20%) than GN80(a) (\>=5%) to account for lack of threat classifications.
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion B4 (Site holds $\geq$ 20% of the global extent of an ecosystem type) align with threshold GN80(a) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019]. The IUCN Red List of Ecosystems does not yet have full global coverage, but KBA Criterion B4 aligns by providing a higher threshold ($\geq$ 20%) than GN80(a) ($\geq$ 5%) to account for lack of threat classifications.
 
 #### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
-- Sites designated under KBA Criterion B4 (Site holds \>=20% of the global extent of an ecosystem type).
+- Sites designated under KBA Criterion B4 (Site holds $\geq$ 20% of the global extent of an ecosystem type).
 - All polygons, and point data with reported areas.
 
 #### How the data are processed{.unnumbered}
@@ -621,12 +621,12 @@ plot_data_sf(data=kbasD1a,
 
 #### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion D1a (Site holds an aggregation representing \>=1% of the global population size of a species, over a season, and during one or more key stages of its life cycle) align directly with threshold GN78(a) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019].
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion D1a (Site holds an aggregation representing $\geq$ 1% of the global population size of a species, over a season, and during one or more key stages of its life cycle) align directly with threshold GN78(a) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019].
 
 #### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
-- Sites designated under KBA Criterion D1a (Site holds an aggregation representing \>=1% of the global population size of a species, over a season, and during one or more key stages of its life cycle).
+- Sites designated under KBA Criterion D1a (Site holds an aggregation representing $\geq$ 1% of the global population size of a species, over a season, and during one or more key stages of its life cycle).
 - All polygons, and point data with reported areas.
 
 #### How the data are processed{.unnumbered}
@@ -711,12 +711,12 @@ plot_data_sf(data=kbasD2,
 
 #### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion D2 (Site supports \>=10% of the global population size of one or more species during periods of environmental stress, for which historical evidence shows that it has served as a refugium in the past and for which there is evidence to suggest it would continue to do so in the foreseeable future) align directly with threshold GN78(b) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019].
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion D2 (Site supports $\geq$ 10% of the global population size of one or more species during periods of environmental stress, for which historical evidence shows that it has served as a refugium in the past and for which there is evidence to suggest it would continue to do so in the foreseeable future) align directly with threshold GN78(b) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019].
 
 #### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
-- Sites designated under KBA Criterion D2 (Site supports \>=10% of the global population size of one or more species during periods of environmental stress, for which historical evidence shows that it has served as a refugium in the past and for which there is evidence to suggest it would continue to do so in the foreseeable future).
+- Sites designated under KBA Criterion D2 (Site supports $\geq$ 10% of the global population size of one or more species during periods of environmental stress, for which historical evidence shows that it has served as a refugium in the past and for which there is evidence to suggest it would continue to do so in the foreseeable future).
 - All polygons, and point data with reported areas.
 
 #### How the data are processed{.unnumbered}
@@ -756,12 +756,12 @@ plot_data_sf(data=kbasD3,
 
 #### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion D3 (Site predictably produces propagules, larvae, or juveniles that maintain \>=10% of the global population size of a species) align with threshold GN78(a) and GN78(b) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019].
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion D3 (Site predictably produces propagules, larvae, or juveniles that maintain $\geq$ 10% of the global population size of a species) align with threshold GN78(a) and GN78(b) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019].
 
 #### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
-- Sites designated under KBA Criterion D3 (Site predictably produces propagules, larvae, or juveniles that maintain \>=10% of the global population size of a species).
+- Sites designated under KBA Criterion D3 (Site predictably produces propagules, larvae, or juveniles that maintain $\geq$ 10% of the global population size of a species).
 - All polygons, and point data with reported areas.
 
 #### How the data are processed{.unnumbered}
@@ -801,12 +801,12 @@ plot_data_sf(data=kbasE,
 
 #### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion E (Site has a level of irreplaceability of \>=0.90 (on a 0–1 scale), measured by quantitative spatial analysis, and is characterised by the regular presence of species with \>=10 reproductive units known to occur (or \>= 5 units for EN or CR species)) align with threshold GN72(a) and GN72(c) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019].
+Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Critical Habitat criteria thresholds with the since published *Global Standard for the Identification of Key Biodiversity Areas*[@internationalfinancecorporationInternationalFinanceCorporation2019;@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019]. Building on the justifications set out in Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018], KBAs designated under KBA Criterion E (Site has a level of irreplaceability of $\geq$ 0.90 (on a 0–1 scale), measured by quantitative spatial analysis, and is characterised by the regular presence of species with $\geq$ 10 reproductive units known to occur (or $\geq$ 5 units for EN or CR species)) align with threshold GN72(a) and GN72(c) of GN2019[@internationalfinancecorporationInternationalFinanceCorporation2019].
 
 #### How the data are filtered{.unnumbered}
 
 - Sites with `KbaStatus = confirmed`.
-- Sites designated under KBA Criterion E (Site has a level of irreplaceability of \>=0.90 (on a 0–1 scale), measured by quantitative spatial analysis, and is characterised by the regular presence of species with \>=10 reproductive units known to occur (or \>= 5 units for EN or CR species)).
+- Sites designated under KBA Criterion E (Site has a level of irreplaceability of $\geq$ 0.90 (on a 0–1 scale), measured by quantitative spatial analysis, and is characterised by the regular presence of species with $\geq$ 10 reproductive units known to occur (or $\geq$ 5 units for EN or CR species)).
 - All polygons, and point data with reported areas.
 
 #### How the data are processed{.unnumbered}
@@ -1003,7 +1003,7 @@ See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@b
 
 #### How the data are filtered{.unnumbered}
 
-- Sites designated under IBA Criterion A4 (The site is known or thought to hold congregations of >=1% of the global population of one or more species on a regular or predictable basis).
+- Sites designated under IBA Criterion A4 (The site is known or thought to hold congregations of $\geq$ 1% of the global population of one or more species on a regular or predictable basis).
 - All polygons, and point data with reported areas.
 
 #### How the data are processed{.unnumbered}
@@ -1403,7 +1403,7 @@ ifl_sql = paste0("select * from \"",ifl_layer,"\" limit 1")
 
 #### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-Despite being aligned with IFC PS6 criteria, Intact Forest Landscapes (IFLs) were initially excluded by Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018] on account of their spatial extent. However, on reassessment IFLs are no larger in spatial extent than other included datasets: they comprise `r label_percent(accuracy=0.01)(feat_areas[feat_areas$feature=="L_IFL","pct"][[1]])` of Critical Habitat; IBAs under criteria A1 and A4, neither of which were excluded, comprise `r label_percent(accuracy=0.01)(feat_areas[feat_areas$feature=="L_IBAA1","pct"][[1]])` and `r label_percent(accuracy=0.01)(feat_areas[feat_areas$feature=="L_IBAA4","pct"][[1]])`. IFLs constitute 20% of all "forest zones" -- areas with tree canopy cover of \>20% -- and are defined as *"seamless mosaics of forests and associated natural treeless ecosystems that exhibit no remotely detected signs of human activity or habitat fragmentation and are large enough to maintain all native biological diversity, including viable populations of wide-ranging species"*[@potapovLastFrontiersWilderness2017]. Intactness correlates well with the full conservation value of forest landscapes[@luyssaertOldgrowthForestsGlobal2008;@balmfordEconomicReasonsConserving2002;@franklinPreservingBiodiversitySpecies1993]. For this reason, they are likely to be of high priority for conservation and therefore align directly with GN80(b).
+Despite being aligned with IFC PS6 criteria, Intact Forest Landscapes (IFLs) were initially excluded by Brauneder *et al.* 2018[@braunederGlobalScreeningCritical2018] on account of their spatial extent. However, on reassessment IFLs are no larger in spatial extent than other included datasets: they comprise `r label_percent(accuracy=0.01)(feat_areas[feat_areas$feature=="L_IFL","pct"][[1]])` of Critical Habitat; IBAs under criteria A1 and A4, neither of which were previously excluded, comprise `r label_percent(accuracy=0.01)(feat_areas[feat_areas$feature=="L_IBAA1","pct"][[1]])` and `r label_percent(accuracy=0.01)(feat_areas[feat_areas$feature=="L_IBAA4","pct"][[1]])`. IFLs constitute 20% of all "forest zones" -- areas with tree canopy cover of \>20% -- and are defined as *"seamless mosaics of forests and associated natural treeless ecosystems that exhibit no remotely detected signs of human activity or habitat fragmentation and are large enough to maintain all native biological diversity, including viable populations of wide-ranging species"*[@potapovLastFrontiersWilderness2017]. Intactness correlates well with the full conservation value of forest landscapes[@luyssaertOldgrowthForestsGlobal2008;@balmfordEconomicReasonsConserving2002;@franklinPreservingBiodiversitySpecies1993]. For this reason, they are likely to be of high priority for conservation and therefore align directly with GN80(b).
 
 #### How the data are filtered{.unnumbered}
 
@@ -1489,7 +1489,7 @@ rl_full = st_read("rl_full.gpkg",quiet=TRUE)
 - Exclude marine ranges (`biome_marine==false`).
 - Species in Family *Hominidae*.
 - Exclude *Extinct (post 1500)* or *Probably Extant* (deprecated category) ranges.
-- Ranges with areas >= three times the standard deviation of the data (see Technical Validation in main text). This exercise removes areas disproportionately large. Furthermore, some of the records removed include the northern white rhino, of which there is only one individual left, and the ivory-billed woodpecker, which is argued to be extinct.
+- Ranges with areas $\geq$ three times the standard deviation of the data (see Technical Validation in main text). This exercise removes areas disproportionately large. Furthermore, some of the records removed include the northern white rhino, of which there is only one individual left, and the ivory-billed woodpecker, which is argued to be extinct.
 
 #### How the data are processed{.unnumbered}
 
@@ -1693,7 +1693,7 @@ See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@b
 - Raster tiles are mosaicked to a global extent.
 - Raster mosaic is then aggregated to a 30 arcseconds resolution using the following function: `function(x,...){sum(x,na.rm=T)/length(x)}` that returns the percentage of cells identified as mangrove.
 - Resulting raster is then resampled to a template global raster.
-- Cells are then classified as a presence when the percentage is above a certain threshold (\>=50% in this case - see @fig-mangrove-sensitivity for a sensitivity analysis of this).
+- Cells are then classified as a presence when the percentage is above a certain threshold ($\geq$ 50% in this case - see @fig-mangrove-sensitivity for a sensitivity analysis of this).
 
 ```{r mangrove-sensitivity}
 #| fig-width: 5
@@ -2032,7 +2032,7 @@ plot_rst(data=rast("../../scratch/L_C4_Tropical_Moist_Forest.tif"),
 - Raster tiles are mosaicked to a global extent.
 - Raster mosaic is then aggregated to a 30 arcseconds resolution using the following function: `function(x,...){sum((x == 10),na.rm = T)/length(x)}` that returns the percentage of cells equaling 10, "Undisturbed tropical moist forest".
 - Resulting raster is then resampled to a template global raster.
-- Cells are then classified as a presence when the percentage is above a certain threshold (\>=50% in this case - see @fig-tmf-sensitivity for a sensitivity analysis of this).
+- Cells are then classified as a presence when the percentage is above a certain threshold ($\geq$ 50% in this case - see @fig-tmf-sensitivity for a sensitivity analysis of this).
 
 ```{r tmf-sensitivity}
 #| fig-width: 5
