@@ -420,13 +420,13 @@ cat("ramsar wetlands...")
 tic("ramsar sites fix and union")
 
 ramsar_polys = query_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas",
-                              q = "status NOT IN ('Proposed','Not Reported') AND desig_eng='Ramsar Site, Wetland of International Importance' AND desig_type='International' AND int_crit LIKE '%(ii)%' ESCAPE '\\'",
+                              q = "status NOT IN ('Proposed','Not Reported') AND desig_eng='Ramsar Site, Wetland of International Importance' AND desig_type='International'",
                               feature_layer = 1) %>%
   dplyr::select(rep_area,int_crit) %>%
   fix_sf()
 
 ramsar_pts = query_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas",
-                            q = "status NOT IN ('Proposed','Not Reported') AND desig_eng='Ramsar Site, Wetland of International Importance' AND desig_type='International' AND int_crit LIKE '%(ii)%' ESCAPE '\\'",
+                            q = "status NOT IN ('Proposed','Not Reported') AND desig_eng='Ramsar Site, Wetland of International Importance' AND desig_type='International'",
                             feature_layer = 0) %>%
   filter(rep_area > 0) %>%
   dplyr::select(rep_area,int_crit)

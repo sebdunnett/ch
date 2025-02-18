@@ -116,11 +116,21 @@ P_C1_IUCN_VU_D2 = filter(rl_out, category=="VU" & str_detect(criteria,"D2|D1+2")
   st_faster_union() %>% 
   mutate(Type="Potential", Feature="VU species under criterion D2") %>% 
   filter(st_geometry_type(.)=="MULTIPOLYGON")
-P_C1_IUCN_Great_Apes = filter(rl_full, family_name == "HOMINIDAE") |>
-  st_buffer(dist=50000,max_cells=1000) |>
+
+# Great Apes clip buffer and clip to coast
+
+ga = filter(rl_full, family_name == "HOMINIDAE") |>
+  st_buffer(dist=50000,max_cells=5000) |>
   fix_sf() |>
   st_faster_union() |> 
   mutate(Type="Potential", Feature="Great Apes species ranges")
+
+ga_countries_idx = unlist(st_intersects(st_make_valid(ga),gisco_get_countries()))
+ga_countries_list = gisco_get_countries()[ga_countries_idx,] |> pull(ISO3_CODE)
+
+ga_countries = st_union(gisco_get_countries(country=ga_countries_list,resolution="01"))
+
+P_C1_IUCN_Great_Apes = st_intersection(st_make_valid(ga),ga_countries)
 
 # check output folder for previously made files
 # rename old files (and delete older)

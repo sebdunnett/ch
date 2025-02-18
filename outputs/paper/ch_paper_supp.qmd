@@ -38,11 +38,6 @@ author:
 bibliography: references.bib
 format: scidata-pdf
 number-sections: true
-execute:
-  echo: false
-  message: false
-  warning: false
-  cache: true
 abstract: "The International Finance Corporation (IFC) defines Critical Habitat as areas of high biodiversity value in their Performance Standard 6 (PS6), requiring projects located in Critical Habitat to achieve a net gain of biodiversity. IFC's definition of Critical Habitat has since been frequently used by the finance sector and businesses to identify areas of high biodiversity value. Here we present an update to previous global screening layers of Critical Habitat in the marine and terrestrial realms, derived from global spatial datasets covering the distributions of 53 biodiversity features aligned with guidance provided by the IFC. As with previous layers, each biodiversity feature is categorised as 'Likely' or 'Potential' Critical Habitat based on: 1. Alignment between the biodiversity feature and the IFC Critical Habitat definition; and 2. Suitability of the spatial resolution for indicating a feature's presence on the ground. This analysis indicates that a total of 52.77 million km^2^ (10.4%) and 15.94 million km^2^ (3.2%) of the globe can be considered as Likely and Potential Critical Habitat respectively, while the remaining 441.4 million km^2^ (86.4%) did not overlap with any of the biodiversity features assessed. This represents a significant increase to the 26.2 million km^2^ (5%) and 10 million km^2^ (2%) Likely and Potential Critical Habitat identified previously. Classification of Likely Critical Habitat was dominated by Important Bird and Biodiversity Areas, Intact Forest Landscapes, and protected areas; Potential Critical Habitat by Important Marine Mammal Areas (IMMAs) and ranges of species classified as Vulnerable by the International Union for Conservation of Nature (IUCN) Red List of Threatened Species. Our results can aid businesses to prioritise impact avoidance by screening potential development sites at an early project stage for biodiversity features."
 ---
 
@@ -50,7 +45,7 @@ abstract: "The International Finance Corporation (IFC) defines Critical Habitat 
 #| cache: false
 
 if (!require("pacman")) install.packages("pacman")
-p_load(sf,scico,tidyverse,cowplot,terra,units,vapour,giscoR,scales)
+p_load(sf,scico,tidyverse,cowplot,terra,units,giscoR,scales,httr,jsonlite,vapour)
 terraOptions(progress=0)
 
 source("plot_functions.R")
@@ -133,7 +128,7 @@ plot_data_sf(data=coldseeps,
 ```
 
 - **Data type**: Point
-- **Number of records**: `r nrow(query_unepwcmc_nogeo(dataset="Hosted/ChEssBase_ColdSeeps"))`
+- **Number of records**: `r countRecords_unepwcmc(dataset="Hosted/ChEssBase_ColdSeeps", feature_layer=0)`
 - **Original CRS**: WGS 84
 - **Critical Habitat type**: Likely/Potential
 - **IFC PS6 Criteria triggered**: C4 (Highly Threatened or Unique Ecosystems) and C5 (Key Evolutionary Processes)/C2 (Endemic and Restricted-range Species)
@@ -231,7 +226,7 @@ plot_data_sf(data=cold_coral_obs_pts,
 ```
 
 - **Data type**: Point and polygon
-- **Number of records**: `r nrow(query_unepwcmc_nogeo(dataset="HabitatsAndBiotopes/Global_Distribution_of_Cold_water_Corals", feature_layer=0))` (point) and `r nrow(query_unepwcmc_nogeo(dataset="HabitatsAndBiotopes/Global_Distribution_of_Cold_water_Corals", feature_layer=1))` (polygon)
+- **Number of records**: `r countRecords_unepwcmc(dataset="HabitatsAndBiotopes/Global_Distribution_of_Cold_water_Corals", feature_layer=0)` (point) and `r countRecords_unepwcmc(dataset="HabitatsAndBiotopes/Global_Distribution_of_Cold_water_Corals", feature_layer=1)` (polygon)
 - **Original CRS**: WGS 84
 - **Area (polygons)**: `r cold_coral_obs_polys_area` km^2^
 - **Critical Habitat type**: Likely
@@ -1378,7 +1373,7 @@ ifl = st_read("../../scratch/L_C4_Intact_Forest_Landscapes_polys.shp",quiet=TRUE
   st_transform("EPSG:8857") |>
   st_simplify(dTolerance=1000)
 
-plot_data_sf(data=ifl,
+ifl_plot = plot_data_sf(data=ifl,
              wrld=wrld,
              bkg=sphere,
              palette=pal,
@@ -1390,6 +1385,8 @@ ifl_n = nrow(data.frame(vapour_read_attributes("../../raw_data/IFL_2020/ifl_2020
 
 ifl_layer = st_layers("../../raw_data/IFL_2020/ifl_2020.shp")[[1]]
 ifl_sql = paste0("select * from \"",ifl_layer,"\" limit 1")
+
+ifl_plot
 
 ```
 
@@ -1618,46 +1615,37 @@ No further filtering of data.
 
 {{< pagebreak >}}
 
-### Great Apes species ranges
+## Great apes habitat
 
 ```{r iucn-apes}
-#| fig-cap: "Global distribution of Great Apes (inset: ranges in Central Africa and Southeast Asia)."
+#| fig-cap: "Global distribution of great apes."
+#| cache: false
 
-iucn_apes = st_read("../../scratch/P_C1_IUCN_Great_Apes_polys.shp",quiet=TRUE)
+plot_rst(data=rast("../../scratch/L_C1_Great_Apes_AoH.tif"),
+         wrld=wrld,
+         bkg=sphere,
+         palette=pal,
+         revCol=revCol)
 
-iucn_apes_area = filter(area_lookup,Feature==iucn_apes$Feature)$Area_polys_sqkm
-
-iucn_apes = iucn_apes |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
-
-plot_inset_sf(data=iucn_apes,
-             wrld=wrld,
-             bkg=sphere,
-             palette=pal,
-             revCol=revCol,
-             inset_x=0.05,inset_y=0.05,
-             inset_width=0.3,inset_height=0.3)
 ```
 
-- **Number of records**: `r nrow(filter(rl_full, family_name == "HOMINIDAE"))`
-- **Area**: `r iucn_apes_area` km^2^
-- **Critical Habitat type**: Potential
+- **Data type**: Raster
+- **Original CRS**: WGS 84
+- **Original resolution**: 100m
+- **Extent**: Global
+- **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/L_C1_Great_Apes_AoH.tif"), unit="km", byValue=T)[2,3]`
+- **Critical Habitat type**: Likely
 - **IFC PS6 Criteria triggered**: C1 (Critically Endangered or Endangered Species)
+- **Source**: Lumbierres *et al.* 2022[@lumbierresAreaHabitatMaps2022]
 
 #### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
-GN73 of GN2019 requests *"special consideration"* for great ape species. Any area with great apes present is likely to be treated as Critical Habitat but use of the IUCN Red List species ranges as a proxy for more accurate data from Ape Population Environments Surveys Portal (A.P.E.S.) means this feature does not *directly* align with GN73.
-
-#### How the data are filtered{.unnumbered}
-
-No further filtering of data.
+GN73 of GN2019 requests *"special consideration"* for non-human great ape species. Any area with great apes present is likely to be treated as Critical Habitat. Lumbierres *et al.* 2022[@lumbierresAreaHabitatMaps2022] produced Area of Habitat (AoH) -- *"the habitat available to a species, that is, habitat within its range"* -- maps for 5,481 terrestrial mammal species, including great apes, at ~100m resolution. AoH maps are produced by subtracting unsuitable habitat from a species' geographic range and therefore indicate a high probability of presence on the ground. As such, great apes habitat is classified as Likely Critical Habitat.
 
 #### How the data are processed{.unnumbered}
 
-- Invalid S2 geometries (see @sec-s2) are made valid.
-- Data are unioned to remove overlap (see @sec-union).
+- Area of habitat data for each of the non-human great apes species at ~100m resolution are aggregated to 30 arcseconds resolution using a modal function.
+- Data are then merged together to form a data layer at global extent for all great ape species.
 
 {{< pagebreak >}}
 
@@ -1700,7 +1688,6 @@ See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@b
 #| fig-height: 5
 #| fig-cap: Sensitivity analysis of % presence cutoff values. Plots show effect of setting the % presence to >25, >50, >75, >90% on the output binary distribution. We select 50% for use in this analysis.
 #| label: fig-mangrove-sensitivity
-#| cache: false
 
 plot_rst_sensitivity(data_WGS=rast("../../raw_data/GMW_v3/gmw_v3_2020/mangrove_mosaic_agg.tif"),
              wrld=wrld,
@@ -1722,7 +1709,7 @@ saltmarsh = st_read("../../scratch/L_C4_Saltmarsh_polys.shp",quiet=TRUE) |>
   st_transform("EPSG:8857") |>
   st_simplify(dTolerance=1000)
 
-plot_data_sf(data=saltmarsh,
+sm_plot = plot_data_sf(data=saltmarsh,
              wrld=wrld,
              bkg=sphere,
              palette=pal,
@@ -1730,8 +1717,10 @@ plot_data_sf(data=saltmarsh,
 
 saltmarsh_area = filter(area_lookup,Feature==saltmarsh$Feature)$Area_polys_sqkm
 
-saltmarsh_pts_n = nrow(query_unepwcmc_nogeo(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Saltmarshes", feature_layer = 1))
-saltmarsh_pols_n = nrow(query_unepwcmc_nogeo(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Saltmarshes", feature_layer = 0))
+saltmarsh_pts_n = countRecords_unepwcmc(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Saltmarshes", feature_layer = 1)
+saltmarsh_pols_n = countRecords_unepwcmc(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Saltmarshes", feature_layer = 0)
+
+sm_plot
 
 ```
 
@@ -1852,7 +1841,7 @@ seagrass = st_read("../../scratch/L_C4_Seagrass_polys.shp",quiet=TRUE) |>
   st_transform("EPSG:8857") |>
   st_simplify(dTolerance=1000)
 
-plot_data_sf(data=seagrass,
+sg_plot = plot_data_sf(data=seagrass,
              wrld=wrld,
              bkg=sphere,
              palette=pal,
@@ -1860,8 +1849,10 @@ plot_data_sf(data=seagrass,
 
 seagrass_area = filter(area_lookup,Feature==seagrass$Feature)$Area_polys_sqkm
 
-seagrass_pts_n = nrow(query_unepwcmc_nogeo(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Seagrasses", feature_layer = 0))
-seagrass_pols_n = nrow(query_unepwcmc_nogeo(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Seagrasses", feature_layer = 1))
+seagrass_pts_n = countRecords_unepwcmc(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Seagrasses", feature_layer = 0)
+seagrass_pols_n = countRecords_unepwcmc(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Seagrasses", feature_layer = 1)
+
+sg_plot
 
 ```
 
@@ -1904,7 +1895,7 @@ plot_data_sf(data=seamounts,
 ```
 
 -   **Data type**: Point
--   **Number of records**: `r nrow(query_unepwcmc_nogeo(dataset = "Hosted/ZSL_ModelledSeamountsKnolls2011", feature_layer = 2))`
+-   **Number of records**: `r countRecords_unepwcmc(dataset = "Hosted/ZSL_ModelledSeamountsKnolls2011", feature_layer = 2)`
 -   **Original CRS**: WGS 84
 -   **Critical habitat type**: Potential
 -   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
@@ -2039,7 +2030,6 @@ plot_rst(data=rast("../../scratch/L_C4_Tropical_Moist_Forest.tif"),
 #| fig-height: 5
 #| fig-cap: Sensitivity analysis of % presence cutoff values.
 #| label: fig-tmf-sensitivity
-#| cache: false
 
 plot_rst_sensitivity(data_WGS=rast("../../raw_data/Tropical Moist Forest/tmf_mosaic_agg.tif"),
              wrld=wrld,
@@ -2098,7 +2088,7 @@ warm_coral = st_read("../../scratch/L_C4_C5_Warm_water_coral_polys.shp",quiet=TR
   st_transform("EPSG:8857") |>
   st_simplify(dTolerance=1000)
 
-plot_data_sf(data=warm_coral,
+cr_plot = plot_data_sf(data=warm_coral,
              wrld=wrld,
              bkg=sphere,
              palette=pal,
@@ -2106,8 +2096,10 @@ plot_data_sf(data=warm_coral,
 
 warm_coral_area = filter(area_lookup,Feature==warm_coral$Feature)$Area_polys_sqkm
 
-warm_coral_pts_n = nrow(query_unepwcmc_nogeo(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Coral_Reefs", feature_layer = 0))
-warm_coral_pols_n = nrow(query_unepwcmc_nogeo(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Coral_Reefs", feature_layer = 1))
+warm_coral_pts_n = countRecords_unepwcmc(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Coral_Reefs", feature_layer = 0)
+warm_coral_pols_n = countRecords_unepwcmc(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Coral_Reefs", feature_layer = 1)
+
+cr_plot
 
 ```
 
@@ -2138,18 +2130,11 @@ No filtering of data from source.
 
 ## World Database on Protected Areas (WDPA) {#sec-wdpa}
 
-```{r wdpa}
-
-wdpa_polys = query_unepwcmc_nogeo(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas", feature_layer = 1)
-wdpa_pts = query_unepwcmc_nogeo(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas", feature_layer = 0)
-
-```
-
 -   **Data type**: Point and polygon
--   **Number of records**: `r nrow(wdpa_polys) + nrow(wdpa_pts)`
+-   **Number of records**: `r countRecords_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas", feature_layer = 1)` (polygons); `r countRecords_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas", feature_layer = 0)` (points)
 -   **Original CRS**: WGS 84
--   **Area (polygons - reported)**: `r sum(wdpa_polys$rep_area,na.rm=TRUE)` km^2^
--   **Area (point - reported)**: `r sum(wdpa_pts$rep_area,na.rm=TRUE)` km^2^
+-   **Area (polygons - reported)**: `r stats_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas", feature_layer = 1, fun = "sum", field = "rep_area", outfield = "total_rep_area")` km^2^
+-   **Area (point - reported)**: `r stats_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas", feature_layer = 0, fun = "sum", field = "rep_area", outfield = "total_rep_area")` km^2^
 -   **Source**: UNEP-WCMC and IUCN 2024[@WDPA2024]
 -   **Version**: October 2024
 
@@ -2179,7 +2164,7 @@ plot_data_sf(data=ramsar,
 
 ```
 
--   **Number of records**: `r nrow(filter(wdpa_polys, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International")) + nrow(filter(wdpa_pts, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International"))`
+-   **Number of records**: `r countRecords_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas",q = "status NOT IN ('Proposed','Not Reported') AND desig_eng='Ramsar Site, Wetland of International Importance' AND desig_type='International'",feature_layer = 1)` (polygons); `r countRecords_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas",q = "status NOT IN ('Proposed','Not Reported') AND desig_eng='Ramsar Site, Wetland of International Importance' AND desig_type='International'",feature_layer = 0)` (points)
 -   **Area**: `r ramsar_all_area` km^2^
 -   **Critical habitat type**: Likely
 -   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
@@ -2223,9 +2208,10 @@ plot_data_sf(data=ramsar_ii,
              bkg=sphere,
              palette=pal,
              revCol=revCol)
+
 ```
 
--   **Number of records**: `r nrow(filter(wdpa_polys, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International" & str_detect(int_crit,"(ii)"))) + nrow(filter(wdpa_pts, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International" & str_detect(int_crit,"(ii)")))`
+-   **Number of records**: `r countRecords_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas",q = "status NOT IN ('Proposed','Not Reported') AND desig_eng='Ramsar Site, Wetland of International Importance' AND desig_type='International' AND int_crit LIKE '%(ii)%' ESCAPE '\\'",feature_layer = 1)` (polygons); `r countRecords_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas",q = "status NOT IN ('Proposed','Not Reported') AND desig_eng='Ramsar Site, Wetland of International Importance' AND desig_type='International' AND int_crit LIKE '%(ii)%' ESCAPE '\\'",feature_layer = 0)` (points)
 -   **Area**: `r ramsar_ii_area` km^2^
 -   **Critical habitat type**: Likely
 -   **IFC PS6 criteria triggered**: C1 (Critically Endangered and Endangered Species)
@@ -2270,9 +2256,10 @@ plot_data_sf(data=ramsar_v_vi,
              bkg=sphere,
              palette=pal,
              revCol=revCol)
+
 ```
 
--   **Number of records**: `r nrow(filter(wdpa_polys, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International" & str_detect(int_crit,"(v)|(vi)"))) + nrow(filter(wdpa_pts, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International" & str_detect(int_crit,"(v)|(vi)")))`
+-   **Number of records**: `r countRecords_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas",q = "status NOT IN ('Proposed','Not Reported') AND desig_eng='Ramsar Site, Wetland of International Importance' AND desig_type='International' AND (int_crit LIKE '%(v)%' ESCAPE '\\' OR int_crit LIKE '%(vi)%' ESCAPE '\\')",feature_layer = 1)` (polygons); `r countRecords_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas",q = "status NOT IN ('Proposed','Not Reported') AND desig_eng='Ramsar Site, Wetland of International Importance' AND desig_type='International' AND (int_crit LIKE '%(v)%' ESCAPE '\\' OR int_crit LIKE '%(vi)%' ESCAPE '\\')",feature_layer = 0)` (points)
 -   **Area**: `r ramsar_v_vi_area` km^2^
 -   **Critical habitat type**: Likely
 -   **IFC PS6 criteria triggered**: C3 (Migratory and Congregatory Species)
@@ -2319,9 +2306,10 @@ plot_data_sf(data=ramsar_i_iii,
              bkg=sphere,
              palette=pal,
              revCol=revCol)
+
 ```
 
--   **Number of records**: `r nrow(filter(wdpa_polys, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International" & str_detect(int_crit,"(i)|(iii)"))) + nrow(filter(wdpa_pts, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International" & str_detect(int_crit,"(i)|(iii)")))`
+-   **Number of records**: `r countRecords_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas",q = "status NOT IN ('Proposed','Not Reported') AND desig_eng='Ramsar Site, Wetland of International Importance' AND desig_type='International' AND (int_crit LIKE '%(i)%' ESCAPE '\\' OR int_crit LIKE '%(iii)%' ESCAPE '\\')",feature_layer = 1)` (polygons); `r countRecords_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas",q = "status NOT IN ('Proposed','Not Reported') AND desig_eng='Ramsar Site, Wetland of International Importance' AND desig_type='International' AND (int_crit LIKE '%(i)%' ESCAPE '\\' OR int_crit LIKE '%(iii)%' ESCAPE '\\')",feature_layer = 0)` (points)
 -   **Area**: `r ramsar_i_iii_area` km^2^
 -   **Critical habitat type**: Likely
 -   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
@@ -2368,9 +2356,10 @@ plot_data_sf(data=ramsar_iv_vii_viii_ix,
              bkg=sphere,
              palette=pal,
              revCol=revCol)
+
 ```
 
--   **Number of records**: `r nrow(filter(wdpa_polys, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International" & str_detect(int_crit,"(iv)|(vii)|(viii)|(ix)"))) + nrow(filter(wdpa_pts, !status %in% c("Proposed","Not Reported") & desig_eng == "Ramsar Site, Wetland of International Importance" & desig_type == "International" & str_detect(int_crit,"(iv)|(vii)|(viii)|(ix)")))`
+-   **Number of records**: `r countRecords_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas",q = "status NOT IN ('Proposed','Not Reported') AND desig_eng='Ramsar Site, Wetland of International Importance' AND desig_type='International' AND (int_crit LIKE '%(iv)%' ESCAPE '\\' OR int_crit LIKE '%(vii)%' ESCAPE '\\' OR int_crit LIKE '%(viii)%' ESCAPE '\\' OR int_crit LIKE '%(ix)%' ESCAPE '\\')",feature_layer = 1)` (polygons); `r countRecords_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas",q = "status NOT IN ('Proposed','Not Reported') AND desig_eng='Ramsar Site, Wetland of International Importance' AND desig_type='International' AND (int_crit LIKE '%(iv)%' ESCAPE '\\' OR int_crit LIKE '%(vii)%' ESCAPE '\\' OR int_crit LIKE '%(viii)%' ESCAPE '\\' OR int_crit LIKE '%(ix)%' ESCAPE '\\')",feature_layer = 0)` (points)
 -   **Area**: `r ramsar_iv_vii_viii_ix_area` km^2^
 -   **Critical habitat type**: Potential
 -   **IFC PS6 criteria triggered**: C3 (Migratory and Congregatory Species)
@@ -2410,17 +2399,17 @@ iucn_i_ii = st_read("../../scratch/L_C4_IUCN_Ia_Ib_II_polys.shp",quiet=TRUE) |>
   st_transform("EPSG:8857") |>
   st_simplify(dTolerance=1000)
 
+iucn_i_ii_area = filter(area_lookup,Feature==iucn_i_ii$Feature)$Area_polys_sqkm
+
 plot_data_sf(data=iucn_i_ii,
              wrld=wrld,
              bkg=sphere,
              palette=pal,
              revCol=revCol)
 
-iucn_i_ii_area = filter(area_lookup,Feature==iucn_i_ii$Feature)$Area_polys_sqkm
-
 ```
 
--   **Number of records**: `r nrow(filter(wdpa_polys, !status %in% c("Proposed","Not Reported") & iucn_cat %in% c("Ia","Ib","II"))) + nrow(filter(wdpa_pts, !status %in% c("Proposed","Not Reported") & iucn_cat %in% c("Ia","Ib","II")))`
+-   **Number of records**: `r countRecords_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas", q = "status NOT IN ('Proposed','Not Reported') AND iucn_cat IN ('Ia','Ib','II')", feature_layer = 1) + countRecords_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas", q = "status NOT IN ('Proposed','Not Reported') AND iucn_cat IN ('Ia','Ib','II')", feature_layer = 0)`
 -   **Area**: `r iucn_i_ii_area` km^2^
 -   **Critical habitat type**: Likely
 -   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
@@ -2468,7 +2457,7 @@ plot_data_sf(data=whs,
              revCol=revCol)
 ```
 
--   **Number of records**: `r nrow(filter(wdpa_polys, !status %in% c("Proposed","Established","Not Reported") & desig_eng == "World Heritage Site (natural or mixed)" & desig_type == "International")) + nrow(filter(wdpa_pts, !status %in% c("Proposed","Established","Not Reported") & desig_eng == "World Heritage Site (natural or mixed)" & desig_type == "International"))`
+-   **Number of records**: `r countRecords_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas", q = "status NOT IN ('Proposed','Established','Not Reported') AND desig_eng = 'World Heritage Site (natural or mixed)' AND desig_type = 'International'", feature_layer = 1)`
 -   **Area**: `r whs_area` km^2^
 -   **Critical habitat type**: Likely
 -   **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)

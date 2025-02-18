@@ -193,3 +193,28 @@ cat("done\n")
 # rast_save(rst=L_C4_Mangrove,filename="L_C4_Mangrove.tif",outpath=output_path,nms="Mangroves",dt="FLT8S")
 # 
 # cat("done\n")
+
+################################################################
+#### Great Apes ################################################
+################################################################
+
+cat("Great Apes...")
+
+ga_files = list.files(path=paste0(data_path,"Mammals_primates"),pattern=c("Pongo|Pan|Gorilla"),full.names=TRUE)
+
+ga = lapply(1:length(ga_files),function(x){
+  rst = rast(ga_files[x]) |>
+    aggregate(fact=10,fun="modal",na.rm=TRUE) |>
+    extend(raster_WGS) |>
+    resample(raster_WGS,method="near") |>
+    classify(cbind(NA,0))
+  return(rst)
+})
+
+L_C1_Great_Apes_AoH = app(rast(ga),any)
+
+cat("writing...")
+
+rast_save(rst=L_C1_IUCN_Great_Apes,filename="L_C1_Great_Apes_AoH.tif",outpath=output_path,nms="Great Apes habitat",dt="FLT8S")
+
+cat("done\n")

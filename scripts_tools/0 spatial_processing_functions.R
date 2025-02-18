@@ -243,7 +243,7 @@ st_buffer_antimeridian <- function(sf,dist,max_cells){
   }
 }
 
-query_unepwcmc <- function(dataset=NULL,feature_layer=0,q="1=1"){
+query_unepwcmc <- function(dataset=NULL,feature_layer=0,q="1=1",max_retries=10,wait_time=2){
   
   if (!require('httr')) install.packages('httr'); library('httr')
   
@@ -261,15 +261,27 @@ query_unepwcmc <- function(dataset=NULL,feature_layer=0,q="1=1"){
     f = "geojson"
   )
   
-  sf = build_url(url) |>
-    st_read()
-  
-  return(sf)
+  retry_count <- 0
+  while (retry_count < max_retries) {
+    tryCatch({
+      sf = build_url(url) |> st_read()
+      return(sf)  # Return on success
+    }, error = function(e) {
+      retry_count <- retry_count + 1
+      if (retry_count < max_retries) {
+        message(paste("Attempt", retry_count, "failed. Retrying in", wait_time, "seconds..."))
+        Sys.sleep(wait_time)  # Wait before retrying
+      } else {
+        stop("Failed to connect to", dataset,"after", max_retries, "attempts.")
+      }
+    })
+  }
 }
 
-query_unepwcmc_nogeo <- function(dataset=NULL,feature_layer=0,q="1=1"){
+countRecords_unepwcmc <- function(dataset=NULL,feature_layer=0,q="1=1",max_retries=10,wait_time=2){
   
   if (!require('httr')) install.packages('httr'); library('httr')
+  if (!require('jsonlite')) install.packages('jsonlite'); library('jsonlite')
   
   if(is.null(dataset)){
     return("Please select a dataset")
@@ -281,14 +293,63 @@ query_unepwcmc_nogeo <- function(dataset=NULL,feature_layer=0,q="1=1"){
   
   url$query <- list(
     where = q,
-    outFields = "*",
-    f = "geojson",
-    returnGeometry = "false"
+    f = "json",
+    returnCountOnly = "true"
   )
   
-  df = build_url(url)  %>% 
-    st_read(quiet=TRUE) |>
-    st_drop_geometry()
+  retry_count <- 0
+  while (retry_count < max_retries) {
+    tryCatch({
+      df = build_url(url) |>
+        read_json(simplifyVector=TRUE)
+      return(df$count)  # Return on success
+    }, error = function(e) {
+      retry_count <- retry_count + 1
+      if (retry_count < max_retries) {
+        message(paste("Attempt", retry_count, "failed. Retrying in", wait_time, "seconds..."))
+        Sys.sleep(wait_time)
+      } else {
+        stop("Failed to connect to", dataset,"after", max_retries, "attempts.")
+      }
+    })
+  }
+}
+
+stats_unepwcmc <- function(dataset = NULL, feature_layer = 0, q = "1=1", field, fun, outfield, max_retries=10, wait_time=2) {
+  if (!require('httr')) install.packages('httr'); library('httr')
+  if (!require('jsonlite')) install.packages('jsonlite'); library('jsonlite')
   
-  return(df)
+  if (is.null(dataset)) {
+    return("Please select a dataset")
+  }
+  
+  outstats <- paste0('[{"statisticType": "', fun, '", ',
+                           '"onStatisticField": "', field, '", ',
+                           '"outStatisticFieldName": "', outfield, '"}]')
+  
+  url = parse_url("https://data-gis.unep-wcmc.org/server/rest/services")
+  
+  url$path <- paste(url$path, dataset, "FeatureServer", feature_layer, "query", sep = "/")
+  
+  url$query <- list(
+    where = q,
+    f = "json",
+    outStatistics = outstats
+    )
+  
+  retry_count <- 0
+  while (retry_count < max_retries) {
+    tryCatch({
+      df = build_url(url) %>% read_json(simplifyVector=TRUE)
+      return(df$features$attributes[[1]])  # Return on success
+    }, error = function(e) {
+      retry_count <- retry_count + 1
+      if (retry_count < max_retries) {
+        message(paste("Attempt", retry_count, "failed. Retrying in", wait_time, "seconds..."))
+        Sys.sleep(wait_time)
+      } else {
+        stop("Failed to connect to", dataset, "after", max_retries, "attempts.")
+      }
+    })
+  }
 }

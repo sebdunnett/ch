@@ -28,7 +28,7 @@ L_WARMREEF,Likely,Warm water coral reefs,0,0,0,1,1
 P_COLDSEEP,Potential,Cold seeps,0,1,0,0,0
 P_COLDREEF,Potential,Cold water Coral - Modelled occurence,0,0,0,1,1
 P_EVERWET,Potential,Ever-wet tropical forests,0,0,0,1,0
-P_GRTAPES,Potential,Great Apes species ranges,1,0,0,0,0
+L_GRTAPES,Likely,Great Apes habitat,1,0,0,0,0
 P_HYDRO,Potential,Hydrothermal Vents,0,0,0,1,0
 P_IMMAC123,Potential,"IMMAs under criteria C1, C2 and C3",0,0,1,0,0
 P_IMMAB1,Potential,IMMAs under criterion A,1,0,0,0,0

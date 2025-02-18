@@ -14,6 +14,7 @@ mapdocs/
 outputs/*
 !outputs/paper/
 outputs/paper/ch_paper_files/
+outputs/paper/ch_paper_cache/
 outputs/paper/ch_paper_supp_cache/
 outputs/paper/ch_paper_supp_files/
 outputs/paper/*.ldf

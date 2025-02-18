@@ -113,7 +113,7 @@ cat("importing already rasterised input data\n")
 # list files, import and stack
 # order layers alphabetically and transfer values for binary info retention when summing features
 likely_rfiles = list.files(scratch_path) %>% 
-  keep(.,str_detect(.,"^L_") & str_detect(.,".tif") & !str_detect(.,"_uncertainty"))
+  keep(.,str_detect(.,"^L_") & str_detect(.,".tif") & !str_detect(.,"_uncertainty|_old"))
 likely_rasters = rast(lapply(paste0(scratch_path,likely_rfiles),rast))
 likely_rasters = likely_rasters[[order(names(likely_rasters))]]
 tic("reclass input rasters")
@@ -207,7 +207,7 @@ cat("importing already rasterised input data\n")
 # list files, import and stack
 # order layers alphabetically and transfer values for binary info retention when summing features
 potential_rfiles = list.files(scratch_path) %>% 
-  keep(.,str_detect(.,"^P_") & str_detect(.,".tif") & !str_detect(.,"_uncertainty"))
+  keep(.,str_detect(.,"^P_") & str_detect(.,".tif") & !str_detect(.,"_uncertainty|_old"))
 potential_rasters = rast(lapply(paste0(scratch_path,potential_rfiles),rast))
 potential_rasters = potential_rasters[[order(names(potential_rasters))]]
 tic("reclass input rasters")
