@@ -8,6 +8,7 @@ author:
       - name: United Nations Environment Programme World Conservation Monitoring Centre
         address: 219 Huntingdon Road
         city: Cambridge
+        country: UK
         postal-code: CB3 0DL
         id: unep-wcmc
   - name: Alfred Muge
@@ -16,11 +17,12 @@ author:
   - name: Alex Ross
     affiliations:
       - ref: unep-wcmc
-  - name: Joe Turner
+  - name: Joseph A. Turner
     affiliations:
       - name: The Biodiversity Consultancy
         address: 3E King's Parade
         city: Cambridge
+        country: UK
         postal-code: CB2 1SJ
         id: tbc
   - name: Neil Burgess

@@ -2,6 +2,10 @@
 
 The process for compiling the complete Critical Habitat layers comprises three main steps, split across six separate scripts.
 
+The most up-to-date layers can be found on the [UN Environment Programme World Conservation Monitoring Centre data portal](https://data-gis.unep-wcmc.org/portal/home/).
+
+While some of the input data can be prepared using the scripts provided here through a direct interface with the UNEP-WCMC data portal, many input datasets cannot be provided here and must be sought, with permission, from their respective owners.
+
 ## 1 Data preprocessing
 
 ### 1.1 Red_List_Preprocessing.R
