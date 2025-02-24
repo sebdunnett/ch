@@ -10,7 +10,7 @@
 % \ProvidesClass{wlscirep}[03/11/2016, v1.2]
 \ProvidesClass{wlscirep}[27/02/2017, v1.3]
 \RequirePackage[utf8]{inputenc}
-\RequirePackage[english]{babel}
+\RequirePackage[provide=*]{babel}
 
 \RequirePackage{ifthen}
 \RequirePackage{calc}

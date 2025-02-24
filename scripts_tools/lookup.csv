@@ -2,7 +2,7 @@ Short,Type,Feature,C1,C2,C3,C4,C5
 L_RAMSALL,Likely,All Ramsar sites,0,0,0,1,0
 L_AZE,Likely,Alliance for Zero Extinction Sites,1,1,1,0,0
 L_COLDSEEP,Likely,Cold seeps,0,0,0,0,1
-L_COLDREEF,Likely,Cold water coral reefs - Observed occurence,0,0,0,1,1
+L_COLDREEF,Likely,Cold water coral reefs - Observed occurrence,0,0,0,1,1
 L_CRCRD,Likely,CR species under criterion D,1,0,0,0,0
 L_ENCRD,Likely,EN species under criterion D,1,0,0,0,0
 L_HYDRO,Likely,Hydrothermal Vents,0,1,0,0,1
