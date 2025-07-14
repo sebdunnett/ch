@@ -25,7 +25,7 @@ author:
         country: UK
         postal-code: CB2 1SJ
         id: tbc
-  - name: Neil Burgess
+  - name: Neil D. Burgess
     orcid: 0000-0003-2291-4535
     affiliations:
       - ref: unep-wcmc
@@ -38,9 +38,11 @@ author:
     affiliations:
       - ref: unep-wcmc
 bibliography: references.bib
-format: scidata-pdf
+format:
+  scidata-pdf:
+    fig-pos: '!h'
 number-sections: true
-abstract: "The International Finance Corporation (IFC) defines Critical Habitat as areas of high biodiversity value in their Performance Standard 6 (PS6), requiring projects located in Critical Habitat to achieve a net gain of biodiversity. IFC's definition of Critical Habitat is used frequently by the finance sector and businesses to identify areas of high biodiversity value. In 2019, IFC updated their guidance for implementing PS6 to better align with emerging global biodiversity standards such as the Global Standard for the Identification of Key Biodiversity Areas. Here we present a much-needed update to previous global screening layers of Critical Habitat in the marine and terrestrial realms that is aligned with the updated guidance. The layer is derived from global spatial datasets covering the distributions of 53 biodiversity features, with each biodiversity feature categorised as 'Likely' or 'Potential' Critical Habitat based on: 1. Alignment between the biodiversity feature and the IFC Critical Habitat definition and criteria; and 2. Suitability of the data for indicating a feature's presence on the ground. This analysis indicates that a total of 52.77 million km^2^ (10.4%) and 15.94 million km^2^ (3.2%) of the globe can be considered as Likely and Potential Critical Habitat respectively, while the remaining 441.4 million km^2^ (86.4%) did not overlap with any of the biodiversity features assessed. This represents a significant increase over the 26.2 million km^2^ (5%) and 10 million km^2^ (2%) Likely and Potential Critical Habitat identified previously. Classification of Likely Critical Habitat was dominated by Important Bird and Biodiversity Areas, Intact Forest Landscapes, and protected areas; Potential Critical Habitat by Important Marine Mammal Areas (IMMAs) and ranges of species classified as Vulnerable by the International Union for Conservation of Nature (IUCN) Red List of Threatened Species. Our results can aid businesses to prioritise impact avoidance and identify opportunities for action by screening potential development sites at an early project stage for biodiversity features."
+abstract: "The International Finance Corporation (IFC) defines Critical Habitat in Performance Standard 6 (PS6) as high biodiversity value areas requiring net biodiversity gain for projects. We present an updated global screening layer of Critical Habitat aligned with IFC's 2019 guidance. This layer derives from global datasets covering 53 biodiversity features, categorized as 'Likely' or 'Potential' Critical Habitat based on agreement with IFC criteria and data suitability. Analysis indicates 52.77 million km^2^ (10.4%) and 15.94 million km^2^ (3.2%) of the globe can be considered Likely and Potential Critical Habitat respectively, with the remaining 86.4% not overlapping with assessed biodiversity features. This represents a significant increase over previously identified 5% and 2% for Likely and Potential Critical Habitat. Likely Critical Habitat was dominated by Important Bird and Biodiversity Areas, Intact Forest Landscapes, and protected areas; Potential Critical Habitat by Important Marine Mammal Areas and ranges of IUCN Vulnerable species. Our results can help businesses prioritize impact avoidance and identify opportunities by screening potential development sites for biodiversity features."
 ---
 
 ```{r setup}

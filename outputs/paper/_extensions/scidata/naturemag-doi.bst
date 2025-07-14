@@ -652,7 +652,7 @@ FUNCTION {format.url}
 FUNCTION {format.doi}
 { doi empty$
     { "" }
-    { "\url{" doi * "}" * }
+    { "https://doi.org/" doi * "\url{" swap$ * "}" * }
   if$
 }
 FUNCTION {format.doi.withsemicolon}

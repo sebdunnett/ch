@@ -1,0 +1,902 @@
+---
+title: "An update to the global Critical Habitat screening layer"
+author:
+  - name: Sebastian Dunnett
+    orcid: 0000-0002-4238-2508
+    email: sebastian.dunnett@unep-wcmc.org
+    affiliations:
+      - name: United Nations Environment Programme World Conservation Monitoring Centre
+        address: 219 Huntingdon Road
+        city: Cambridge
+        country: UK
+        postal-code: CB3 0DL
+        id: unep-wcmc
+  - name: Alfred Muge
+    affiliations:
+      - ref: unep-wcmc
+  - name: Alex Ross
+    affiliations:
+      - ref: unep-wcmc
+  - name: Joseph A. Turner
+    affiliations:
+      - name: The Biodiversity Consultancy
+        address: 3E King's Parade
+        city: Cambridge
+        country: UK
+        postal-code: CB2 1SJ
+        id: tbc
+  - name: Neil D. Burgess
+    orcid: 0000-0003-2291-4535
+    affiliations:
+      - ref: unep-wcmc
+  - name: Matt Jones
+    orcid: 0000-0002-5690-4274
+    affiliations:
+      - ref: unep-wcmc
+  - name: Sharon Brooks
+    orcid: 0000-0001-8744-3557
+    affiliations:
+      - ref: unep-wcmc
+format: scidata-pdf
+bibliography: references.bib
+abstract: "The International Finance Corporation (IFC) defines Critical Habitat in Performance Standard 6 (PS6) as high biodiversity value areas requiring net biodiversity gain for projects. We present an updated global screening layer of Critical Habitat aligned with IFC's 2019 guidance. This layer derives from global datasets covering 53 biodiversity features, categorized as 'Likely' or 'Potential' Critical Habitat based on agreement with IFC criteria and data suitability. Analysis indicates 52.77 million km^2^ (10.4%) and 15.94 million km^2^ (3.2%) of the globe can be considered Likely and Potential Critical Habitat respectively, with the remaining 86.4% not overlapping with assessed biodiversity features. This represents a significant increase over previously identified 5% and 2% for Likely and Potential Critical Habitat. Likely Critical Habitat was dominated by Important Bird and Biodiversity Areas, Intact Forest Landscapes, and protected areas; Potential Critical Habitat by Important Marine Mammal Areas and ranges of IUCN Vulnerable species. Our results can help businesses prioritize impact avoidance and identify opportunities by screening potential development sites for biodiversity features."
+---
+
+```{r setup}
+#| cache: false
+
+# Install packages (if required)
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse,terra,sf,giscoR,scico,cowplot,kableExtra,scales,units,tidyterra,httr,jsonlite)
+terraOptions(progress=0)
+
+ch_pal = c("#8400a8","#ff00c5","#e8e8e8")
+
+knitr::knit_hooks$set(inline = function(x) {
+  if(!is.numeric(x)){x}
+  else{
+    prettyNum(signif(x,4), big.mark=",")
+    }
+  })
+
+```
+
+```{r import-rasters}
+#| cache: false
+
+raster_WGS <- rast(res=1/12)
+
+raster_eq <- project(raster_WGS,"EPSG:8857",res=10000)
+
+sphere <- st_graticule(ndiscr = 10000, margin = 10e-6) %>%
+  st_transform(crs = st_crs("ESRI:54009")) %>%
+  st_convex_hull() %>%
+  summarise(geometry = st_union(geometry)) |>
+  st_buffer(1000) |> st_union() |> st_buffer(-1000) |>
+  st_transform("EPSG:8857")
+
+ch_basic_files = list.files("..", pattern = "Basic_Critical_Habitat.*\\.tif$", full.names=TRUE)
+ch_basic_file = ch_basic_files[which.max(file.info(ch_basic_files)$ctime)]
+
+ch_poly_files = list.files("..", pattern = "Drill_Down_Critical_Habitat_Polygons.*\\.gpkg$", full.names=TRUE)
+ch_poly_file = ch_poly_files[which.max(file.info(ch_poly_files)$ctime)]
+
+ch2024_30as = rast(ch_basic_file)
+
+ch2024_areas = expanse(ch2024_30as,unit="km",byValue=TRUE)[,2:3]
+ch2018_areas = expanse(rast("ch2018_30as.tif"),unit="km",byValue=TRUE)[,2:3]
+
+ch2024 = rast("../../outputs/paper/ch2024_1am.tif") |>
+project(raster_eq,method="near",mask=TRUE)
+levels(ch2024) = data.frame(id=c(0,1,10), ch2024=c("Unclassified","Potential Critical Habitat","Likely Critical Habitat"))
+
+ch2018 = rast("../../outputs/paper/ch2018_1am.tif") |>
+project(raster_eq,method="near",mask=TRUE)
+levels(ch2018) = data.frame(id=c(0,1,10), ch2018=c("Unclassified","Potential Critical Habitat","Likely Critical Habitat"))
+
+ch_combined = c(ch2018,ch2024)
+names(ch_combined) = c("2018","2024")
+
+ch_combined_df = as.data.frame(ch_combined,xy=TRUE) |>
+  pivot_longer(3:4,names_to="year",values_to="ch") |>
+  mutate(year=factor(year,levels=c("2018","2024")),
+         ch=factor(ch,levels=c("Likely Critical Habitat","Potential Critical Habitat","Unclassified")))
+  
+ch_changes = rast("../../outputs/paper/changes_2018_2024.tif") |>
+  aggregate(fact=10,fun="modal") |>
+  project(raster_eq,method="near",mask=TRUE)
+
+ch_changes_areas = read.csv("wrld_ch_areas.csv",check.names = F) |>
+  select(starts_with("ch_")) |>
+  pivot_longer(everything(),values_to="ch_area",names_to="ch_type") |>
+  group_by(ch_type) |>
+  summarise(total_area=sum(ch_area,na.rm=TRUE)) |>
+  ungroup()
+
+ch_changes_df = as.data.frame(ch_changes,xy=TRUE) |>
+  rename("change"=3) |>
+  mutate(change=case_match(change,
+                           -2 ~ "Removed",
+                           -1 ~ "Downgraded",
+                           0 ~ "No change",
+                           1 ~ "Upgraded",
+                           2 ~ "Additional") |>
+           factor(levels=c("Removed","Downgraded","No change","Upgraded","Additional")))
+
+wrld = gisco_get_coastallines(resolution="03") |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+features_table = read.csv("features_table.csv",check.names=F)
+
+```
+
+
+
+## Background & Summary
+
+More than US\$ 60 trillion of infrastructure spending is likely required to meet 2040 societal goals, with an additional 1.2 million km^2^ urbanised land by 2030, an additional 3-4.7 million km of roads by 2050 [@setoGlobalForecastsUrban2012; @meijerGlobalPatternsCurrent2018a; @globalinfrastructurehubGlobalInfrastructureOutlook2017]. During the relatively modest infrastucture expansion of the late twentieth and early twenty-first centuries, biodiversity has continued to decline precipitously, with governments collectively failing every single one of the Aichi Biodiversity Targets set under the United Nations (UN) Convention on Biological Diversity (CBD) in 2011. Much of the potential expansion of infrastructure is predicted to occur in some of the world's highest integrity ecosystems [@lauranceReducingGlobalEnvironmental2015; @latrubesseDammingRiversAmazon2017a; @alamgirHighriskInfrastructureProjects2019; @ermgassenRoleNoNet2019].
+
+In 2012, the International Finance Corporation (IFC; a member of the World Bank Group) revised their *Performance Standard 6: Biodiversity Conservation and Sustainable Management of Living Natural Resources* (hereafter PS6), one of eight Performance Standards any client of the organisation must meet throughout the life of an investment [@internationalfinancecorporationPerformanceStandardBiodiversity2012]. PS6 draws heavily on fundamental conservation principles such as protected areas and threatened species [@WDPA2024; @iucnIUCNRedList2024; @binghamSixtyYearsTracking2019]. The standard is seen as the benchmark for sustainable investment with 130 financial institutions following its social and environmental classification process as signatories to the Equator Principles [@equatorprinciplesassociationSignatoriesEPFIReporting2024]. Businesses can prioritise impact avoidance and direct corporate nature action with Critical Habitat screening[@addisonUsingConservationScience2019], even more important when, for example, half of marine Critical Habitat identified in 2015 is not formally protected and would not be flagged when only considering legally designated sites[@jacobMarineBiodiversityOffsets2020].
+
+Critical Habitat is defined by IFC using the following criteria:
+
+1.  Critically Endangered or Endangered species
+2.  Endemic and/or restricted-range species
+3.  Globally significant concentration of migratory or congregatory species
+4.  Highly threatened and/or unique ecosystems
+5.  Key evolutionary processes
+
+Previous work by Martin *et al.*[@martinGlobalMapAid2015] and Brauneder *et al.*[@braunederGlobalScreeningCritical2018] produced global 1 km^2^ IFC Critical Habitat screening layers for the marine and terrestrial realms respectively. These studies identified global biodiversity feature data with sufficient resolution and alignment with IFC PS6 criteria to produce global screening layers for Likely and Potential Critical Habitat. Martin *et al.*[@martinGlobalMapAid2015] classified 1.6% of the ocean as Likely Critical Habitat and 2.1% as Potential Critical Habitat. Brauneder *et al.*[@braunederGlobalScreeningCritical2018] identified 10% of the terrestrial surface as Likely Critical Habitat and 5% as Potential Critical Habitat. The screening layers, as well as the amalgamated marine plus terrestrial Critical Habitat layer, are made available through the UN Environment Programme World Conservation Monitoring Centre's [data portal](https://data-gis.unep-wcmc.org/portal/home/) as well as the [UN Biodiversity Lab](https://unbiodiversitylab.org/en/). The layers have been used in a number of subsequent studies, including analysis of the impact of PS6 on biodiversity offset implementation [@bullGlobalExtentBiodiversity2018a]. Many of the studies focus on the threat to biodiversity of China's Belt and Road Initiative, a programme to link sixty-five countries with a network of transport and energy infrastructure. Researchers have used the global Critical Habitat screening layer to estimate that 50% of loans intersect with Critical Habitat[^1] [@yangRisksGlobalBiodiversity2021]. Full 49 Chinese-funded dams have a total of 149 km^2^ Critical Habitat in close proximity (i.e. within 1 km) and dams funded by multilateral development banks (MDBs) have much lower average areas of Critical Habitat per area of dam at risk relative to Chinese-funded dams [@narainBiodiversityRisksSafeguards2022]. Researchers have also identified 12,000 km^2^ of Critical Habitat within 1 km of the Belt and Road Initiative's linear infrastructure [@narainBestpracticeBiodiversitySafeguards2020]. In a decarbonising world, 20% of mining locations in Africa trigger a Critical Habitat classification for something other than Great Ape habitat [@junkerThreatMiningAfrican2024].
+
+[^1]: Reference to Critical Habitat in this manuscript refers specifically to *Likely or Potential* Critical Habitat. This **does not indicate** confirmed Critical Habitat, which requires ground-truthed assessment.
+
+In June 2019, IFC updated the 2012 PS6 Guidance Note that had accompanied the initial release [@internationalfinancecorporationInternationalFinanceCorporation2019]. The update significantly changed the Critical Habitat criteria to better align the standard with the then newly developed *Global Standard for the Identification of Key Biodiversity Areas* (KBAs) [@iucnGlobalStandardIdentification2016a; @unep-wcmcInternationalFinanceCorporation2019; @tbl-updates]. This meant that the original Critical Habitat global screening layers were now out of sync with the latest criteria. At the same time, many of the datasets that underpinned the original analyses have been updated multiple times since (e.g. the the World Database on Protected Areas -- WDPA -- is updated monthly). Finally, many eligible datasets have been produced in the years since that meet the completeness and alignment criteria of the layer.
+
++--------------------------------------------------------------------------+---------------+--------------+-----------------------------------------------------------+
+| Criteria                                                                 | GN 2012       | GN 2019      | Implications                                              |
++==========================================================================+===============+==============+===========================================================+
+| Critically Endangered or Endangered species                              | Tier 1: 10%   | 0.5%         | Small increase in threshold                               |
+|                                                                          |               |              |                                                           |
+|                                                                          | Tier 2: \>0%  |              | Reduction in overall Likely or Potential Critical Habitat |
++--------------------------------------------------------------------------+---------------+--------------+-----------------------------------------------------------+
+| Endemic and/or restricted-range species                                  | Tier 1: 95%   | 10%          | Threshold significantly higher                            |
+|                                                                          |               |              |                                                           |
+|                                                                          | Tier 2: 1%    |              | Reduction in overall Likely or Potential Critical Habitat |
++--------------------------------------------------------------------------+---------------+--------------+-----------------------------------------------------------+
+| Globally significant concentrations of migratory or congregatory species | Tier 1: 95%   | 1%           | Threshold unchanged                                       |
+|                                                                          |               |              |                                                           |
+|                                                                          | Tier 2: 1%    |              | No change to overall Likely or Potential Critical Habitat |
++--------------------------------------------------------------------------+---------------+--------------+-----------------------------------------------------------+
+| Highly threatened and/or unique ecosystems                               | Qualitative   | 5%           | New threshold                                             |
+|                                                                          |               |              |                                                           |
+|                                                                          | No thresholds |              |                                                           |
++--------------------------------------------------------------------------+---------------+--------------+-----------------------------------------------------------+
+| Key evolutionary processes                                               | Qualitative   | Qualitative  | Unchanged                                                 |
+|                                                                          |               |              |                                                           |
+|                                                                          | No threshold  | No threshold |                                                           |
++--------------------------------------------------------------------------+---------------+--------------+-----------------------------------------------------------+
+
+: Comparison of thresholds for triggering Critical Habitat in the update Guidance Note. Implications are based on changes to the lowest threshold for Critical Habitat (i.e. Tier 2 in 2012). Adapted from UNEP-WCMC[@unep-wcmcInternationalFinanceCorporation2019]. {#tbl-updates}
+
+For businesses to manage their biodiversity impacts in areas of high biodiversity value, it is essential to provide an updated Critical Habitat layer that fully aligns with the 2019 update of PS6. In this Data Descriptor, we describe a new, updated global Critical Habitat screening layer. The new data incorporates updated datasets, as well as new sources identified through a comprehensive search for any that could meet the eligibility criteria. Most importantly, we describe and make available a methodology whereby the layer can be updated as and when new data are found or updated.
+
+## Methods
+
+### Critical Habitat criteria
+
+IFC define Critical Habitat according to five criteria (@tbl-updates) with associated thresholds for Criteria 1-4. The 2019 update to the accompanying Guidance Note made a number of changes to the classification of Critical Habitat of relevance to any updated methodology:
+
+-   **Changes to thresholds**: thresholds have been updated to better align with the Global KBA Standard [@iucnGlobalStandardIdentification2016a]. Criteria 1, 3 and 4 now directly align with the standard, and Criteria 1-3 have streamlined thresholds that largely sit between the previous Tier 1 and Tier 2 thresholds. Quantitative thresholds have been added for Criterion 4, based on the developing IUCN Red List of Ecosystems [@iucnRedListEcosystems2024].
+-   **Specified exceptional circumstances**: IFC now specify three circumstances that trigger special considerations.
+    -   Great Apes: the presence of Great Ape species is likely to trigger Critical Habitat regardless of thresholds. Where present, clients are expected to inform both IFC and the IUCN Species Survival Commission's Primate Specialist Group.
+    -   Unapprovable sites:
+        -   World Heritage Sites (Natural or Mixed).
+        -   Alliance for Zero Extinction sites.
+-   **Addition of IUCN Vulnerable species**: IFC added a threshold for Criteria 1 that now explicitly includes species classified as Vulnerable (VU) by the IUCN Red List of Threatened Species (hereafter IUCN Red List) where:
+    -   Globally important populations are present.
+    -   The loss of the population would lead to the species being upgraded to Endangered (EN) or Critically Endangered (CR).
+    -   The population in question would then trigger Criterion 1a (the area supports \>=0.5% of the global population and \>=5 reproductive units).
+
+### Data screening and classification
+
+Using the updated criteria, we proceeded with data screening and classification as with previous studies [@martinGlobalMapAid2015; @braunederGlobalScreeningCritical2018]. Datasets were identified through expert knowledge and consultation, using the criteria adapted from Martin *et al.*[@martinGlobalMapAid2015]:
+
+1.  Direct relevance to one or more Critical Habitat criteria.
+2.  Global in extent.
+3.  Assembled using a standardised protocol.
+4.  The best available data for the biodiversity feature of interest.
+5.  Sufficiently high resolution to indicate presence of biodiversity on the ground at scales relevant to business operations.
+
+Datasets that met our criteria were classified as one of three classes: Likely, Potential, and Unclassified. The classification was done by expert judgement, weighing the alignment with PS6 criteria and the likely presence on the ground (@fig-class-grid).
+
+
+
+```{r class-grid}
+#| fig-width: 5
+#| fig-height: 5
+#| label: fig-class-grid
+#| fig-cap: "Classification of data as Likely or Potential Critical Habitat is based on the perceived strength of alignment with PS6 criteria and the spatial resolution of the data. Adapted from Brauneder et al. [@braunederGlobalScreeningCritical2018]."
+#| echo: false
+
+classGrid = data.frame(xmin=c(0,0,0.5,0.5),
+                xmax=c(0.5,0.5,1,1),
+                ymin=c(0,0.5,0,0.5),
+                ymax=c(0.5,1,0.5,1),
+                ch=c("Unclassified","Potential Critical Habitat","Potential Critical Habitat","Likely Critical Habitat"),
+                labx=c(0.25,0.25,0.75,0.75),
+                laby=c(0.25,0.75,0.25,0.75))
+
+c = ggplot(classGrid) +
+  geom_rect(aes(xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,fill=ch)) +
+  geom_text(aes(label=ch,x=labx,y=laby),fontface="bold",size=9,size.unit="pt") +
+  theme_void() +
+  scale_fill_manual(values=ch_pal) +
+  theme(legend.position = "none",
+        plot.margin = unit(c(rep(0.5,4)),"in"),
+        axis.line.y = element_line(arrow=grid::arrow(ends="last",type="open",length=unit(0.1,"in"))),
+        axis.line.x = element_line(arrow=grid::arrow(ends="last",type="open",length=unit(0.1,"in"))),
+        axis.title.x = element_text(),
+        axis.title.y = element_text(angle=90)) +
+  xlab("\nAlignment / relevance to IFC PS6") +
+  ylab("Presence on the ground\n")
+
+ggdraw(c) +
+  draw_text("Potential",x=0.15,y=0.07,size=11,fontface="italic") +
+  draw_text("Likely",x=0.9,y=0.07,size=11,fontface="italic") +
+  draw_text("Uncertain",x=0.075,y=0.15,size=11,fontface="italic",angle=90) +
+  draw_text("Certain",x=0.075,y=0.9,size=11,fontface="italic",angle=90)
+
+```
+
+
+
+We identified `r length(unique(features_table[,1]))` biodiversity feature datasets that are split into `r length(unique(paste0(features_table[,1],features_table[,2])))` separate triggers (@tbl-features).
+
+
+
+```{r features-table}
+#| tbl-cap: "Biodiversity features included in the analysis, their alignment with IFC PS6 Critical Habitat criteria and classification as 'Likely' or 'Potential' Critical Habitat. *Data newly added in the update."
+#| label: tbl-features
+
+features_table = read.csv("features_table.csv",check.names = F) 
+features_table |>
+  mutate(across(`1`:`5`, ~ cell_spec(.x, color = ifelse(.x == "L","Purple",ifelse(.x=="P","Magenta","black"))))) |>
+  kable(format="latex",escape=F,booktabs=T,longtable=T) |>
+  add_header_above(header=c(" "=2,"IFC PS6 criteria"=5," "=1),escape=F) |>
+  column_spec(1, width = "2cm") |>
+  column_spec(2, width = "3cm") |>
+  column_spec(3:7, width = "0.25cm") |>
+  collapse_rows(1,row_group_label_position="first") |>
+  kable_styling(font_size = 8, latex_options = "repeat_header") |>
+  footnote(general = "CR: Critically Endangered; EN: Endangered; L: Likely; P: Potential.")
+
+```
+
+
+
+### Data processing and spatial analysis
+
+Spatial data analysis was conducted in **R**, predominantly using the `terra` and `sf` packages.
+
+For the greatest accuracy, vector data were processed using the `sf` package and `S2` library. This allows spatial processing, e.g. intersections and buffers, using Great Circle distances. Data were prepared for the analysis in three steps: First, data were made valid on the sphere. Second, data were filtered as detailed by (a) their respective guidance, and (b) to produce the data subset required for the analysis. For example, Key Biodiversity Areas (KBAs) must first be filtered by those whose status is confirmed (`KbaStatus=="confirmed"`) and then by the criterion/criteria required to create the subset (e.g. sites designated under KBA Criterion B1). Finally, data were unioned to remove duplicates from point data and any overlapping area in polygon data. Not all input data were available in vector format. For raster data, preprocessing varies by source but generally involved aggregating to the correct resolution (30 arcseconds) before reprojecting the data to a template raster in WGS 84.
+
+Data are then converted to binary maps of presence/absence. For vector data, this was done by a process called rasterisation, whereby any grid cell in contact with the vector data assumes the value of the vector data. In keeping with the precautionary nature of the screening layer, we chose to rasterise based on any intersection, not requiring polygon data to cross the midpoint of the grid cell. Point data transferred their values to the grid cells they occupy. For raster data, where necessary (i.e. the data were not already binary), a classification threshold was set. Again, in keeping with the precautionary nature of the data, we set this at 0.5. This meant that any cell with \>=50% of the feature was classified as a presence (see Technical Validation for a brief sensitivity analysis of this threshold).
+
+Binary raster data were then combined so that each grid cell's unique combination of biodiversity features has a unique value. Based on what features comprised the value, the grid cell was categorised hierarchically: Likely \> Potential \> Unclassified.
+
+
+
+{{< pagebreak >}}
+
+
+
+
+## Data Records
+
+We find that `r sum(ch2024_areas[2:3,2])/1000000` million km^2^ of the Earth's surface was classified as Likely or Potential Critical Habitat (@fig-main): `r ch2024_areas[3,2]/1000000` million km^2^ (`r label_percent(accuracy=.01)(ch2024_areas[3,2]/sum(ch2024_areas[,2]))`) as Likely Critical Habitat and `r ch2024_areas[2,2]/1000000` million km^2^ (`r label_percent(accuracy=.01)(ch2024_areas[2,2]/sum(ch2024_areas[,2]))`) as Potential Critical Habitat. This is a significant increase on the `r ch2018_areas[3,2]/1000000` million km^2^ (`r label_percent(accuracy=.01)(ch2018_areas[3,2]/sum(ch2018_areas[,2]))`) and `r ch2018_areas[2,2]/1000000` million km^2^ (`r label_percent(accuracy=.01)(ch2018_areas[2,2]/sum(ch2018_areas[,2]))`) previously identified. The remaining `r ch2024_areas[1,2]/1000000` million km^2^ (`r label_percent(accuracy=.01)(ch2024_areas[1,2]/sum(ch2024_areas[,2]))`) is "Unclassified" as either known biodiversity features do not align with the IFC definition or because appropriate data that might be used to classify do not exist: Critical Habitat may still occur in these regions.
+
+
+
+```{r main-plot}
+#| fig-width: 8
+#| fig-height: 7
+#| fig-cap: Global screening layer for Critical Habitat. Reprojected to Equal Earth and aggregated to 10 x 10 km for visualisation.
+#| label: fig-main
+#| fig-pos: 'H'
+
+a = ggplot(ch_combined_df |> drop_na(ch)) +
+  geom_raster(aes(x=x,y=y,fill=ch)) +
+  geom_sf(data=st_transform(gisco_coastallines,"EPSG:8857"),fill=NA) +
+  theme_void() +
+  facet_wrap(~year) +
+  scale_fill_manual(values=ch_pal,name=NULL) + 
+  theme(legend.position="bottom")
+
+b = ggplot(ch_changes_df) +
+  geom_raster(aes(x=x,y=y,fill=factor(change))) +
+  geom_sf(data=st_transform(gisco_coastallines,"EPSG:8857"),fill=NA) +
+  theme_void() +
+  scale_fill_scico_d(palette="bam",name=NULL) +
+  theme(legend.position="bottom")
+
+plot_grid(a,b,rel_heights=c(0.3,0.7),nrow=2)
+
+```
+
+
+
+These data are presented in two formats at 30 arcseconds resolution in WGS 84 projection and one in WGS 84 vector format. They represent the best publicly available global screening layer for Critical Habitat:
+
+### Basic Critical Habitat layer
+
+*Basic_Critical_Habitat.tif*
+
+Basic global layer at 30 arcseconds resolution in WGS 84 projection containing three values: 0 (Unclassified), 1 (Potential Critical Habitat), and 10 (Likely Critical Habitat). Made available under a [CC BY licence](https://creativecommons.org/licenses/by/4.0/) at [https://doi.org/10.34892/snwv-a025](https://doi.org/10.34892/snwv-a025).
+
+### Drill down Critical Habitat layer
+
+*Drill_Down_Critical_Habitat.tif* and *Drill_Down_Critical_Habitat.tif.vat.dbf*
+    
+More detailed global layer at 30 arcseconds resolution in WGS 84 projection. The spatial grid (*Drill_Down_Critical_Habitat.tif*) works in conjunction with the raster attribute table (RAT: *Drill_Down_Critical_Habitat.tif.vat.dbf*) to detail what biodiversity features trigger any cell's Critical Habitat classification. Values in the `TIFF` file correspond to unique identifiers in the RAT that reveal the underlying data (@tbl-rat-lookup). Made available under a [CC BY-NC licence](https://creativecommons.org/licenses/by-nc/4.0/) at [https://doi.org/10.34892/d3xm-qm60](https://doi.org/10.34892/d3xm-qm60).
+
+
+
+```{r rat-lookup}
+#| echo: false
+#| tbl-cap: "Codes for biodiversity features in the raster attribute table."
+#| label: tbl-rat-lookup
+
+shortcodes = read.csv("../../scripts_tools/lookup.csv")[,c(1,3)] |>
+  rename("Shortcode"=1,"Description"=2) |>
+  mutate(Description=paste0("Binary variable indicating presence of ",Description)) |>
+  arrange(Shortcode)
+
+shortcodes_add = data.frame(
+  Shortcode = c("VALUE","COUNT","CH","C1","C2","C3","C4","C5"),
+  Description = c("Unique identifier relating cells in the raster to data in this database",
+                  "Number of cells with this unique combination of features",
+                  "Critical Habitat classification",
+                  "Binary variable indicating IFC PS6 Criteria 1 triggered",
+                  "Binary variable indicating IFC PS6 Criteria 2 triggered",
+                  "Binary variable indicating IFC PS6 Criteria 3 triggered",
+                  "Binary variable indicating IFC PS6 Criteria 4 triggered",
+                  "Binary variable indicating IFC PS6 Criteria 5 triggered")
+)
+
+kable(rbind(shortcodes_add,shortcodes)) |>
+  kable_styling(font_size=8)
+
+```
+
+
+
+### Drill down Critical Habitat layer - polygons
+
+*Drill_Down_Critical_Habitat_Polygons.gpkg*
+
+This polygonised version of the drill down raster layer allows for more concise information retention (@tbl-gpkg-lookup). The data draw boundaries around the cells of each unique feature combination. For ease, and to limit the size of the file, we excluded Unclassified polygons. There are `r nrow(st_read(ch_poly_file,quiet=TRUE))` polygons in the GeoPackage. Made available under a [CC BY-NC licence](https://creativecommons.org/licenses/by-nc/4.0/).
+
+| Name         | Description                                                       |
+|--------------|-------------------------------------------------------------------|
+| CH           | Critical Habitat designation: Likely, Potential, or Unclassified. |
+| CRITERIA     | IFC PS6 Criteria triggered.                                       |
+| ALL_FEATURES | All biodiversity features found in polygon.                       |
+| C1           | All biodiversity features triggering IFC PS6 Criteria 1.          |
+| C2           | All biodiversity features triggering IFC PS6 Criteria 2.          |
+| C3           | All biodiversity features triggering IFC PS6 Criteria 3.          |
+| C4           | All biodiversity features triggering IFC PS6 Criteria 4.          |
+| C5           | All biodiversity features triggering IFC PS6 Criteria 5.          |
+
+: Variable names and descriptions in the polygonised GeoPackage layer. {#tbl-gpkg-lookup}
+
+## Technical validation
+
+### Coverage
+
+
+
+```{r realm-pcts}
+
+realm_pcts = read.csv("wrld_ch_areas.csv",check.names = F) |>
+  group_by(type) |>
+  summarise(across(c(starts_with(c("2018","2024")),total_country_area_km2),~sum(.x,na.rm=TRUE)/1000000)) |>
+  mutate(`2024_Total` = `2024_Likely` + `2024_Potential`, `2018_Total` = `2018_Likely` + `2018_Potential`) |>
+  mutate(across(starts_with(c("2018","2024")), ~ .x / total_country_area_km2)) |>
+  dplyr::select(c(type,ends_with("Total"))) |>
+  mutate(Increase=`2024_Total`/`2018_Total`)
+
+```
+
+
+
+Both categories of Critical Habitat increased their absolute areas relative to the first global screening layer. Likely Critical Habitat maintained a largely similar split proportionally across domains (@tbl-ch-coverage) but Potential Critical Habitat coverage increased in Areas Beyond National Jurisdiction (ABNJ) relative to land and Exclusive Economic Zones (EEZ). Overall, the updated screening layer increased coverage in all domains, with a large increase from `r scales::label_percent(accuracy=0.01)(realm_pcts[realm_pcts$type=="ABNJ","2018_Total"][[1]])` to `r scales::label_percent(accuracy=0.01)(realm_pcts[realm_pcts$type=="ABNJ","2024_Total"][[1]])` in ABNJ, `r scales::label_percent(accuracy=0.01)(realm_pcts[realm_pcts$type=="EEZ","2018_Total"][[1]])` to `r scales::label_percent(accuracy=0.01)(realm_pcts[realm_pcts$type=="EEZ","2024_Total"][[1]])` in EEZ and `r scales::label_percent(accuracy=0.01)(realm_pcts[realm_pcts$type=="Land","2018_Total"][[1]])` to `r scales::label_percent(accuracy=0.01)(realm_pcts[realm_pcts$type=="Land","2024_Total"][[1]])` on land.
+
+
+
+```{r ch-coverage-table}
+#| echo: false
+#| tbl-cap: "Areas and percentage coverage of each Critical Habitat category in 2018 and 2024 across realms. Percentages indicate splits within Critical Habitat categories."
+#| label: tbl-ch-coverage
+
+wrld_ch_areas = read.csv("wrld_ch_areas.csv",check.names = F) |>
+  group_by(type) |>
+  summarise(across(starts_with(c("2018","2024")),~sum(.x,na.rm=TRUE)/1000000))
+
+wrld_ch_pct = wrld_ch_areas |>
+  reframe(across(2:7,~label_percent(accuracy=.2)(.x/sum(.x)))) |>
+  rename_with(~paste0(.x,"_pct"))
+
+wrld_ch_areas_pct = cbind(wrld_ch_areas,wrld_ch_pct) %>% 
+  select(type,sort(names(.)))
+
+wrld_ch_areas_pct = cbind(wrld_ch_areas,wrld_ch_pct) %>% 
+  select(type,sort(names(.)))
+
+names(wrld_ch_areas_pct) <- NULL
+
+kable(wrld_ch_areas_pct,
+      format.args = list(digits=2,big.mark=","),
+      format="latex",
+      booktabs=T,
+      longtable=T) |>
+  add_header_above(header=c("Domain"=1,"Likely"=2,"Potential"=2,"Unclassified"=2,
+                           "Likely"=2,"Potential"=2,"Unclassified"=2)) |>
+  add_header_above(header=c(" "=1,"2018"=6,"2024"=6)) |>
+  column_spec(1,width="1cm") |>
+  column_spec(c(3,5,7,9,11,13),width="1cm") |>
+  column_spec(c(2,4,6,8,10,12),width="0.5cm") |>
+  kable_styling(font_size=8) |>
+  footnote(general="Areas in km$^2$ x 10$^6$. ABNJ: Areas Beyond National Jurisdiction; EEZ: Economic Exclusion Zone.",escape=F)
+
+```
+
+
+
+@tbl-criteria-areas sets out the coverage of the Critical Habitat screening layer across the five criteria. Criteria 1, 3, and 4 dominate coverage. As identified previously[@martinGlobalMapAid2015;@braunederGlobalScreeningCritical2018], data are still either largely unavailable or do not meet Criterion 5, key evolutionary processes, and all biodiversity features triggering it remain in the marine realm. The ongoing development and improved coverage of the IUCN Red List of Ecosystems will likely serve to harmonise much of the data inputs to Criterion 4 and reduce the percentage contribution of Criterion 4 to Likely and Potential Critical Habitat classifications[@iucnRedListEcosystems2024;@nicholsonRolesRedList2024].
+
+
+
+```{r criteria-areas-table}
+#| echo: false
+#| tbl-cap: "Areas and percentage cover of each IFC PS6 criteria to Potential and Likely Critical Habitat. Percentages indicate splits within Critical Habitat categories."
+#| label: tbl-criteria-areas
+
+criteria_areas = read.csv("drill_down_change_areas.csv", check.names = F) |>
+  select(CH,C1:C5,area) |>
+  pivot_longer(C1:C5,values_to="present",names_to="criteria") |>
+  filter(present>0) |>
+  group_by(criteria,CH) |>
+  summarise(area=sum(area)/1000,.groups="drop") |>
+  pivot_wider(id_cols=1,names_from="CH",values_from="area") |>
+  ungroup() |>
+  mutate(total_potential=ch2024_areas[ch2024_areas$value==1,2],
+         total_likely=ch2024_areas[ch2024_areas$value==10,2],
+         likely_pct=label_percent(accuracy=.2)(`10`/(total_likely/1000)),
+         potential_pct=label_percent(accuracy=.2)(`1`/(total_potential/1000)),
+         criteria=case_match(criteria,
+                             "C1" ~ "1. Critically Endangered or Endangered species",
+                             "C2" ~ "2. Endemic and/or restricted-range species",
+                             "C3" ~ "3. Globally significant concentration of migratory or congregatory species",
+                             "C4" ~ "4. Highly threatened and/or unique ecosystems",
+                             "C5" ~ "5. Key evolutionary processes")) |>
+  select(criteria,`10`,likely_pct,`1`,potential_pct)
+
+kable(criteria_areas,
+      col.names = c("Criteria","Likely","","Potential",""),
+      format.args = list(digits=2,big.mark=",")) |>
+  column_spec(1,width="8cm") |>
+  footnote(general="Areas in km$^2$ x 10$^3$. Percentages add up to >100 due to overlapping areas.",escape=F)
+
+```
+
+```{r top-ten}
+#| tbl-cap: "States (including associated territories) with the largest areas of identified Critical Habitat."
+#| label: tbl-top-ten
+
+wrld_areas = read.csv("O:/f01_projects_active/Global/p08868_CriticalHabitatUpdate/outputs/paper/wrld_ch_areas.csv", check.names=FALSE, encoding="latin1")
+
+wrld_areas |>
+    filter(!str_detect(iso_sov,";") & !str_starts(iso_sov,"x")) |>
+    group_by(iso_sov) |>
+    summarise(likely_total=sum(`2024_Likely`,na.rm=TRUE)/1000,potential_total=sum(`2024_Potential`,na.rm=TRUE)/1000) |>
+    mutate(total_ch = likely_total + potential_total) |>
+    ungroup() |>
+    slice_max(total_ch,n=10) |>
+    left_join(dplyr::select(gisco_countrycode,ISO3_CODE,iso.name.en),by=c("iso_sov"="ISO3_CODE")) |>
+    mutate(iso.name.en = case_when(iso_sov=="ABNJ" ~ "Areas Beyond National Jurisdiction",.default=iso.name.en)) |>
+    dplyr::select(iso.name.en,likely_total,potential_total,total_ch) |>
+    kable(col.names = c("State","Likely CH","Potential CH","Total"),
+          format.args = list(digits=2,big.mark=",")) |>
+    footnote(general="Areas in km$^2$ x 10$^3$.",escape=F)
+
+```
+
+
+
+### Large species ranges
+
+The inclusion of species classified as Vulnerable in the IFC Guidance Note 2019 update, and data updates to the IUCN Red List generally, necessitated the inclusion of large numbers of species ranges. Some of these ranges, e.g. the Australian grey falcon, *Falco hypoleucos*, are exceptionally large. In order to retain precision in the updated screening layer, we conducted a sensitivity analysis of trimming the largest species ranges (range areas 3, 10, 20 and 50 standard deviations above the mean; see @fig-rl-sensitivity below). Trimming species ranges 3 standard deviations above the mean resulted in a 61.2% decrease in coverage for the removal of only 31 species ranges of 3,953. Furthermore, among the species ranges excluded were the northern white rhino, *Ceratotherium simum cottoni*, whose species range spans several Central and Eastern African countries despite comprising only two living individuals, and the ivory-billed woodpecker, *Campephilus principalis*, which is presumed extinct. Species are not expected to be evenly distributed within this range and if it is otherwise important for threatened species it will likely be classified as Critical Habitat via other biodiversity features.
+
+
+
+```{r rl-sensitivity}
+#| fig-width: 8
+#| fig-height: 7
+#| fig-cap: Sensitivity analysis of IUCN Red List ranges. Plots show result of removing areas with 3, 10, 20, 50 standard deviations (SDs) higher than the mean of the data. Each plot reports the SD, the number of ranges removed, and the percentage of the total area the data now represent.
+#| label: fig-rl-sensitivity
+#| cache: false
+
+pal="imola"
+revCol=TRUE
+
+rl_full = st_read("rl_full.gpkg",quiet=TRUE) |>
+  st_wrap_dateline() |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=10000)
+
+plts = lapply(c(3,10,20,50), function(x){
+  plot_df = rl_full %>%
+    filter(units::drop_units(st_area(.)) < (x*sd(units::drop_units(st_area(.)))) + mean(units::drop_units(st_area(.))))
+  
+  area_diff_pct = (sum(units::drop_units(st_area(plot_df)))/sum(units::drop_units(st_area(rl_full))))*100
+  
+  area_diff_pct = signif(area_diff_pct,3)
+  
+  row_diff = nrow(rl_full)-nrow(plot_df)
+  
+  if(revCol){
+    rl_pal = rev(scico(palette=pal,n=3))
+  } else{
+    rl_pal = scico(palette=pal,n=3)
+  }
+  
+  ggplot() +
+    geom_sf(data=sphere, fill=NA) +
+    geom_sf(data=gisco_coastallines |> st_transform("EPSG:8857"), fill=NA) +
+    geom_sf(data=plot_df,aes(fill=category),alpha=0.85,col=NA) +
+    scale_fill_manual(values=rl_pal, name=NULL) +
+    cowplot::theme_map() +
+    labs(title=paste0("SD: ",x),
+         subtitle = paste0(area_diff_pct,"% of total area; ",row_diff," ranges missing of ",nrow(rl_full))) +
+    theme(legend.position="bottom",
+          legend.justification = "centre",
+          plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5))
+})
+
+cowplot::plot_grid(plotlist=plts,nrow=2,ncol=2)
+
+```
+
+
+
+### Presence thresholds
+
+Following Martin *et al.*[@martinGlobalMapAid2015] and Brauneder *et al.*[@braunederGlobalScreeningCritical2018], we use a high threshold for species distribution models of >90% as for the modelled cold-water coral datasets used in this analysis (@tbl-features; see also @fig-octo-sensitivity). However, two datasets, tropical moist forest and mangroves, required an alternative approach as they represent high-resolution data (10 or 30m grid cells) derived from satellite imagery[@vancutsemLongterm19902019Monitoring2021;@buntingGlobalMangroveWatch2022]. The 10 or 30m pixels are classified as presence/absence. When averaged to 30 arcseconds resolution, these data then present an effective percentage cover in the cell. @fig-mangrove-sensitivity below shows the result of applying four different thresholds to these data: 0.25, 0.5, 0.75, and 0.9. As the aggregated data do not constitute a probability distribution, we selected $\geq$ 0.5 as the threshold. For mangroves, the area occupied by 1km cells over this threshold approximated the reported global extent of mangroves [@buntingGlobalMangroveWatch2022]. 
+
+
+
+```{r raster-sensitivity}
+#| fig-width: 5
+#| fig-height: 5
+#| fig-cap: Sensitivity analysis of % presence cutoff values for mangrove data. Plots show effect of setting the % presence to >25,>50,>75,>90% on the output binary distribution. We select 50% for use in this analysis.
+#| label: fig-mangrove-sensitivity
+#| cache: false
+
+pal="lipari"
+revCol=TRUE
+
+source("plot_functions.R")
+
+plot_rst_sensitivity(data_WGS=rast("../../raw_data/GMW_v3/gmw_v3_2020/mangrove_mosaic_agg.tif"),
+             wrld=wrld,
+             focus_ext=ext(c(-16.717, -13.634, 10.917, 12.683)),
+             palette=pal,
+             revCol=revCol)
+
+```
+
+
+
+### Feature coverage vs previous screening layer
+
+
+
+```{r feature-areas-bar}
+#| fig-width: 8
+#| fig-height: 7
+#| fig-cap: Critical Habitat (Likely and Potential) areas per biodiversity feature, split by whether the area is additional, upgraded, unchanged, or downgraded.
+#| label: fig-feat-area-bar
+
+feat_bar = read.csv("drill_down_change_areas.csv", check.names=TRUE) |>
+  select(c(starts_with(c("L_","P_"))),area,ADDITION,UPGRADE,DOWNGRADE) |>
+  pivot_longer(starts_with(c("L_","P_")),names_to="Short",values_to="Presence") |>
+  filter(Presence==1) |>
+  group_by(Short) |>
+  summarise(across(1:4, ~ sum(.x,na.rm=TRUE))) |>
+  mutate(NOCHANGE=area-(ADDITION+UPGRADE+DOWNGRADE)) |>
+  select(-area) |>
+  pivot_longer(ADDITION:NOCHANGE, names_to="Change", values_to="area") |>
+  mutate(across(Change, ~ factor(.x,levels=c("DOWNGRADE","NOCHANGE","UPGRADE","ADDITION")))) |>
+  left_join(select(read.csv("../../scripts_tools/lookup.csv"),Short,Feature),by="Short") |>
+  select(Feature,Change,area)
+
+ggplot(feat_bar, aes(x=fct_reorder(Feature, .x = area, .fun = sum),y=area,fill=Change)) +
+  geom_bar(stat="identity") +
+  theme_minimal() +
+  scale_fill_manual(name=NULL,values=scico(palette="bam",n=5)[2:5],labels=c("Downgraded","No Change","Upgraded","Additional")) +
+  coord_flip() +
+  ylab(bquote('Area '(km^2))) + xlab(NULL) +
+  theme(
+    legend.position="bottom",
+    panel.grid.major.y = element_blank(),
+    panel.grid.major.x = element_line(colour="gray"),
+    panel.grid.minor.x = element_line(colour="gray"),
+    axis.text.y  = element_text(hjust=1,size=7),
+    panel.background = element_rect(fill="gray80",colour=NA)
+    ) +
+  guides(fill = guide_legend(reverse=T)) +
+  scale_y_continuous(labels=scales::comma,expand=expansion(mult=c(0,.11)))
+
+```
+
+
+
+`r ch_changes_areas[ch_changes_areas$ch_type=="ch_Addition",2][[1]]/1000000` million km^2^ has been added, `r ch_changes_areas[ch_changes_areas$ch_type=="ch_Upgrade",2][[1]]/1000000` million km^2^ upgraded, `r ch_changes_areas[ch_changes_areas$ch_type=="ch_Downgrade",2][[1]]/1000000` million km^2^ downgraded, and `r ch_changes_areas[ch_changes_areas$ch_type=="ch_Removal",2][[1]]/1000000` million km^2^ removed in the updated Critical Habitat screening layer. @tbl-addition, @tbl-upgrade, @tbl-downgrade and @tbl-removal detail the biodiversity features responsible for the changes. @fig-feat-area-bar shows the composition of each biodiversity feature.
+
+
+
+```{r addition-table}
+#| tbl-cap: "Biodiversity features contributing the five highest proportions to the area added as Potential or Likely Critical Habitat in the update."
+#| label: tbl-addition
+
+addition_table = read.csv("feat_addition_areas.csv") |>
+  rename(Short=Feature) |>
+  left_join(read.csv("../../scripts_tools/lookup.csv") |> dplyr::select(Short,Feature),by="Short") |>
+  dplyr::select(Feature,2:6)
+
+addition_table |>
+  select(-total_add_area) |>
+  slice_max(pct_of_add,n=5) |>
+  mutate(across(2:3, ~ prettyNum(.x/1000, big.mark=",",digits=4))) |>
+  mutate(across(4:5, label_percent(accuracy=0.01))) |>
+  select(c(1,3,4,2,5)) |>
+  kable(col.names = c("Biodiversity feature",
+                      "Area added","%",
+                      "Total feature area","%")) |>
+  column_spec(1,width="6cm") |>
+  column_spec(2:5,width="2cm") |>
+  footnote(general="Areas in km$^2$ x 10$^3$. IMMA: Important Marine Mammal Area. Percentages may add up to more than 100% due to overlapping features.", escape=F, threeparttable=TRUE)
+  
+```
+
+```{r upgrade-table}
+#| tbl-cap: "Biodiversity features contributing the five highest proportions to the area upgraded from Potential to Likely Critical Habitat in the update."
+#| label: tbl-upgrade
+
+upgrade_table = read.csv("feat_upgrade_areas.csv") |>
+  rename(Short=Feature) |>
+  left_join(read.csv("../../scripts_tools/lookup.csv") |> dplyr::select(Short,Feature),by="Short") |>
+  dplyr::select(Feature,2:6)
+
+upgrade_table |>
+  select(-total_upgr_area) |>
+  slice_max(pct_of_upgr,n=5) |>
+  mutate(across(2:3, ~ prettyNum(.x/1000, big.mark=",",digits=4))) |>
+  mutate(across(4:5, label_percent(accuracy=0.01))) |>
+  select(c(1,3,4,2,5)) |>
+  kable(col.names = c("Biodiversity feature",
+                      "Area upgraded","%",
+                      "Total feature area","%")) |>
+  column_spec(1,width="6cm") |>
+  column_spec(2:5,width="2cm") |>
+  footnote(general="Areas in km$^2$ x 10$^3$. IBA: Important Bird and Biodiversity Area. Percentages may add up to more than 100% due to overlapping features.", escape=F, threeparttable=TRUE)
+  
+```
+
+
+
+Important Marine Mammal Areas (IMMAs) dominate contributions to added Potential and Likely Critical Habitat (@tbl-addition), adding `r addition_table[addition_table$Feature=="IMMAs under criteria C1, C2 and C3","add_area"][1]/1000000` million km^2^ for IMMAs designated under criteria C1, C2 and C3 alone. Intact Forest Landscapes, an extensive biodiversity feature added in the update (see Supplementary Information for their inclusion justification), also contributes a significant area. For areas upgraded from Potential Critical Habitat to Likely Critical Habitat (@tbl-upgrade), forest features dominate: over half of the area upgraded contain areas that are Likely Critical Habitat due to the presence of tropical moist forest. Just under half of all areas upgraded were previously Potential Critical Habitat due to the presence of tropical dry forest.
+
+
+
+```{r downgrade-table}
+#| tbl-cap: "Five largest areas of biodiversity features downgraded from Likely to Potential Critical Habitat in the update. Names do not fully align with features in updated layer."
+#| label: tbl-downgrade
+
+downgrade_table = read.csv("feat_2018_downgrade_areas.csv")
+
+downgrade_table |>
+  select(-total_down_area) |>
+  slice_max(pct_of_down,n=5) |>
+  mutate(across(2:3, ~ prettyNum(.x/1000, big.mark=",",digits=4))) |>
+  mutate(across(4:5, label_percent(accuracy=0.01))) |>
+  select(c(1,3,4,2,5)) |>
+  kable(col.names = c("Biodiversity feature",
+                      "Area downgraded","%",
+                      "Previous feature area","%")) |>
+  column_spec(1,width="6cm") |>
+  column_spec(2:5,width="2cm") |>
+  footnote(general="Areas in km$^2$ x 10$^3$. CR: Critically Endangered; EN: Endangered; KBA: Key Biodiversity Area; IBA: Important Bird and Biodiversity Area. Percentages may add up to more than 100% due to overlapping features.",escape=F,threeparttable=TRUE)
+  
+```
+
+```{r removal-table}
+#| tbl-cap: "Five largest areas of biodiversity features removed as Critical Habitat in the update. Names do not fully align with features in updated layer."
+#| label: tbl-removal
+
+removal_table = read.csv("feat_2018_removal_areas.csv")
+
+removal_table |>
+  select(-total_remove_area) |>
+  slice_max(pct_of_remove,n=5) |>
+  mutate(across(2:3, ~ prettyNum(.x/1000, big.mark=",",digits=4))) |>
+  mutate(across(4:5, label_percent(accuracy=0.01))) |>
+  select(c(1,3,4,2,5)) |>
+  kable(col.names = c("Biodiversity feature",
+                      "Area removed","%",
+                      "Previous feature area","%")) |>
+  column_spec(1,width="6cm") |>
+  column_spec(2:5,width="2cm") |>
+  footnote(general="Areas in km$^2$ x 10$^3$. CR: Critically Endangered; EN: Endangered; PA: protected area; KBA: Key Biodiversity Area. Percentages may add up to more than 100% due to overlapping features.",escape=F,threeparttable=TRUE)
+  
+```
+
+
+
+Areas downgraded or removed from the screening layer tend to be an order of magnitude lower than those upgraded or added (@tbl-downgrade and @tbl-removal). Some of the features shown to have had area removed in the update are derived from the World Database on Protected Areas (WDPA) and World Database of Key Biodiversity Areas (WDKBA), two datasets that are regularly updated, with records both added and removed. Protected areas, for example, are often downgraded, downsized, or even degazetted[@goldenkronerUncertainFutureProtected2019a] and these changes would be reflected in the screening layer. However, some features used the same data as previously, which warranted further inspection: `r label_percent(accuracy=0.01)(removal_table[removal_table$ALL_FEATURES=="Tropical dry forest","pct_of_feat"][1])` of tropical dry forest has been removed from the layer, alongside `r label_percent(accuracy=0.01)(removal_table[removal_table$ALL_FEATURES=="Soft cold-water coral (Octocorals)","pct_of_feat"][1])` of cold-water coral. Both appear to be small errors in the production of the previous screening layer. @fig-dryfor-sensitivity shows a comparison between the original input data, used in this layer and previously, alongside how the data were aggregated to a lower resolution in the previous layer and now. The method employed here appears to better reflect the higher resolution data but would reduce the overall feature area when compared to previously. For octocorals, the previous methodology considered  values of **>90%** as presences for the species distribution models, but @fig-octo-sensitivity shows that it is more likely that the analysis classified cells $\geq$ 90% as presences. In this update, we have maintained a threshold of >90%, which has consequently removed some areas from the layer.
+
+
+
+```{r dryfor-sensitivity}
+#| fig-width: 8
+#| fig-height: 5
+#| fig-cap: Differences in tropical dry forest coverage between (a) 2024 aggregation method, (b) original 500m resolution, and (c) 2018 aggregation method.
+#| label: fig-dryfor-sensitivity
+#| cache: false
+
+cyl = "ESRI:54034"
+
+bol = gisco_get_countries(country="BOL")
+
+dryfor_orig = rast("../../raw_data/WCMC_065_TropicalDryForests2006/Tropical_Dry_Forests/trop_dryf/tropdryf") |>
+  crop(bol) |>
+  classify(cbind(NA,0))
+dryfor2024 = rast("../../scratch/P_C4_Tropical_Dry_Forest.tif") |>
+  crop(bol) |>
+  disagg(fact=2,method="near") |>
+  resample(dryfor_orig,method="near")
+dryfor2018 = rast("../../raw_data/WCMC-043-GlobalCH-IFCPS6-2017/01_Data/crhab_mt")|>
+  crop(bol |> st_transform(cyl))
+crs(dryfor2018) <- cyl
+
+dryfor_vals = cats(dryfor2018)[[1]] |>
+  filter(if_any(C1:C5, ~ str_detect(.x, "dry forest"))) |>
+  pull(VALUE)
+
+levels(dryfor2018) <- mutate(cats(dryfor2018)[[1]],dryfor=VALUE %in% dryfor_vals)
+
+activeCat(dryfor2018) <- "dryfor"
+dryfor2018 = as.numeric(dryfor2018,activeCat(dryfor2018))
+
+dryfor2018 = project(dryfor2018,dryfor2024,method="near") |>
+  disagg(fact=2,method="near") |>
+  resample(dryfor_orig,method="near") |>
+  classify(cbind(NA,0))
+
+stack = c(dryfor2024,dryfor_orig,dryfor2018)
+names(stack) <- letters[1:3]
+levels(stack) <- list(data.frame(id=0:1,a=c("No","Yes")),
+                      data.frame(id=0:1,b=c("No","Yes")),
+                      data.frame(id=0:1,c=c("No","Yes")))
+
+focus_ext = ext(bol)
+inset_ext = focus_ext+25
+
+a = ggplot() +
+  geom_spatraster(data = stack) +
+  facet_wrap(~lyr, ncol=3) +
+  theme_void() +
+  theme(legend.position="bottom") +
+  scale_fill_manual(name="Tropical dry forest",values=scico(palette=pal,direction=ifelse(revCol,-1,1),n=3)[2:3])
+
+b = ggplot(st_transform(wrld,4326)) +
+  geom_sf(col=NA) +
+  geom_sf(data=st_as_sfc(st_bbox(focus_ext,crs=4326)),col="red",fill=NA) +
+  theme_map() +
+  theme(panel.background = element_rect(fill="gray",colour=NA)) +
+  coord_sf(xlim = inset_ext[1:2], ylim = inset_ext[3:4], expand = FALSE)
+
+ggdraw(a) +
+  draw_plot(b,scale=0.265,halign=0,valign=0)
+
+```
+
+```{r octo-sensitivity}
+#| fig-width: 8
+#| fig-height: 5
+#| fig-cap: Differences in octocoral coverage between (a) 2024 threshold (>90%), (b) >=90% threshold, and (c) 2018 octocoral coverage.
+#| label: fig-octo-sensitivity
+#| cache: false
+
+espmar = ext(c(-4,-2,35,36.5))
+
+coral_files = list.files("../../raw_data/ZSL-001-ModelledOctocorals2012/02_Data_sources/Restricted-GeoTiffHighRes", full.names=TRUE) %>% 
+  keep(str_ends(.,".tif") & !str_detect(.,"Consensus"))
+
+octo2018 = rast("ch2018_drill_down.tif") |>
+  crop(espmar)
+
+octo_vals = cats(octo2018)[[1]] |>
+  filter(if_any(C1:C5, ~ str_detect(.x, "Octocorals"))) |>
+  pull(VALUE)
+
+levels(octo2018) <- mutate(cats(octo2018)[[1]],octo=VALUE %in% octo_vals)
+
+activeCat(octo2018) <- "octo"
+octo2018 = as.numeric(octo2018,activeCat(octo2018))
+
+coral = rast(coral_files) |>
+  crop(espmar) |>
+  classify(cbind(NA,0))
+
+stack = c(app(coral>90,any),app(coral>=90,any),octo2018)
+names(stack) <- letters[1:3]
+levels(stack) <- list(data.frame(id=0:1,a=c("No","Yes")),
+                      data.frame(id=0:1,b=c("No","Yes")),
+                      data.frame(id=0:1,c=c("No","Yes")))
+
+focus_ext = ext(espmar)
+inset_ext = focus_ext+25
+
+a = ggplot() +
+  geom_spatraster(data = stack) +
+  geom_sf(data=st_crop(wrld,st_bbox(extend(focus_ext,y=0.5))),col=scico(palette=pal,n=3)[2],fill=NA) +
+  facet_wrap(~lyr, ncol=3) +
+  theme_void() +
+  theme(legend.position="bottom") +
+  scale_fill_manual(name="Octocorals",values=scico(palette=pal,direction=ifelse(revCol,-1,1),n=3)[2:3]) +
+  coord_sf(xlim = focus_ext[1:2], ylim = focus_ext[3:4], expand = FALSE)
+
+b = ggplot(st_transform(wrld,4326)) +
+  geom_sf(col=NA) +
+  geom_sf(data=st_as_sfc(st_bbox(focus_ext,crs=4326)),col="red",fill=NA) +
+  theme_map() +
+  theme(panel.background = element_rect(fill="gray",colour=NA)) +
+  coord_sf(xlim = inset_ext[1:2], ylim = inset_ext[3:4], expand = FALSE)
+
+ggdraw(a) +
+  draw_plot(b,scale=0.28,halign=0,valign=0)
+
+```
+
+
+
+## Usage notes
+
+As noted by Martin *et al.*[@martinGlobalMapAid2015] and Brauneder *et al.*[@braunederGlobalScreeningCritical2018], the global Critical Habitat screening layer does not replace detailed on-the-ground Critical Habitat assessments. Reference to Critical Habitat here refers specifically to **areas in the screening layer identified as Likely or Potential Critical Habitat**, and does not indicate confirmed, on-the-ground, Critical Habitat. The data allow users to identify areas that need further investigation, including full Critical Habitat assessment, and to help direct impact mitigation efforts and conservation action.
+
+We recommend working mostly with the raster data. While the polygon layer allows for more information to be stored about the relevant biodiversity triggers, it is susceptible to misuse if users mistake it for actual vector data and start performing advanced spatial operations on the layer.
+
+Due to precision restrictions inherent with **R**, the number of biodiversity feature triggers that this workflow can handle is ~66 (this analysis uses `r length(unique(paste0(features_table[,1],features_table[,2])))`, see @tbl-features).
+
+## Code availability
+
+The code used to compile this update of the global Critical Habitat screening layer is publicly available through the *Zenodo* repository[@dunnettUpdateGlobalCritical2024]. The analysis is split across seven **R** scripts:
+
+- *0 spatial_processing_functions.R*. Provides custom spatial processing functions required (see Methods).
+- *1.1 Red_List_Preprocessing.R*. Initial processing of the IUCN Red List data, including filtering out species ranges with areas larger than a set amount of standard deviations above the mean (see Technical Validation).
+- *1.2 Data_Preprocessing_Raster.R*. Preprocessing for the few datasets not available in vector format to produce standardised binary rasters for the next stage of the analysis.
+- *1.3 Data_Preprocessing_Vector.R*. Preprocessing for vector input datasets to produce flat, dissolved layers for the next stage of the analysis.
+- *2 Create_Drill_Down_Critical_Habitat_Raster_Layer.R*. Contains the lion's share of processing. Converts the input flat vector layers to binary raster data and combines with the existing binary raster data in a process akin to the *Combine* tool in ArcGIS to produce a layer with a unique value for every resultant combination of input datasets. The script also produces the accompanying raster attribute table (RAT).
+- *3 Create_Basic_Critical_Habitat_Raster_Layer.R*. Converts the detailed raster data into the basic Critical Habitat file.
+- *4 Create_Drill_Down_Polygons.R*. Polygonises the drill down raster data to produce a vector layer that allows more information to be stored in the file than allowed in the spatial grid + RAT.
+
+We regret that we cannot provide the full suite of input data due to copyright restrictions. All data not freely accessible through the UNEP-WCMC data portal are available on request from their respective owners.
+
+
+
+{{< pagebreak >}}
+
+

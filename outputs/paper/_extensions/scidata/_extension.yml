@@ -16,6 +16,7 @@ contributes:
             digits: 4
             knitr.digits.signif: true #true for signif(), false for round()
     pdf:
+      fig-pos: 'p'
       documentclass: wlscirep
       colorlinks: true
       urlcolor: blue
