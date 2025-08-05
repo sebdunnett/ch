@@ -11,7 +11,7 @@ p_load(tidyverse,sf,terra,tictoc,geos,giscoR,scico,units)
 tic("processing RL ranges")
 
 # location of full Red List geodatabase
-rl_gdb = "O:/f00_data/IUCN_001_RedListSpecies/IUCN_RL_2024_1_Species_Data/IUCN_RL_2024_1_Species_Data.gdb"
+rl_gdb = "O:/f00_data/IUCN_001_RedListSpecies/IUCN_RL_2025_1_Species_Data.gdb"
 
 rl_gdb_layers = st_layers(rl_gdb)$name
 
@@ -37,7 +37,7 @@ rl_lookup = st_read(rl_gdb,layer=rl_list,quiet=TRUE)
 rl_CH_subset = filter(rl_lookup,
                       category %in% c("CR","EN","VU") &
                         str_detect(criteria,"D") &
-                        biome_marine == "false" |
+                        !biome_marine |
                         family_name == "HOMINIDAE") %>% 
   pull(id_no) %>% 
   as.character

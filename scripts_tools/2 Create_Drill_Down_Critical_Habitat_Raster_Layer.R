@@ -125,8 +125,8 @@ likely = c(rast(paste0(scratch_path,"likely_polys.tif")),
               rast(paste0(scratch_path,"likely_pts.tif")),
               likely_rasters)
 
-# features occassionally count as both likely and potential
-# these lines ensure they are handled correctly in both cateories
+# features occasionally count as both likely and potential
+# these lines ensure they are handled correctly in both categories
 likely_duplicates = duplicated(names(likely)) | duplicated(names(likely),fromLast=TRUE)
 
 if(any(likely_duplicates)){

@@ -54,7 +54,7 @@ P_C4_C5_Coldwater_coral = app(c(soft,stony),any)
 
 cat("writing...")
 
-rast_save(rst=P_C4_C5_Coldwater_coral,filename="P_C4_C5_Coldwater_coral.tif",outpath=output_path,nms="Cold water Coral - Modelled occurrence",dt="FLT8S")
+rast_save(rst=P_C4_C5_Coldwater_coral,filename="P_C4_C5_Coldwater_coral.tif",outpath=output_path,nms="Cold water coral reefs - modelled occurrence",dt="FLT8S")
 
 cat("done\n")
 

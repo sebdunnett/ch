@@ -2,7 +2,7 @@
 #source("scripts_tools/1.1 Red_List_Preprocessing.R")
 #source("scripts_tools/1.2 Data_Preprocessing_Raster.R")
 #source("scripts_tools/1.3 Data_Preprocessing_Vector.R")
-source("scripts_tools/2 Create_Drill_Down_Critical_Habitat_Raster_Layer.R")
+#source("scripts_tools/2 Create_Drill_Down_Critical_Habitat_Raster_Layer.R")
 source("scripts_tools/3.1 Create_Basic_Critical_Habitat_Raster_Layer.R")
 source("scripts_tools/3.2 Create_Drill_Down_Polygons.R")
 source("outputs/paper/area_analyses.R")

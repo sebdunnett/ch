@@ -19,12 +19,12 @@ author:
       - ref: unep-wcmc
   - name: Joseph A. Turner
     affiliations:
-      - name: The Biodiversity Consultancy
-        address: 3E King's Parade
-        city: Cambridge
+      - name: Bluedot Associates Ltd
+        address: 12 Whiteladies Road, Clifton
+        city: Bristol
         country: UK
-        postal-code: CB2 1SJ
-        id: tbc
+        postal-code: BS8 1PD
+        id: bd
   - name: Neil D. Burgess
     orcid: 0000-0003-2291-4535
     affiliations:
@@ -42,7 +42,7 @@ format:
   scidata-pdf:
     fig-pos: '!h'
 number-sections: true
-abstract: "The International Finance Corporation (IFC) defines Critical Habitat in Performance Standard 6 (PS6) as high biodiversity value areas requiring net biodiversity gain for projects. We present an updated global screening layer of Critical Habitat aligned with IFC's 2019 guidance. This layer derives from global datasets covering 53 biodiversity features, categorized as 'Likely' or 'Potential' Critical Habitat based on agreement with IFC criteria and data suitability. Analysis indicates 52.77 million km^2^ (10.4%) and 15.94 million km^2^ (3.2%) of the globe can be considered Likely and Potential Critical Habitat respectively, with the remaining 86.4% not overlapping with assessed biodiversity features. This represents a significant increase over previously identified 5% and 2% for Likely and Potential Critical Habitat. Likely Critical Habitat was dominated by Important Bird and Biodiversity Areas, Intact Forest Landscapes, and protected areas; Potential Critical Habitat by Important Marine Mammal Areas and ranges of IUCN Vulnerable species. Our results can help businesses prioritize impact avoidance and identify opportunities by screening potential development sites for biodiversity features."
+abstract: "The International Finance Corporation (IFC) defines Critical Habitat in Performance Standard 6 (PS6) as high biodiversity value areas requiring net biodiversity gain for projects. We present an updated global screening layer of Critical Habitat aligned with IFC's 2019 guidance. This layer derives from global datasets covering 54 biodiversity features, categorized as 'Likely' or 'Potential' Critical Habitat based on agreement with IFC criteria and data suitability. Analysis indicates 53.95 million km^2^ (10.58%) and 13.71 million km^2^ (2.69%) of the globe can be considered Likely and Potential Critical Habitat respectively, with the remaining 86.73% not overlapping with assessed biodiversity features. This represents a significant increase over previously identified 5% and 2% for Likely and Potential Critical Habitat. Likely Critical Habitat was dominated by Important Bird and Biodiversity Areas, Intact Forest Landscapes, and protected areas; Potential Critical Habitat by Important Marine Mammal Areas and ranges of IUCN Vulnerable species. Our results can help businesses prioritize impact avoidance and identify opportunities by screening potential development sites for biodiversity features."
 ---
 
 ```{r setup}
@@ -85,9 +85,9 @@ wrld = gisco_get_coastallines(resolution="03") |>
 ch_basic_files = list.files("..", pattern = "Basic_Critical_Habitat.*\\.tif$", full.names=TRUE)
 ch_basic_file = ch_basic_files[which.max(file.info(ch_basic_files)$ctime)]
 
-ch2024_30as = rast(ch_basic_file)
+ch2025_30as = rast(ch_basic_file)
 
-ch2024_areas = expanse(ch2024_30as,unit="km",byValue=TRUE)[,2:3]
+ch2025_areas = expanse(ch2025_30as,unit="km",byValue=TRUE)[,2:3]
 
 area_lookup = read.csv("../../outputs/area_comparisons.csv")
 
@@ -95,7 +95,7 @@ feat_areas = read.csv("drill_down_change_areas.csv") |> pivot_longer(starts_with
   filter(presence==1) |>
   group_by(feature) |>
   summarise(total_area=sum(area,na.rm=TRUE)) |> ungroup() |>
-  mutate(pct = total_area/sum(ch2024_areas[2:3,2]))
+  mutate(pct = total_area/sum(ch2025_areas[2:3,2]))
 
 raster_eq <- project(rast(res=1/12),"EPSG:8857",res=10000)
 
@@ -196,14 +196,9 @@ See Martin *et al.* 2015[@martinGlobalMapAid2015]. No change to data.
 ```{r cold-coral-obs-polys}
 #| fig-cap: "Global observed distribution of cold water corals - polygons (inset: North Atlantic and North Sea)."
 
-cold_coral_obs_polys = st_read("../../scratch/L_C4_C5_Cold_water_coral_observed_polys.shp",quiet=TRUE)
+cold_coral_obs_polys = st_read("../../scratch/L_C4_C5_Cold_water_coral_observed_polys.gpkg",quiet=TRUE)
 
 cold_coral_obs_polys_area = filter(area_lookup,Feature==cold_coral_obs_polys$Feature)$Area_polys_sqkm
-
-cold_coral_obs_polys = cold_coral_obs_polys |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_inset_sf(data=cold_coral_obs_polys,
              wrld=wrld,
@@ -330,34 +325,42 @@ Data are unioned to remove duplicates (see @sec-union).
 
 ```{r kbas}
 
-kba_aze_iba_polys = data.frame(vapour_read_attributes("O:/f00_data/Birdlife-001-KBA-IBA-AZE/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_POL.shp"))
-kba_aze_iba_pts = data.frame(vapour_read_attributes("O:/f00_data/Birdlife-001-KBA-IBA-AZE/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_PNT.shp"))
+kba_crit_lookup = readxl::read_xlsx("O:\\f00_data\\Birdlife-001-KBA-IBA-AZE\\KBAsGlobal_2025_March_01\\KBAsGlobal_2025_March_01\\TriggerSpecies_KBA_March_2025.xlsx") |>
+  group_by(SitRecID) |>
+  summarise(Criteria=strsplit(KBACriterias, ",") |>
+              unlist() |>
+              trimws() |>
+              unique() %>%
+              discard(.,is.na(.)) |>
+              paste(collapse = ", ") |>
+              na_if("")
+            )
 
-kba_layer = st_layers("O:/f00_data/Birdlife-001-KBA-IBA-AZE/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_POL.shp")[[1]]
+kba_aze_iba_polys = data.frame(vapour_read_attributes("O:\\f00_data\\Birdlife-001-KBA-IBA-AZE\\KBAsGlobal_2025_March_01\\KBAsGlobal_2025_March_01\\KBAsGlobal_2025_March_01_POL.shp")) |>
+  left_join(kba_crit_lookup,by="SitRecID")
+kba_aze_iba_pts = data.frame(vapour_read_attributes("O:\\f00_data\\Birdlife-001-KBA-IBA-AZE\\KBAsGlobal_2025_March_01\\KBAsGlobal_2025_March_01\\KBAsGlobal_2025_March_01_PNT.shp")) |>
+  left_join(kba_crit_lookup,by="SitRecID")
+
+kba_layer = st_layers("O:\\f00_data\\Birdlife-001-KBA-IBA-AZE\\KBAsGlobal_2025_March_01\\KBAsGlobal_2025_March_01\\KBAsGlobal_2025_March_01_POL.shp")[[1]]
 kba_sql = paste0("select * from \"",kba_layer,"\" limit 1")
 
 ```
 
 - **Data type**: Point and polygon
 - **Number of records**:`r nrow(kba_aze_iba_pts)` (point) and `r nrow(kba_aze_iba_polys)` (polygon)
-- **Original CRS**: `r st_crs(st_read("O:/f00_data/Birdlife-001-KBA-IBA-AZE/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_POL/KBAsGlobal_2024_Aug_02_POL.shp",quiet=TRUE,query=kba_sql))$input`
+- **Original CRS**: `r st_crs(st_read("O:\\f00_data\\Birdlife-001-KBA-IBA-AZE\\KBAsGlobal_2025_March_01\\KBAsGlobal_2025_March_01\\KBAsGlobal_2025_March_01_POL.shp",quiet=TRUE,query=kba_sql))$input`
 - **Area (polygons - reported)**: `r sum(kba_aze_iba_polys$GISArea,na.rm=TRUE) %>% units::set_units(ha) %>% units::set_units(km2) %>% as.numeric()` km^2^
 - **Area (point - reported)**: `r sum(as.numeric(kba_aze_iba_pts$sitarea),na.rm=TRUE) %>% units::set_units(ha) %>% units::set_units(km2) %>% as.numeric()` km^2^
-- **Source**: BirdLife International 2024[@KBA2024]
+- **Source**: BirdLife International 2025[@KBA2024]
 
 ### Alliance for Zero Extinction Sites (AZEs)
 
 ```{r azes}
 #| fig-cap: Global distribution of Alliance for Zero Extinction sites.
 
-azes = st_read("../../scratch/L_C1_C2_C3_AZEs_polys.shp",quiet=TRUE)
+azes = st_read("../../scratch/L_C1_C2_C3_AZEs_polys.gpkg",quiet=TRUE)
 
 azes_area = filter(area_lookup,Feature==azes$Feature)$Area_polys_sqkm
-
-azes = azes |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=azes,
              wrld=wrld,
@@ -396,20 +399,17 @@ See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@b
 ```{r kbas-A1ae}
 #| fig-cap: Global distribution of Key Biodiversity Areas under criteria A1a and A1e.
 
-kbasA1ae = st_read("../../scratch/L_C1_KBAs_A1ae_polys.shp",quiet=TRUE)
+kbasA1ae = st_read("../../scratch/L_C1_KBAs_A1ae_polys.gpkg",quiet=TRUE)
 
 kbasA1ae_area = filter(area_lookup,Feature==kbasA1ae$Feature)$Area_polys_sqkm
 
-kbasA1ae = kbasA1ae |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
-
-plot_data_sf(data=kbasA1ae,
+aaa = plot_data_sf(data=kbasA1ae,
              wrld=wrld,
              bkg=sphere,
              palette=pal,
              revCol=revCol)
+
+print(aaa)
 
 ```
 
@@ -443,14 +443,9 @@ Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Crit
 ```{r kbas-A1b}
 #| fig-cap: Global distribution of Key Biodiversity Areas under criterion A1b.
 
-kbasA1b = st_read("../../scratch/P_C1_KBAs_A1b_polys.shp",quiet=TRUE)
+kbasA1b = st_read("../../scratch/P_C1_KBAs_A1b_polys.gpkg",quiet=TRUE)
 
 kbasA1b_area = filter(area_lookup,Feature==kbasA1b$Feature)$Area_polys_sqkm
-
-kbasA1b = kbasA1b |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=kbasA1b,
              wrld=wrld,
@@ -500,14 +495,9 @@ No data present.
 ```{r kbas-B1}
 #| fig-cap: Global distribution of Key Biodiversity Areas under criterion B1.
 
-kbasB1 = st_read("../../scratch/L_C2_KBAs_B1_polys.shp",quiet=TRUE)
+kbasB1 = st_read("../../scratch/L_C2_KBAs_B1_polys.gpkg",quiet=TRUE)
 
 kbasB1_area = filter(area_lookup,Feature==kbasB1$Feature)$Area_polys_sqkm
-
-kbasB1 = kbasB1 |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=kbasB1,
              wrld=wrld,
@@ -545,14 +535,9 @@ Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Crit
 ```{r kbas-B4}
 #| fig-cap: Global distribution of Key Biodiversity Areas under criterion B4.
 
-kbasB4 = st_read("../../scratch/P_C4_KBAs_B4_polys.shp",quiet=TRUE)
+kbasB4 = st_read("../../scratch/P_C4_KBAs_B4_polys.gpkg",quiet=TRUE)
 
 kbasB4_area = filter(area_lookup,Feature==kbasB4$Feature)$Area_polys_sqkm
-
-kbasB4 = kbasB4 |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=kbasB4,
              wrld=wrld,
@@ -596,14 +581,9 @@ No data present.
 ```{r kbas-D1a}
 #| fig-cap: Global distribution of Key Biodiversity Areas under criterion D1a.
 
-kbasD1a = st_read("../../scratch/L_C3_KBAs_D1a_polys.shp",quiet=TRUE)
+kbasD1a = st_read("../../scratch/L_C3_KBAs_D1a_polys.gpkg",quiet=TRUE)
 
 kbasD1a_area = filter(area_lookup,Feature==kbasD1a$Feature)$Area_polys_sqkm
-
-kbasD1a = kbasD1a |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=kbasD1a,
              wrld=wrld,
@@ -641,14 +621,9 @@ Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Crit
 ```{r kbas-D1b}
 #| fig-cap: Global distribution of Key Biodiversity Areas under criterion D1b.
 
-kbasD1b = st_read("../../scratch/P_C3_KBAs_D1b_polys.shp",quiet=TRUE)
+kbasD1b = st_read("../../scratch/P_C3_KBAs_D1b_polys.gpkg",quiet=TRUE)
 
 kbasD1b_area = filter(area_lookup,Feature==kbasD1b$Feature)$Area_polys_sqkm
-
-kbasD1b = kbasD1b |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=kbasD1b,
              wrld=wrld,
@@ -686,14 +661,9 @@ Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Crit
 ```{r kbas-D2}
 #| fig-cap: Global distribution of Key Biodiversity Areas under criterion D2.
 
-kbasD2 = st_read("../../scratch/L_C3_KBAs_D2_polys.shp",quiet=TRUE)
+kbasD2 = st_read("../../scratch/L_C3_KBAs_D2_polys.gpkg",quiet=TRUE)
 
 kbasD2_area = filter(area_lookup,Feature==kbasD2$Feature)$Area_polys_sqkm
-
-kbasD2 = kbasD2 |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=kbasD2,
              wrld=wrld,
@@ -731,14 +701,9 @@ Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Crit
 ```{r kbas-D3}
 #| fig-cap: Global distribution of Key Biodiversity Areas under criterion D3.
 
-kbasD3 = st_read("../../scratch/P_C3_KBAs_D3_polys.shp",quiet=TRUE)
+kbasD3 = st_read("../../scratch/P_C3_KBAs_D3_polys.gpkg",quiet=TRUE)
 
 kbasD3_area = filter(area_lookup,Feature==kbasD3$Feature)$Area_polys_sqkm
-
-kbasD3 = kbasD3 |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=kbasD3,
              wrld=wrld,
@@ -776,14 +741,9 @@ Much of the rationale for the updated 2019 IFC Guidance Note 6 was to align Crit
 ```{r kbas-E}
 #| fig-cap: Global distribution of Key Biodiversity Areas under criterion E.
 
-kbasE = st_read("../../scratch/P_C1_KBAs_E_polys.shp",quiet=TRUE)
+kbasE = st_read("../../scratch/P_C1_KBAs_E_polys.gpkg",quiet=TRUE)
 
 kbasE_area = filter(area_lookup,Feature==kbasE$Feature)$Area_polys_sqkm
-
-kbasE = kbasE |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=kbasE,
              wrld=wrld,
@@ -844,18 +804,17 @@ iba_sql = paste0("select * from \"",iba_layer,"\" limit 1")
 ```{r ibas-A1}
 #| fig-cap: Global distribution of Important Bird and Biodiversity Areas under criterion A1.
 
-ibasA1 = st_read("../../scratch/L_C1_IBAs_A1_polys.shp",quiet=TRUE) |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
+ibasA1 = st_read("../../scratch/L_C1_IBAs_A1_polys.gpkg",quiet=TRUE)
 
-plot_data_sf(data=ibasA1,
+ibasA1_plot = plot_data_sf(data=ibasA1,
              wrld=wrld,
              bkg=sphere,
              palette=pal,
              revCol=revCol)
 
 ibasA1_area = filter(area_lookup,Feature==ibasA1$Feature)$Area_polys_sqkm
+
+print(ibasA1_plot)
 
 ```
 
@@ -886,14 +845,9 @@ See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@b
 ```{r ibas-A2}
 #| fig-cap: Global distribution of Important Bird and Biodiversity Areas under criterion A2.
 
-ibasA2 = st_read("../../scratch/P_C2_IBAs_A2_polys.shp",quiet=TRUE)
+ibasA2 = st_read("../../scratch/P_C2_IBAs_A2_polys.gpkg",quiet=TRUE)
 
 ibasA2_area = filter(area_lookup,Feature==ibasA2$Feature)$Area_polys_sqkm
-
-ibasA2 = ibasA2 |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=ibasA2,
              wrld=wrld,
@@ -930,14 +884,9 @@ See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@b
 ```{r ibas-A3}
 #| fig-cap: Global distribution of Important Bird and Biodiversity Areas under criterion A3.
 
-ibasA3 = st_read("../../scratch/P_C4_IBAs_A3_polys.shp",quiet=TRUE)
+ibasA3 = st_read("../../scratch/P_C4_IBAs_A3_polys.gpkg",quiet=TRUE)
 
 ibasA3_area = filter(area_lookup,Feature==ibasA3$Feature)$Area_polys_sqkm
-
-ibasA3 = ibasA3 |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=ibasA3,
              wrld=wrld,
@@ -974,20 +923,17 @@ See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@b
 ```{r ibas-A4}
 #| fig-cap: Global distribution of Important Bird and Biodiversity Areas under criterion A4.
 
-ibasA4 = st_read("../../scratch/L_C3_IBAs_A4_polys.shp",quiet=TRUE)
+ibasA4 = st_read("../../scratch/L_C3_IBAs_A4_polys.gpkg",quiet=TRUE)
 
 ibasA4_area = filter(area_lookup,Feature==ibasA4$Feature)$Area_polys_sqkm
 
-ibasA4 = ibasA4 |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
-
-plot_data_sf(data=ibasA4,
+ibasA4_plot = plot_data_sf(data=ibasA4,
              wrld=wrld,
              bkg=sphere,
              palette=pal,
              revCol=revCol)
+
+print(ibasA4_plot)
 
 ```
 
@@ -1018,14 +964,9 @@ See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@b
 ```{r ibas-B1b}
 #| fig-cap: Global distribution of Important Bird and Biodiversity Areas under criterion B1b.
 
-ibasB1b = st_read("../../scratch/P_C1_IBAs_B1b_polys.shp",quiet=TRUE)
+ibasB1b = st_read("../../scratch/P_C1_IBAs_B1b_polys.gpkg",quiet=TRUE)
 
 ibasB1b_area = filter(area_lookup,Feature==ibasB1b$Feature)$Area_polys_sqkm
-
-ibasB1b = ibasB1b |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=ibasB1b,
              wrld=wrld,
@@ -1079,14 +1020,9 @@ rm(imma_kml)
 ```{r imma-A}
 #| fig-cap: Global distribution of Important Marine Mammal Areas under criterion A.
 
-immaA = st_read("../../scratch/P_C1_IMMAs_A_polys.shp",quiet=TRUE)
+immaA = st_read("../../scratch/P_C1_IMMAs_A_polys.gpkg",quiet=TRUE)
 
 immaA_area = filter(area_lookup,Feature==immaA$Feature)$Area_polys_sqkm
-
-immaA = immaA |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=immaA,
              wrld=wrld,
@@ -1127,14 +1063,9 @@ Sites designated under IMMA Criterion A (Species or Population Vulnerability).
 ```{r imma-B1}
 #| fig-cap: Global distribution of Important Marine Mammal Areas under criterion B1.
 
-immaB1 = st_read("../../scratch/P_C2_IMMAs_B1_polys.shp",quiet=TRUE)
+immaB1 = st_read("../../scratch/P_C2_IMMAs_B1_polys.gpkg",quiet=TRUE)
 
 immaB1_area = filter(area_lookup,Feature==immaB1$Feature)$Area_polys_sqkm
-
-immaB1 = immaB1 |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=immaB1,
              wrld=wrld,
@@ -1175,14 +1106,9 @@ Sites designated under IMMA Criterion B1 (Small and Resident Populations).
 ```{r imma-B2}
 #| fig-cap: Global distribution of Important Marine Mammal Areas under criterion B2.
 
-immaB2 = st_read("../../scratch/L_C3_IMMAs_B2_polys.shp",quiet=TRUE)
+immaB2 = st_read("../../scratch/L_C3_IMMAs_B2_polys.gpkg",quiet=TRUE)
 
 immaB2_area = filter(area_lookup,Feature==immaB2$Feature)$Area_polys_sqkm
-
-immaB2 = immaB2 |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=immaB2,
              wrld=wrld,
@@ -1223,14 +1149,9 @@ Sites designated under IMMA Criterion B2 (Aggregations).
 ```{r imma-C}
 #| fig-cap: Global distribution of Important Marine Mammal Areas under criterion C.
 
-immaC = st_read("../../scratch/P_C3_IMMAs_C1_C2_C3_polys.shp",quiet=TRUE)
+immaC = st_read("../../scratch/P_C3_IMMAs_C1_C2_C3_polys.gpkg",quiet=TRUE)
 
 immaC_area = filter(area_lookup,Feature==immaC$Feature)$Area_polys_sqkm
-
-immaC = immaC |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=immaC,
              wrld=wrld,
@@ -1274,14 +1195,9 @@ We only consider confirmed IMMAs. Sites designated under IMMA Criteria C1 (Repro
 ```{r imma-D1}
 #| fig-cap: Global distribution of Important Marine Mammal Areas under criterion D1.
 
-immaD1 = st_read("../../scratch/P_C2_C4_IMMAs_D1_polys.shp",quiet=TRUE)
+immaD1 = st_read("../../scratch/P_C2_C4_IMMAs_D1_polys.gpkg",quiet=TRUE)
 
 immaD1_area = filter(area_lookup,Feature==immaD1$Feature)$Area_polys_sqkm
-
-immaD1 = immaD1 |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=immaD1,
              wrld=wrld,
@@ -1324,14 +1240,9 @@ Sites designated under IMMA Criterion D1 (Distinctiveness).
 ```{r imma-D2}
 #| fig-cap: Global distribution of Important Marine Mammal Areas under criterion D2.
 
-immaD2 = st_read("../../scratch/P_C4_IMMAs_D2_polys.shp",quiet=TRUE)
+immaD2 = st_read("../../scratch/P_C4_IMMAs_D2_polys.gpkg",quiet=TRUE)
 
 immaD2_area = filter(area_lookup,Feature==immaD2$Feature)$Area_polys_sqkm
-
-immaD2 = immaD2 |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=immaD2,
              wrld=wrld,
@@ -1372,10 +1283,7 @@ Sites designated under IMMA Criterion D2 (Diversity).
 ```{r ifl}
 #| fig-cap: Global distribution of Intact Forest Landscapes.
 
-ifl = st_read("../../scratch/L_C4_Intact_Forest_Landscapes_polys.shp",quiet=TRUE) |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
+ifl = st_read("../../scratch/L_C4_Intact_Forest_Landscapes_polys.gpkg",quiet=TRUE)
 
 ifl_plot = plot_data_sf(data=ifl,
              wrld=wrld,
@@ -1422,14 +1330,9 @@ No filtering of data from source.
 ```{r irrep-pas}
 #| fig-cap: Global distribution of irreplaceable protected areas.
 
-irrep_pas = st_read("../../scratch/L_C4_Irrep_PAs_polys.shp",quiet=TRUE)
+irrep_pas = st_read("../../scratch/L_C4_Irrep_PAs_polys.gpkg",quiet=TRUE)
 
 irrep_pas_area = filter(area_lookup,Feature==irrep_pas$Feature)$Area_polys_sqkm
-
-irrep_pas = irrep_pas |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=irrep_pas,
              wrld=wrld,
@@ -1465,7 +1368,7 @@ No filtering of data from source.
 
 ```{r rl-import}
 
-rl_gdb = "O:/f00_data/IUCN_001_RedListSpecies/IUCN_RL_2024_1_Species_Data/IUCN_RL_2024_1_Species_Data.gdb"
+rl_gdb = "O:/f00_data/IUCN_001_RedListSpecies/IUCN_RL_2025_1_Species_Data.gdb"
 
 rl_gdb_layers = st_layers(rl_gdb)$name
 
@@ -1481,13 +1384,13 @@ rl_full = st_read("rl_full.gpkg",quiet=TRUE)
 - **Data type**: Polygon (we exclude point data)
 - **Number of records**: `r nrow(st_read(rl_gdb,layer=rl_list,quiet=TRUE))`
 - **Original CRS**: `r st_crs(rl_full)$input`
-- **Source**: IUCN 2024[@iucnIUCNRedList2024]
+- **Source**: IUCN 2025[@iucnIUCNRedList2024]
 - **Version**: `r str_match(rl_gdb, "RL_(.*?)_Species")[, 2]`
 
 #### How the data are filtered{.unnumbered}
 
 - Critically Endangered (CR), Endangered (EN) or Vulnerable (VU) species classified under Criterion D for CR or EN (Population size estimated to number fewer than 50(CR)/250(EN) mature individuals) and D2 for VU (Population with a very restricted area of occupancy (typically less than 20 km^2^) or number of locations (typically five or fewer) such that it is prone to the effects of human activities or stochastic events within a very short time period in an uncertain future, and is thus capable of becoming CR or even Extinct in a very short time period).
-- Exclude marine ranges (`biome_marine==false`).
+- Exclude marine ranges (`!biome_marine`).
 - Species in Family *Hominidae*.
 - Exclude *Extinct (post 1500)* or *Probably Extant* (deprecated category) ranges.
 - Ranges with areas $\geq$ three times the standard deviation of the data (see Technical Validation in main text). This exercise removes areas disproportionately large. Furthermore, some of the records removed include the northern white rhino, of which there is only one individual left, and the ivory-billed woodpecker, which is argued to be extinct.
@@ -1501,14 +1404,9 @@ Invalid S2 geometries (see @sec-s2) are made valid.
 ```{r iucn-cr}
 #| fig-cap: Global distribution of Critically Endangered species under criterion D.
 
-iucn_cr = st_read("../../scratch/L_C1_IUCN_CR_D_polys.shp",quiet=TRUE)
+iucn_cr = st_read("../../scratch/L_C1_IUCN_CR_D_polys.gpkg",quiet=TRUE)
 
 iucn_cr_area = filter(area_lookup,Feature==iucn_cr$Feature)$Area_polys_sqkm
-
-iucn_cr = iucn_cr |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=iucn_cr,
              wrld=wrld,
@@ -1542,14 +1440,9 @@ No further filtering of data.
 ```{r iucn-en}
 #| fig-cap: Global distribution of Endangered species under criterion D.
 
-iucn_en = st_read("../../scratch/L_C1_IUCN_EN_D_polys.shp",quiet=TRUE)
+iucn_en = st_read("../../scratch/L_C1_IUCN_EN_D_polys.gpkg",quiet=TRUE)
 
 iucn_en_area = filter(area_lookup,Feature==iucn_en$Feature)$Area_polys_sqkm
-
-iucn_en = iucn_en |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=iucn_en,
              wrld=wrld,
@@ -1583,14 +1476,9 @@ No further filtering of data from source.
 ```{r iucn-vu}
 #| fig-cap: Global distribution of Vulnerable species under criterion D2.
 
-iucn_vu = st_read("../../scratch/P_C1_IUCN_VU_D2_polys.shp",quiet=TRUE)
+iucn_vu = st_read("../../scratch/P_C1_IUCN_VU_D2_polys.gpkg",quiet=TRUE)
 
 iucn_vu_area = filter(area_lookup,Feature==iucn_vu$Feature)$Area_polys_sqkm
-
-iucn_vu = iucn_vu |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=iucn_vu,
              wrld=wrld,
@@ -1708,10 +1596,7 @@ plot_rst_sensitivity(data_WGS=rast("../../raw_data/GMW_v3/gmw_v3_2020/mangrove_m
 ```{r saltmarsh}
 #| fig-cap: Global distribution of saltmarshes.
 
-saltmarsh = st_read("../../scratch/L_C4_Saltmarsh_polys.shp",quiet=TRUE) |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
+saltmarsh = st_read("../../scratch/L_C4_Saltmarsh_polys.gpkg",quiet=TRUE)
 
 sm_plot = plot_data_sf(data=saltmarsh,
              wrld=wrld,
@@ -1724,7 +1609,7 @@ saltmarsh_area = filter(area_lookup,Feature==saltmarsh$Feature)$Area_polys_sqkm
 saltmarsh_pts_n = countRecords_unepwcmc(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Saltmarshes", feature_layer = 1)
 saltmarsh_pols_n = countRecords_unepwcmc(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Saltmarshes", feature_layer = 0)
 
-sm_plot
+print(sm_plot)
 
 ```
 
@@ -1840,10 +1725,7 @@ Data are unioned to remove duplicates (see @sec-union).
 ```{r seagrass}
 #| fig-cap: Global distribution of seagrasses.
 
-seagrass = st_read("../../scratch/L_C4_Seagrass_polys.shp",quiet=TRUE) |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
+seagrass = st_read("../../scratch/L_C4_Seagrass_polys.gpkg",quiet=TRUE)
 
 sg_plot = plot_data_sf(data=seagrass,
              wrld=wrld,
@@ -1856,7 +1738,7 @@ seagrass_area = filter(area_lookup,Feature==seagrass$Feature)$Area_polys_sqkm
 seagrass_pts_n = countRecords_unepwcmc(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Seagrasses", feature_layer = 0)
 seagrass_pols_n = countRecords_unepwcmc(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Seagrasses", feature_layer = 1)
 
-sg_plot
+print(sg_plot)
 
 ```
 
@@ -1925,14 +1807,9 @@ No filtering of data from source.
 ```{r tigers}
 #| fig-cap: "Global distribution of Tiger Conservation Landscapes (inset: South Asia)."
 
-tigers = st_read("../../scratch/L_C1_Tiger_polys.shp",quiet=TRUE)
+tigers = st_read("../../scratch/L_C1_Tiger_polys.gpkg",quiet=TRUE)
 
 tigers_area = filter(area_lookup,Feature==tigers$Feature)$Area_polys_sqkm
-
-tigers = tigers |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_inset_sf(data=tigers,
              wrld=wrld,
@@ -2020,7 +1897,7 @@ plot_rst(data=rast("../../scratch/L_C4_Tropical_Moist_Forest.tif"),
 - **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/L_C4_Tropical_Moist_Forest.tif"), unit="km", byValue=T) |> filter(value==1) |> pull(area)`
 - **Critical habitat type**: Likely
 - **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
-- **Source**: Vancutsem *et al.* 2021[@vancutsemLongterm19902019Monitoring2021]
+- **Source**: Vancutsem *et al.* 2021[@vancutsemLongterm19902019Monitoring2021]: Transition Map - Main Classes 1982-2023
 
 #### How the data are processed{.unnumbered}
 
@@ -2066,7 +1943,7 @@ plot_rst(data=rast("../../scratch/L_C4_Cloud_Forest.tif"),
 - **Gridded area of feature at 1-km resolution**: `r expanse(rast("../../scratch/L_C4_Cloud_Forest.tif"), unit="km", byValue=T)[2,3]`
 - **Critical habitat type**: Likely
 - **IFC PS6 criteria triggered**: C4 (Highly Threatened or Unique Ecosystems)
-- **Source**: Karger *et al.* 2021[@kargerLimitedProtectionOngoing2021]
+- **Source**: Karger *et al.* 2021[@kargerLimitedProtectionOngoing2021] - 2018 ensemble mean
 
 #### Justification and alignment with IFC PS6 criteria{.unnumbered}
 
@@ -2087,10 +1964,7 @@ Data are unioned to remove duplicates (see @sec-union).
 ```{r warm-coral}
 #| fig-cap: Global distribution of warm water coral reefs.
 
-warm_coral = st_read("../../scratch/L_C4_C5_Warm_water_coral_polys.shp",quiet=TRUE) |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
+warm_coral = st_read("../../scratch/L_C4_C5_Warm_water_coral_polys.gpkg",quiet=TRUE)
 
 cr_plot = plot_data_sf(data=warm_coral,
              wrld=wrld,
@@ -2103,7 +1977,7 @@ warm_coral_area = filter(area_lookup,Feature==warm_coral$Feature)$Area_polys_sqk
 warm_coral_pts_n = countRecords_unepwcmc(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Coral_Reefs", feature_layer = 0)
 warm_coral_pols_n = countRecords_unepwcmc(dataset = "HabitatsAndBiotopes/Global_Distribution_of_Coral_Reefs", feature_layer = 1)
 
-cr_plot
+print(cr_plot)
 
 ```
 
@@ -2139,8 +2013,8 @@ No filtering of data from source.
 -   **Original CRS**: WGS 84
 -   **Area (polygons - reported)**: `r stats_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas", feature_layer = 1, fun = "sum", field = "rep_area", outfield = "total_rep_area")` km^2^
 -   **Area (point - reported)**: `r stats_unepwcmc(dataset = "ProtectedSites/The_World_Database_of_Protected_Areas", feature_layer = 0, fun = "sum", field = "rep_area", outfield = "total_rep_area")` km^2^
--   **Source**: UNEP-WCMC and IUCN 2024[@WDPA2024]
--   **Version**: October 2024
+-   **Source**: UNEP-WCMC and IUCN 2025[@WDPA2024]
+-   **Version**: July 2025
 
 For all data sourced from the WDPA, point data were buffered to reported area, as recommended by the WDPA Manual v1.6.
 
@@ -2151,14 +2025,9 @@ For all data sourced from the WDPA, point data were buffered to reported area, a
 #| fig-height: 3
 #| fig-cap: Global distribution of all Ramsar sites.
 
-ramsar = st_read("../../scratch/L_C4_All_Ramsar_polys.shp",quiet=TRUE)
+ramsar = st_read("../../scratch/L_C4_All_Ramsar_polys.gpkg",quiet=TRUE)
 
 ramsar_all_area = filter(area_lookup,Feature==ramsar$Feature)$Area_polys_sqkm
-
-ramsar = ramsar |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=ramsar,
              wrld=wrld,
@@ -2198,20 +2067,17 @@ See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@b
 #| fig-height: 3
 #| fig-cap: Global distribution of all Ramsar sites under criterion 2.
 
-ramsar_ii = st_read("../../scratch/L_C1_Ramsar_ii_polys.shp",quiet=TRUE)
+ramsar_ii = st_read("../../scratch/L_C1_Ramsar_ii_polys.gpkg",quiet=TRUE)
 
 ramsar_ii_area = filter(area_lookup,Feature==ramsar_ii$Feature)$Area_polys_sqkm
 
-ramsar_ii = ramsar_ii |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
-
-plot_data_sf(data=ramsar_ii,
+ramsar_ii_plot = plot_data_sf(data=ramsar_ii,
              wrld=wrld,
              bkg=sphere,
              palette=pal,
              revCol=revCol)
+
+print(ramsar_ii_plot)
 
 ```
 
@@ -2246,14 +2112,9 @@ See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@b
 #| fig-height: 3
 #| fig-cap: Global distribution of all Ramsar sites under criteria 5 and 6.
 
-ramsar_v_vi = st_read("../../scratch/L_C3_Ramsar_v_vi_polys.shp",quiet=TRUE)
+ramsar_v_vi = st_read("../../scratch/L_C3_Ramsar_v_vi_polys.gpkg",quiet=TRUE)
 
 ramsar_v_vi_area = filter(area_lookup,Feature==ramsar_v_vi$Feature)$Area_polys_sqkm
-
-ramsar_v_vi = ramsar_v_vi |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=ramsar_v_vi,
              wrld=wrld,
@@ -2296,14 +2157,9 @@ See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@b
 #| fig-height: 3
 #| fig-cap: Global distribution of all Ramsar sites under criteria 1 and 3.
 
-ramsar_i_iii = st_read("../../scratch/L_C4_Ramsar_i_iii_polys.shp",quiet=TRUE)
+ramsar_i_iii = st_read("../../scratch/L_C4_Ramsar_i_iii_polys.gpkg",quiet=TRUE)
 
 ramsar_i_iii_area = filter(area_lookup,Feature==ramsar_i_iii$Feature)$Area_polys_sqkm
-
-ramsar_i_iii = ramsar_i_iii |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=ramsar_i_iii,
              wrld=wrld,
@@ -2346,14 +2202,9 @@ See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@b
 #| fig-height: 3
 #| fig-cap: Global distribution of all Ramsar sites under criteria 4, 7, 8 and 9.
 
-ramsar_iv_vii_viii_ix = st_read("../../scratch/P_C3_Ramsar_iv_vii_viii_ix_polys.shp",quiet=TRUE)
+ramsar_iv_vii_viii_ix = st_read("../../scratch/P_C3_Ramsar_iv_vii_viii_ix_polys.gpkg",quiet=TRUE)
 
 ramsar_iv_vii_viii_ix_area = filter(area_lookup,Feature==ramsar_iv_vii_viii_ix$Feature)$Area_polys_sqkm
-
-ramsar_iv_vii_viii_ix = ramsar_iv_vii_viii_ix |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=ramsar_iv_vii_viii_ix,
              wrld=wrld,
@@ -2398,18 +2249,17 @@ See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@b
 #| fig-height: 3
 #| fig-cap: Global distribution of all protected areas under IUCN management categories I and II.
 
-iucn_i_ii = st_read("../../scratch/L_C4_IUCN_Ia_Ib_II_polys.shp",quiet=TRUE) |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
+iucn_i_ii = st_read("../../scratch/L_C4_IUCN_Ia_Ib_II_polys.gpkg",quiet=TRUE)
 
 iucn_i_ii_area = filter(area_lookup,Feature==iucn_i_ii$Feature)$Area_polys_sqkm
 
-plot_data_sf(data=iucn_i_ii,
+iucn_i_ii_plot = plot_data_sf(data=iucn_i_ii,
              wrld=wrld,
              bkg=sphere,
              palette=pal,
              revCol=revCol)
+
+print(iucn_i_ii_plot)
 
 ```
 
@@ -2445,14 +2295,9 @@ See Martin *et al.* 2015[@martinGlobalMapAid2015] and Brauneder *et al.* 2018[@b
 #| fig-height: 3
 #| fig-cap: Global distribution of natural and mixed World Heritage Sites.
 
-whs = st_read("../../scratch/L_C4_WHS_polys.shp",quiet=TRUE)
+whs = st_read("../../scratch/L_C4_WHS_polys.gpkg",quiet=TRUE)
 
 whs_area = filter(area_lookup,Feature==whs$Feature)$Area_polys_sqkm
-
-whs = whs |>
-  st_wrap_dateline() |>
-  st_transform("EPSG:8857") |>
-  st_simplify(dTolerance=1000)
 
 plot_data_sf(data=whs,
              wrld=wrld,
