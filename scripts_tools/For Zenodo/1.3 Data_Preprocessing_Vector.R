@@ -34,12 +34,12 @@ cat("sea turtle nesting...")
 swot = st_read(paste0(data_path,"PATH-TO-SWOT-SEA-TURTLES-DATA"), quiet=TRUE)
 
 L_C1_Turtle_CREN = filter(swot,commonname %in% c("Green Sea Turtle","Hawksbill Sea Turtle","Kemp's Ridley")) %>%
- st_faster_union() %>%
- mutate(Type = "Likely", Feature = "Sea turtle nesting sites - CR and EN species")
+  st_faster_union() %>%
+  mutate(Type = "Likely", Feature = "Sea turtle nesting sites - CR and EN species")
 
 P_C3_C4_Turtle_all = swot %>%
- st_faster_union() %>%
- mutate(Type = "Potential", Feature = "Sea turtle nesting sites - All species")
+  st_faster_union() %>%
+  mutate(Type = "Potential", Feature = "Sea turtle nesting sites - All species")
 
 cat("saving...")
 
@@ -85,7 +85,7 @@ tic("coldwater coral polys read in, fix and union")
 L_C4_C5_Cold_water_coral_observed_polys = query_unepwcmc(dataset="HabitatsAndBiotopes/Global_Distribution_of_Cold_water_Corals", feature_layer=1) %>%
   fix_sf() %>%
   st_faster_union() %>%
-  mutate(Type = "Likely", Feature = "Cold water coral reefs - Observed occurence")
+  mutate(Type = "Likely", Feature = "Cold water coral reefs - observed occurrence")
 toc()
 
 cat("saving...")
@@ -237,18 +237,30 @@ cat("kbas...")
 
 tic("kbas fix and union")
 kba_polys = filter(kba_aze_iba_polys, KbaStatus == "confirmed") %>%
-  dplyr::select(Criteria) %>%
+  dplyr::select(SitRecID) %>%
   fix_sf()
 
 kba_pts = filter(kba_aze_iba_pts, KbaStatus == "confirmed") %>%
-  mutate(SitArea = as.numeric(SitArea)) %>%
-  drop_na(SitArea)
+  filter(RepAreaKM2>0)
 
-kba_pts_buff = st_buffer_antimeridian(kba_pts, dist = sqrt((kba_pts$SitArea*10000)/pi), max_cells=5000) %>%
+kba_pts_buff = st_buffer_antimeridian(kba_pts, dist = sqrt((kba_pts$RepAreaKM2*10000)/pi), max_cells=5000) %>%
   fix_sf() %>%
-  select(Criteria)
+  select(SitRecID)
 
 kba = bind_rows(kba_polys,kba_pts_buff)
+
+kba_crit_lookup = readxl::read_xlsx("PATH-TO-KBA-TRIGGER-SPECIES-XLSX") |>
+  group_by(SitRecID) |>
+  summarise(Criteria=strsplit(KBACriterias, ",") |>
+              unlist() |>
+              trimws() |>
+              unique() %>%
+              discard(.,is.na(.)) |>
+              paste(collapse = ", ") |>
+              na_if("")
+            )
+
+kba = left_join(kba,kba_crit_lookup,by="SitRecID")
 
 L_C1_KBAs_A1ae = filter(kba, str_detect(Criteria,"A1a|A1e")) %>%
   st_faster_union() %>%
@@ -335,14 +347,13 @@ aze_polys = filter(kba_aze_iba_polys, AzeStatus == "confirmed") %>%
   fix_sf() %>%
   dplyr::select(last_col())
 
-aze_pts = filter(kba_aze_iba_pts, AzeStatus == "confirmed") %>%
-  mutate(SitArea = as.numeric(SitArea)) %>%
-  drop_na(SitArea) %>%
-  dplyr::select(SitArea,last_col())
+aze_pts = filter(kba_aze_iba_pts, AzeStatus == "confirmed" &
+                   RepAreaKM2>0) %>%
+  dplyr::select(RepAreaKM2,last_col())
 
-aze_pts_buff = st_buffer_antimeridian(aze_pts, dist = sqrt((aze_pts$SitArea*10000)/pi), max_cells=5000) %>%
+aze_pts_buff = st_buffer_antimeridian(aze_pts, dist = sqrt((aze_pts$RepAreaKM2*10000)/pi), max_cells=5000) %>%
   fix_sf() %>%
-  dplyr::select(-SitArea)
+  dplyr::select(-RepAreaKM2)
 
 L_C1_C2_C3_AZEs = bind_rows(aze_polys,aze_pts_buff) %>%
   st_faster_union() %>%
@@ -375,7 +386,7 @@ iba_pts_buff = st_buffer_antimeridian(iba_pts, dist = sqrt((iba_pts$SitArea*1000
 
 iba = bind_rows(iba_polys,iba_pts_buff)
 
-iba_crit_lookup = read.csv(paste0(data_path,"PATH-TO-IBA-CRITERIA-CSV-LOOKUP"))
+iba_crit_lookup = read.csv(paste0(data_path,"IBAsGlobal_2023_September_02/TriggerSpecies.csv"))
 
 iba = left_join(iba,iba_crit_lookup,by="SitRecID")
 

@@ -2,17 +2,17 @@
 
 The process for compiling the complete Critical Habitat layers comprises three main steps, split across six separate scripts.
 
-The most up-to-date layers can be found on the [UN Environment Programme World Conservation Monitoring Centre data portal](https://data-gis.unep-wcmc.org/portal/home/).
+The most up-to-date layers can be found on the [UN Environment Programme World Conservation Monitoring Centre data portal](https://data-gis.unep-wcmc.org/portal/home/). This code and the basic layer are made available under [CC BY](https://creativecommons.org/licenses/by/4.0/) but note that the drill down layer is made available under a [CC BY-NC](https://creativecommons.org/licenses/by-nc/4.0/) licence.
 
 While some of the input data can be prepared using the scripts provided here through a direct interface with the UNEP-WCMC data portal, many input datasets cannot be provided here and must be sought, with permission, from their respective owners.
 
-Where these are used in the scripts, we have included placeholder file paths starting with "PATH-TO". These need to be replaced with their respective actual paths when known.
+Where these are used in the scripts, we have included placeholder file paths starting with "PATH-TO" (or similar). These need to be replaced with their respective actual paths when known.
 
 ## 1 Data preprocessing
 
 ### 1.1 Red_List_Preprocessing.R
 
-Queries the IUCN Red List to produce four input datasets for the analysis: CR, EN, VU species, and Great Apes. The script includes code, currently commented out, that can add a desired buffer to these data.
+Queries the IUCN Red List to produce three input datasets for the analysis: CR, EN, VU species, and a fourth, Great Apes, that did not end up in the final layer. The script includes code, currently commented out, that can add a desired buffer to these data.
 
 ### 1.2 Data_Preprocessing_Raster.R
 

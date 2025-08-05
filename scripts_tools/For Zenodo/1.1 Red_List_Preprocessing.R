@@ -37,7 +37,7 @@ rl_lookup = st_read(rl_gdb,layer=rl_list,quiet=TRUE)
 rl_CH_subset = filter(rl_lookup,
                       category %in% c("CR","EN","VU") &
                         str_detect(criteria,"D") &
-                        biome_marine == "false" |
+                        !biome_marine |
                         family_name == "HOMINIDAE") %>% 
   pull(id_no) %>% 
   as.character
