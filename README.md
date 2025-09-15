@@ -1,84 +1,22 @@
 # An update to the global Critical Habitat screening layer
-Sebastian Dunnett<sup>a</sup>, Alfred Muge<sup>a</sup>, Alex
-Ross<sup>a</sup>, Joseph A. Turner<sup>b</sup>, Neil D.
-Burgess<sup>a</sup>, Matt Jones<sup>a</sup>, Sharon Brooks<sup>a</sup>
 
-<sup>a</sup>UN Environment Programme World Conservation Monitoring
-Centre, Cambridge, UK
 
-<sup>b</sup>Bluedot Associates Ltd, 12 Whiteladies Rd, Clifton, Bristol
-BS8 1PD, UK
+![](fig-main.png) This repository contains code for compiling the latest
+global Critical Habitat screening layer, based on the International
+Finance Corporation’s Performance Standard 6’s updated Guidance Note of
+2019, as well as code used to produce the associated publication in
+*Scientific Data* (accepted in principle).
 
-![Global screening layer for Critical Habitat. Reprojected to Equal
-Earth and aggregated to 10 x 10 km for
-visualisation.](outputs/paper/ch_paper_figures_tables_stats_files/figure-pdf/fig-main-1.pdf)
+Please see the full paper for detailed methodology.
 
-The process for compiling the complete Critical Habitat layers comprises
-three main steps, split across six separate scripts.
+Archived code at point of submission to *Scientific Data* that can be
+used to reproduce the analysis can be found on Zenodo:
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16746348.svg)](https://doi.org/10.5281/zenodo.16746348)
 
-The most up-to-date layers can be found on the [UN Environment Programme
-World Conservation Monitoring Centre data
-portal](https://data-gis.unep-wcmc.org/portal/home/). This code and the
-basic layer are made available under [CC
+The most up-to-date data layers can be found on the [UN Environment
+Programme World Conservation Monitoring Centre data
+portal](https://data-gis.unep-wcmc.org/portal/home/). Code presented
+here and the basic data layer are made available under [CC
 BY](https://creativecommons.org/licenses/by/4.0/) but note that the
-drill down layer is made available under a [CC
+drill down data layer is made available under a [CC
 BY-NC](https://creativecommons.org/licenses/by-nc/4.0/) licence.
-
-While some of the input data can be prepared using the scripts provided
-here through a direct interface with the UNEP-WCMC data portal, many
-input datasets cannot be provided here and must be sought, with
-permission, from their respective owners.
-
-Where these are used in the scripts, we have included placeholder file
-paths starting with “PATH-TO” (or similar). These need to be replaced
-with their respective actual paths when known.
-
-## 1 Data preprocessing
-
-### 1.1 Red_List_Preprocessing.R
-
-Queries the IUCN Red List to produce three input datasets for the
-analysis: CR, EN, VU species, and a fourth, Great Apes, that did not end
-up in the final layer. The script includes code, currently commented
-out, that can add a desired buffer to these data.
-
-### 1.2 Data_Preprocessing_Raster.R
-
-Pre-processes any input data only available in raster format. This
-script includes the processing of extremely high resolution tropical
-moist forest and mangrove data, both of which can take days to complete.
-
-### 1.3 Data_Preprocessing_Vector.R
-
-The main pre-processing script: pre-processes all vector input data.
-Some datasets, e.g. warm-water coral reefs, are extremely detailed and
-take a substantial time to complete.
-
-> N.B. At this stage, the lookup table, `lookup.csv`, needs to be
-> manually edited in Excel or similar to include all features for which
-> **data exist**. For example, at the moment, many KBA criteria do not
-> have any sites triggering them. So while a criterion may align with
-> the definition of Critical Habitat, the pre-processing scripts will
-> not output any data for them so they need removed from the lookup.
-
-## 2 Creating Critical Habitat layers
-
-### 2 Create_Drill_Down_Critical_Habitat_Raster_Layer.R
-
-Combines all standardised input data from 1.1, 1.2, and 1.3 to produce
-the finished drill down raster layer with accompanying attribute table
-in WGS 84.
-
-## 3 Post-processing
-
-### 3.1 Create_Basic_Critical_Habitat_Raster_Layers.R
-
-“Flattens” the drill down raster layer produced in 2 to only contain one
-attribute: whether a cell is “Likely” Critical Habitat (10), “Potential”
-(1), or “Unclassified” (0).
-
-### 3.2 Create_Drill_Down_Polygons.R
-
-Polygonises the drill down raster layer produced in 2 and reorders the
-variables to be more user-friendly in a way not possible with raster
-data.
