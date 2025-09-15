@@ -1,10 +1,17 @@
-<figure>
-<embed
-src="outputs/paper/ch_paper_figures_tables_stats_files/fig-main-1.pdf" />
-<figcaption aria-hidden="true">Global screening layer for Critical
-Habitat. Reprojected to Equal Earth and aggregated to 10 x 10 km for
-visualisation.</figcaption>
-</figure>
+# An update to the global Critical Habitat screening layer
+Sebastian Dunnett<sup>a</sup>, Alfred Muge<sup>a</sup>, Alex
+Ross<sup>a</sup>, Joseph A. Turner<sup>b</sup>, Neil D.
+Burgess<sup>a</sup>, Matt Jones<sup>a</sup>, Sharon Brooks<sup>a</sup>
+
+<sup>a</sup>UN Environment Programme World Conservation Monitoring
+Centre, Cambridge, UK
+
+<sup>b</sup>Bluedot Associates Ltd, 12 Whiteladies Rd, Clifton, Bristol
+BS8 1PD, UK
+
+![Global screening layer for Critical Habitat. Reprojected to Equal
+Earth and aggregated to 10 x 10 km for
+visualisation.](outputs/paper/ch_paper_figures_tables_stats_files/figure-pdf/fig-main-1.pdf)
 
 The process for compiling the complete Critical Habitat layers comprises
 three main steps, split across six separate scripts.

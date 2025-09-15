@@ -1,50 +1,21 @@
 ---
 title: An update to the global Critical Habitat screening layer
 author:
-  - name: Sebastian Dunnett
-    orcid: 0000-0002-4238-2508
-    email: sebastian.dunnett@unep-wcmc.org
-    affiliations:
-      - name: United Nations Environment Programme World Conservation Monitoring Centre
-        address: 219 Huntingdon Road
-        city: Cambridge
-        country: UK
-        postal-code: CB3 0DL
-        id: unep-wcmc
-        attributes:
-          corresponding: boolean
-  - name: Alfred Muge
-    affiliations:
-      - ref: unep-wcmc
-  - name: Alex Ross
-    affiliations:
-      - ref: unep-wcmc
-  - name: Joseph A. Turner
-    affiliations:
-      - name: The Biodiversity Consultancy
-        address: 3E King's Parade
-        city: Cambridge
-        country: UK
-        postal-code: CB2 1SJ
-        id: tbc
-  - name: Neil D. Burgess
-    orcid: 0000-0003-2291-4535
-    affiliations:
-      - ref: unep-wcmc
-  - name: Matt Jones
-    orcid: 0000-0002-5690-4274
-    affiliations:
-      - ref: unep-wcmc
-  - name: Sharon Brooks
-    orcid: 0000-0001-8744-3557
-    affiliations:
-      - ref: unep-wcmc
-output: 
-  md_document:
-    variant: gfm
+  - name: Sebastian Dunnett^a^
+  - name: Alfred Muge^a^
+  - name: Alex Ross^a^
+  - name: Joseph A. Turner^b^
+  - name: Neil D. Burgess^a^
+  - name: Matt Jones^a^
+  - name: Sharon Brooks^a^
+format: gfm
 ---
 
-![Global screening layer for Critical Habitat. Reprojected to Equal Earth and aggregated to 10 x 10 km for visualisation.](outputs/paper/ch_paper_figures_tables_stats_files/fig-main-1.pdf)
+^a^UN Environment Programme World Conservation Monitoring Centre, Cambridge, UK
+
+^b^Bluedot Associates Ltd, 12 Whiteladies Rd, Clifton, Bristol BS8 1PD, UK
+
+![Global screening layer for Critical Habitat. Reprojected to Equal Earth and aggregated to 10 x 10 km for visualisation.](outputs/paper/ch_paper_figures_tables_stats_files/figure-pdf/fig-main-1.pdf)
 
 The process for compiling the complete Critical Habitat layers comprises three main steps, split across six separate scripts.
 
