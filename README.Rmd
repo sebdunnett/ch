@@ -1,13 +1,85 @@
 ---
 title: An update to the global Critical Habitat screening layer
 format: gfm
+execute:
+  echo: false
 ---
 
-![](fig-main.png)
-This repository contains code for compiling the latest global Critical Habitat screening layer, based on the International Finance Corporation's Performance Standard 6's updated Guidance Note of 2019, as well as code used to produce the associated publication in *Scientific Data* (accepted in principle).
+```{r setup}
+
+# Install packages (if required)
+if (!require("pacman",quietly=TRUE)) install.packages("pacman")
+pacman::p_load(tidyverse,terra,sf,giscoR,scico,scales,units)
+terraOptions(progress=0)
+
+ch_pal = c("#8400a8","#ff00c5","#e8e8e8")
+
+knitr::knit_hooks$set(inline = function(x) {
+  if(!is.numeric(x)){x}
+  else{
+    prettyNum(signif(x,4), big.mark=",")
+    }
+  })
+
+```
+
+```{r import-rasters}
+
+raster_WGS <- rast(res=1/12)
+
+raster_eq <- project(raster_WGS,"EPSG:8857",res=10000)
+
+sphere <- st_graticule(ndiscr = 10000, margin = 10e-6) %>%
+  st_transform(crs = st_crs("ESRI:54009")) %>%
+  st_convex_hull() %>%
+  summarise(geometry = st_union(geometry)) |>
+  st_buffer(1000) |> st_union() |> st_buffer(-1000) |>
+  st_transform("EPSG:8857")
+
+ch_basic_files = list.files("outputs", pattern = "Basic_Critical_Habitat.*\\.tif$", full.names=TRUE)
+ch_basic_file = ch_basic_files[which.max(file.info(ch_basic_files)$ctime)]
+
+ch2025_30as = rast(ch_basic_file)
+
+ch2025_areas = expanse(ch2025_30as,unit="km",byValue=TRUE)[,2:3]
+
+ch2025_plot = aggregate(ch2025_30as,fact=10,fun="modal") |>
+project(raster_eq,method="near",mask=TRUE)
+levels(ch2025_plot) = data.frame(id=c(0,1,10), ch2025=c("Unclassified","Potential Critical Habitat","Likely Critical Habitat"))
+
+wrld = gisco_get_coastallines(resolution="03") |>
+  st_transform("EPSG:8857") |>
+  st_simplify(dTolerance=1000)
+
+features_table = read.csv("outputs/paper/features_table.csv",check.names=F)
+
+```
+
+```{r plot}
+
+plot_df = as.data.frame(ch2025_plot,xy=TRUE)
+
+ggplot(plot_df) +
+  geom_raster(aes(x=x,y=y,fill=fct_rev(ch2025))) +
+  geom_sf(data=st_transform(gisco_coastallines,"EPSG:8857"),fill=NA) +
+  theme_void() +
+  scale_fill_manual(values=ch_pal,name=NULL) + 
+  theme(legend.position="bottom")
+
+```
+
+The current version of the layer uses `r length(unique(features_table[,1]))` biodiversity feature datasets that are split into `r length(unique(paste0(features_table[,1],features_table[,2])))` separate triggers.
+
+The latest data leads to `r sum(ch2025_areas[2:3,2])/1000000` million km^2^ of the Earth's surface being classified as Likely or Potential Critical Habitat: `r ch2025_areas[3,2]/1000000` million km^2^ (`r label_percent(accuracy=.01)(ch2025_areas[3,2]/sum(ch2025_areas[,2]))`) as Likely Critical Habitat and `r ch2025_areas[2,2]/1000000` million km^2^ (`r label_percent(accuracy=.01)(ch2025_areas[2,2]/sum(ch2025_areas[,2]))`) as Potential Critical Habitat. The remaining `r ch2025_areas[1,2]/1000000` million km^2^ (`r label_percent(accuracy=.01)(ch2025_areas[1,2]/sum(ch2025_areas[,2]))`) is "Unclassified" as either known biodiversity features do not align with the IFC definition or because appropriate data that might be used to classify do not exist: Critical Habitat may still occur in these regions.
+
+This repository contains code for compiling the latest global Critical Habitat screening layer, based on the International Finance Corporation's Performance Standard 6's updated Guidance Note of 2019, as well as code used to produce the associated publication:
+
+>Dunnett, S., Muge, A., Ross, A., Turner, J.A., Burgess, N.D., Jones, M., Brooks, S. An update to the global Critical Habitat screening layer. *Sci Data* **12**, 1812 (2025). [https://doi.org/10.1038/s41597-025-06117-y](https://doi.org/10.1038/s41597-025-06117-y)
 
 Please see the full paper for detailed methodology.
 
-Archived code at point of submission to *Scientific Data* that can be used to reproduce the analysis can be found on Zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16746348.svg)](https://doi.org/10.5281/zenodo.16746348)
+Archived code at point of submission to *Scientific Data* that can be used to reproduce the analysis at that point in time can be found on Zenodo:
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16746348.svg)](https://doi.org/10.5281/zenodo.16746348)
 
 The most up-to-date data layers can be found on the [UN Environment Programme World Conservation Monitoring Centre data portal](https://data-gis.unep-wcmc.org/portal/home/). Code presented here and the basic data layer are made available under [CC BY](https://creativecommons.org/licenses/by/4.0/) but note that the drill down data layer is made available under a [CC BY-NC](https://creativecommons.org/licenses/by-nc/4.0/) licence.
