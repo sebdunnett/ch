@@ -7,7 +7,7 @@
 
 # Install packages (if required)
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(terra,tidyverse,foreign)
+pacman::p_load(terra,tidyverse)
 
 # import helper functions
 source("scripts_tools/0 spatial_processing_functions.R")
@@ -19,13 +19,9 @@ output_path = "outputs/"
 ch_files = list.files(output_path, pattern = "Drill_Down_Critical_Habitat.*\\.tif$", full.names=TRUE)
 ch_file = ch_files[which.max(file.info(ch_files)$ctime)]
 
-rat_files = list.files(output_path, pattern = "Drill_Down_Critical_Habitat.*\\.vat\\.dbf$", full.names=TRUE)
-rat_file = rat_files[which.max(file.info(rat_files)$ctime)]
-rat = foreign::read.dbf(rat_file)
-
 # reclassify raster to CH values
-rc = classify(x = rast(ch_file),
-                  rcl = as.matrix(dplyr::select(rat,VALUE,CH)))
+rc = rast(ch_file) |>
+  as.numeric("CH")
 
 # save
 rast_save(rst=rc,filename=paste0("Basic_Critical_Habitat",format(Sys.time(), "_%d%m%Y"),".tif"),
