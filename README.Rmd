@@ -61,7 +61,7 @@ plot_df = as.data.frame(ch2025_plot,xy=TRUE)
 
 ggplot(plot_df) +
   geom_raster(aes(x=x,y=y,fill=fct_rev(ch2025))) +
-  geom_sf(data=st_transform(gisco_coastallines,"EPSG:8857"),fill=NA) +
+  geom_sf(data=st_transform(gisco_coastal_lines,"EPSG:8857"),fill=NA) +
   theme_void() +
   scale_fill_manual(values=ch_pal,name=NULL) + 
   theme(legend.position="bottom")

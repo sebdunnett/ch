@@ -6,10 +6,10 @@
 The current version of the layer uses 22 biodiversity feature datasets
 that are split into 54 separate triggers.
 
-The latest data leads to 67.66 million km<sup>2</sup> of the Earth’s
-surface being classified as Likely or Potential Critical Habitat: 53.95
-million km<sup>2</sup> (10.58%) as Likely Critical Habitat and 13.71
-million km<sup>2</sup> (2.69%) as Potential Critical Habitat. The
+The latest data leads to 67.67 million km<sup>2</sup> of the Earth’s
+surface being classified as Likely or Potential Critical Habitat: 53.91
+million km<sup>2</sup> (10.57%) as Likely Critical Habitat and 13.76
+million km<sup>2</sup> (2.70%) as Potential Critical Habitat. The
 remaining 442.4 million km<sup>2</sup> (86.73%) is “Unclassified” as
 either known biodiversity features do not align with the IFC definition
 or because appropriate data that might be used to classify do not exist:
